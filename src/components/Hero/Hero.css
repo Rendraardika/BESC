@@ -1,0 +1,174 @@
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 8rem 3rem 4rem;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid rgba(200, 169, 74, 0.3);
+  padding: 0.4rem 0.9rem;
+  margin-bottom: 2rem;
+  animation: fadeUp 0.8s ease both;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px var(--gold);
+  animation: pulse 2s ease infinite;
+}
+
+.hero-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(3.5rem, 6vw, 6rem);
+  font-weight: 300;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+
+.hero-title em {
+  font-style: italic;
+  color: var(--green-bright);
+  text-shadow: 0 0 40px rgba(40, 199, 111, 0.4);
+}
+
+.hero-title-accent {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(4rem, 7vw, 7.5rem);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--white);
+  display: block;
+  animation: fadeUp 0.8s 0.2s ease both;
+  -webkit-text-stroke: 1px rgba(40, 199, 111, 0.4);
+}
+
+.hero-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.7;
+  margin: 1.5rem 0 2.5rem;
+  max-width: 420px;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  animation: fadeUp 0.8s 0.4s ease both;
+}
+
+/* ── HERO VISUAL ── */
+.hero-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 1.2s 0.3s ease both;
+}
+
+.logo-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-glow-ring {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    rgba(40, 199, 111, 0.3) 25%,
+    transparent 50%,
+    rgba(40, 199, 111, 0.15) 75%,
+    transparent 100%
+  );
+  animation: rotateSlow 8s linear infinite;
+  filter: blur(20px);
+}
+
+.hero-logo-img {
+  width: 500px;
+  height: 500px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 40px rgba(19, 173, 88, 0.5));
+  position: relative;
+  z-index: 2;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 992px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 2rem;
+  }
+
+  .hero-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
+  .hero-logo-img {
+    width: 300px;
+    height: 300px;
+  }
+
+  .logo-glow-ring {
+    width: 280px;
+    height: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 7rem 1.5rem 3rem;
+  }
+
+  .hero-logo-img {
+    width: 240px;
+    height: 240px;
+  }
+
+  .logo-glow-ring {
+    width: 220px;
+    height: 220px;
+  }
+}
