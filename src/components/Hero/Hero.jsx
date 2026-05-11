@@ -1,4 +1,5 @@
 import './Hero.css';
+import logoWarna from '../../../logo/warna logo.png';
 
 export default function Hero() {
   return (
@@ -26,7 +27,7 @@ export default function Hero() {
           <div className="logo-wrapper">
             <div className="logo-glow-ring"></div>
             <img
-              src="/image/BESC LOGO resmi.png"
+              src={logoWarna}
               alt="Logo BESC"
               className="hero-logo-img"
             />

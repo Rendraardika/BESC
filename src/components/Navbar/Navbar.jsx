@@ -1,26 +1,28 @@
 import './Navbar.css';
+import { useState } from 'react';
 
 export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+  const closeMenu = () => setIsOpen(false);
+
   return (
     <nav className="navbar" id="navbar">
       <div className="nav-logo">
         B<span>E</span>SC
       </div>
-      <ul className="nav-links">
-        <li><a href="#tentang">Tentang</a></li>
-        <li><a href="#jadwal">Jadwal</a></li>
-        <li><a href="#materi">Materi</a></li>
-        <li><a href="#faq">FAQ</a></li>
+      <ul className={`nav-links ${isOpen ? 'open' : ''}`}>
+        <li><a href="#tentang" onClick={closeMenu}>Tentang</a></li>
+        <li><a href="#jadwal" onClick={closeMenu}>Jadwal</a></li>
+        <li><a href="#materi" onClick={closeMenu}>Materi</a></li>
+        <li><a href="#faq" onClick={closeMenu}>FAQ</a></li>
       </ul>
 
       {/* Hamburger button for mobile */}
       <button
-        className="nav-hamburger"
+        className={`nav-hamburger ${isOpen ? 'active' : ''}`}
         aria-label="Toggle menu"
-        onClick={() => {
-          document.querySelector('.nav-links').classList.toggle('open');
-          document.querySelector('.nav-hamburger').classList.toggle('active');
-        }}
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
       >
         <span></span>
         <span></span>
