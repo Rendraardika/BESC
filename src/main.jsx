@@ -17,19 +17,19 @@ const events = [
   },
   {
     icon: '🌱',
-    bg: 'from-stone-950 to-amber-800',
-    iconColor: 'text-amber-200',
-    tags: ['Olimpiade', 'SMP', 'Nasional'],
-    title: 'Olimpiade Botani & Ekologi — BESC 2025 (Jenjang SMP)',
-    desc: 'Uji pemahamanmu tentang dunia tumbuhan dan ekosistem dalam kompetisi biologi tingkat nasional.',
+    bg: 'bg-[linear-gradient(180deg,#1c79c6,#044b86)]',
+    iconColor: 'text-blue-200',
+    tags: ['Lomba Karya Tulis Ilmiah SMA sederajat', 'Nasional'],
+    title: 'Lomba Karya Tulis Ilmiah — BESC 2026 (Jenjang SMA)',
+    desc: 'Buktikan bahwa ide cemerlangmu layak jadi juara',
     price: 'Gratis',
     original: 'Rp 29.000',
     discount: '100% OFF',
   },
   {
     icon: '🦠',
-    bg: 'from-indigo-950 to-indigo-700',
-    iconColor: 'text-indigo-200',
+    bg: 'bg-[linear-gradient(180deg,#1c79c6,#044b86)]',
+    iconColor: 'text-blue-200',
     tags: ['Olimpiade', 'SMP', 'Nasional'],
     title: 'Olimpiade Biologi — BESC 2026 (Jenjang SMP)',
     desc: 'Kompetisi biologi tingkat nasional untuk pelajar SMP/MTs sederajat. Online, bersertifikat.',
@@ -382,9 +382,9 @@ function Blog() {
         <SectionHeader label="✍️ Blog & Artikel" title="Konten Terbaru BESC" sub="Informasi lengkap seputar dunia biologi, tips kompetisi, dan update terbaru BESC." />
         <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
           {[
-            ['🧬', 'Biologi', '10 Mei 2025', 'Tips Persiapan Olimpiade Biologi: Strategi Belajar Efektif untuk SMA'],
-            ['🔬', 'Sains', '5 Mei 2025', 'Memahami Replikasi DNA: Panduan Lengkap untuk Pelajar SMA'],
-            ['🌱', 'Ekologi', '1 Mei 2025', 'Keanekaragaman Hayati Indonesia: Peluang dan Tantangan Konservasi'],
+            ['🧬', 'Biologi', '17 agustus 2026', 'Tips Persiapan Olimpiade Biologi: Strategi Belajar Efektif untuk SMA'],
+            ['🔬', 'Sains', '5 september 2026', 'Memahami Replikasi DNA: Panduan Lengkap untuk Pelajar SMA'],
+            ['🌱', 'Ekologi', '1 oktober 2026', 'Keanekaragaman Hayati Indonesia: Peluang dan Tantangan Konservasi'],
           ].map(([icon, tag, date, title]) => (
             <a key={title} href="#blog" className="flex min-h-[380px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:shadow-2xl">
               <div className="grid h-48 shrink-0 place-items-center bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-5xl text-blue-200">{icon}</div>
