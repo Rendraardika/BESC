@@ -9,8 +9,8 @@ const events = [
     bg: 'bg-[linear-gradient(180deg,#1c79c6,#044b86)]',
     iconColor: 'text-blue-200',
     tags: ['Olimpiade', 'SMA', 'Nasional'],
-    title: 'Olimpiade Biologi Sel & Molekuler — BESC 2025 (Jenjang SMA)',
-    desc: 'Kompetisi biologi sel dan biologi molekuler tingkat nasional untuk pelajar SMA/MA sederajat. Online, bersertifikat.',
+    title: 'Olimpiade Biologi — BESC 2026 (Jenjang SMA)',
+    desc: 'Kompetisi biologi tingkat nasional untuk pelajar SMA/MA sederajat. Online, bersertifikat.',
     price: 'Gratis',
     original: 'Rp 39.000',
     discount: '100% OFF',
@@ -30,9 +30,9 @@ const events = [
     icon: '🦠',
     bg: 'from-indigo-950 to-indigo-700',
     iconColor: 'text-indigo-200',
-    tags: ['Olimpiade', 'SMA', 'Nasional'],
-    title: 'Olimpiade Mikrobiologi & Genetika — BESC 2025 (Jenjang SMA)',
-    desc: 'Kompetisi mikrobiologi dan genetika untuk pelajar SMA/MA. Uji kemampuan analisis dan pemahaman konsepmu.',
+    tags: ['Olimpiade', 'SMP', 'Nasional'],
+    title: 'Olimpiade Biologi — BESC 2026 (Jenjang SMP)',
+    desc: 'Kompetisi biologi tingkat nasional untuk pelajar SMP/MTs sederajat. Online, bersertifikat.',
     price: 'Rp 39.000',
     original: 'Rp 60.000',
     discount: '35% OFF',
@@ -58,10 +58,10 @@ const materi = [
 ];
 
 const timeline = [
-  ['01', 'Jan - Feb 2025', 'Pendaftaran', 'Daftar online, lengkapi dokumen, dan bayar biaya administrasi.'],
-  ['02', 'Maret 2025', 'Seleksi Awal', 'Ujian online CBT pilihan ganda dan isian singkat.'],
-  ['03', 'April 2025', 'Semifinal', '50 peserta terbaik mengikuti ujian esai dan analisis data.'],
-  ['04', 'Mei 2025', 'Grand Final', '15 finalis bertanding dalam praktikum lab dan presentasi riset.'],
+  ['01', 'Agustus - September 2026', 'Pendaftaran', 'Daftar online, lengkapi dokumen, dan bayar biaya administrasi.'],
+  ['02', 'Septmeber 2026', 'Seleksi Awal', 'Ujian online CBT pilihan ganda dan isian singkat.'],
+  ['03', 'Oktober 2026', 'Semifinal', '50 peserta terbaik mengikuti ujian esai dan analisis data.'],
+  ['04', 'Oktober 2026', 'Grand Final', '15 finalis bertanding dalam praktikum lab dan presentasi riset.'],
 ];
 
 const faqs = [
@@ -182,10 +182,10 @@ function StatsStrip() {
     <div className="border-b border-slate-200 bg-white px-6 py-6 md:px-8">
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 text-center md:grid-cols-4">
         {[
-          ['500+', 'Peserta Aktif'],
+          ['19 jt', 'Peserta Aktif'],
           ['34', 'Provinsi Terwakili'],
           ['10+', 'Bidang Materi'],
-          ['Rp50Jt', 'Total Hadiah'],
+          ['Rp217 T', 'Total Hadiah'],
         ].map(([num, label]) => (
           <div key={label} className="border-slate-200 py-2 md:border-r md:last:border-r-0">
             <div className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1c79c6]">{num}</div>
@@ -330,9 +330,9 @@ function WhyBesc() {
         </div>
         <div className="hidden rounded-[1.5rem] bg-[linear-gradient(180deg,#1c79c6,#044b86)] p-12 lg:block">
           {[
-            ['500+', 'Peserta telah bergabung dari seluruh Indonesia'],
+            ['19 Jt', 'Peserta telah bergabung dari seluruh Indonesia'],
             ['34', 'Provinsi terwakili dalam kompetisi BESC'],
-            ['Rp 50Jt', 'Total hadiah yang telah dibagikan kepada pemenang'],
+            ['Rp 217 T', 'Total hadiah yang telah dibagikan kepada pemenang'],
           ].map(([num, label]) => (
             <div key={num} className="mb-6 rounded-2xl border border-white/15 bg-white/10 p-6 text-white last:mb-0">
               <div className="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold text-blue-200">{num}</div>
@@ -352,9 +352,9 @@ function Testimonials() {
         <SectionHeader center label="💬 Testimoni" title="Kata Mereka tentang BESC" sub="BESC telah berkomitmen untuk siswa dan instansi seluruh Indonesia." />
         <div className="grid gap-7 lg:grid-cols-3">
           {[
-            ['👩‍🎓', 'Ratu Apik Hidayah', 'SMA Negeri 3 Jakarta', 'Olimpiade BESC bermanfaat banget untuk melatih manajemen waktu dan berpikir kritis.'],
-            ['👨‍🎓', 'Ahmad Zaki Firmansyah', 'SMAN 1 Surabaya', 'Dari BESC, saya belajar untuk berpikir kritis tentang konsep biologi dan teliti dalam mengerjakan soal.'],
-            ['👩‍🔬', 'Dirta Amelia Putri', 'SMA Hang Tuah 5 Sidoarjo', 'Senang sekali bisa jadi Juara 1 Olimpiade Biologi BESC! Tetap optimis dan terus belajar.'],
+            ['👩‍🎓', 'Achai Ridho Dhavita', 'SMA Negeri 3 Blitar', 'Olimpiade BESC bermanfaat banget untuk melatih manajemen waktu dan berpikir kritis.'],
+            ['👨‍🎓', 'Muhammad Lussy Zain', 'SMAN 1 Madura', 'Dari BESC, saya belajar untuk berpikir kritis tentang konsep biologi dan teliti dalam mengerjakan soal.'],
+            ['👩‍🔬', 'Kholifatul Ula', 'SMAN 99 Sampang', 'Senang sekali bisa jadi Juara 1 Olimpiade Biologi BESC! Tetap optimis dan terus belajar.'],
           ].map(([avatar, name, school, text]) => (
             <div key={name} className="relative rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-2xl">
               <div className="absolute right-5 top-5 text-xs tracking-wider text-amber-500">★★★★★</div>
