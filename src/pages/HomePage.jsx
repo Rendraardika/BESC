@@ -12,15 +12,15 @@ import Blog from '../sections/Blog.jsx';
 import CTA from '../sections/CTA.jsx';
 import FAQ from '../sections/FAQ.jsx';
 
-export default function HomePage({ onRegister, onLogin }) {
+export default function HomePage({ onCompetitionDetail, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, user }) {
   return (
     <>
-      <Header onRegister={onRegister} onLogin={onLogin} />
+      <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onTryout={onTryout} user={user} />
       <main>
         <Hero onRegister={onRegister} />
         <StatsStrip />
-        <Events onRegister={onRegister} />
-        <Tryout />
+        <Events onCompetitionDetail={onCompetitionDetail} />
+        <Tryout onTryoutPackage={onTryoutPackage} />
         <Materi />
         <Timeline />
         <WhyBesc />

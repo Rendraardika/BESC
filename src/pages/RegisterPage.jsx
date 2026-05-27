@@ -1,18 +1,15 @@
 import bescLogo from '../assets/images/1.png';
 
-export default function RegisterPage({ onBack }) {
+export default function RegisterPage({ onLogin }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <button type="button" onClick={onBack} className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl items-center">
+          <div className="flex items-center gap-3">
             <img src={bescLogo} alt="BESC Logo" className="h-11 w-auto object-contain" />
-          </button>
-          <button type="button" onClick={onBack} className="rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition hover:border-[#1c79c6] hover:text-[#1c79c6]">
-            Kembali
-          </button>
+          </div>
         </div>
       </header>
 
@@ -37,7 +34,10 @@ export default function RegisterPage({ onBack }) {
           <div className="p-6 md:p-10">
             <h2 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-slate-950">Daftar Akun</h2>
             <p className="mt-2 text-sm text-slate-500">Lengkapi data diri untuk mengikuti kompetisi.</p>
-            <form className="mt-8 grid gap-4 md:grid-cols-2">
+            <form className="mt-8 grid gap-4 md:grid-cols-2" onSubmit={(event) => {
+              event.preventDefault();
+              onLogin();
+            }}>
               {['Nama', 'Email', 'Nomor WA Aktif', 'Tanggal Lahir', 'Nama Sekolah', 'Password', 'Confirm Password'].map((label) => (
                 <div key={label} className={label === 'Nama Sekolah' ? 'md:col-span-2' : ''}>
                   <label className="mb-1 block text-xs font-bold text-slate-700">{label}</label>
@@ -59,6 +59,29 @@ export default function RegisterPage({ onBack }) {
               ))}
               <button type="submit" className="mt-2 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-3 text-sm font-bold text-white md:col-span-2">Daftar</button>
             </form>
+
+            <div className="mt-7">
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200"></div>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Atau lanjutkan dengan</span>
+                <div className="h-px flex-1 bg-slate-200"></div>
+              </div>
+
+              <button type="button" className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-[#1c79c6] hover:bg-blue-50">
+                <span className="text-xl font-extrabold">
+                  <span className="text-blue-500">G</span>
+                </span>
+                Google
+              </button>
+
+              <p className="mt-6 text-center text-sm text-slate-500">
+                Sudah punya akun?{' '}
+                <button type="button" onClick={onLogin} className="font-bold text-[#1c79c6]">
+                  Masuk
+                </button>
+              </p>
+              <p className="mt-1 text-center text-xs text-slate-400">© 2026 BESC. Semua hak dilindungi.</p>
+            </div>
           </div>
         </div>
       </section>

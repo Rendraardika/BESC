@@ -9,6 +9,10 @@ export const events = [
     price: 'Gratis',
     original: 'Rp 39.000',
     discount: '100% OFF',
+    deadline: '30 September 2026',
+    participants: '2.400+ peserta',
+    category: 'Olimpiade SMA',
+    badges: ['Online', 'Nasional'],
   },
   {
     icon: '🌱',
@@ -20,6 +24,10 @@ export const events = [
     price: 'Gratis',
     original: 'Rp 29.000',
     discount: '100% OFF',
+    deadline: '12 Oktober 2026',
+    participants: '1.800+ peserta',
+    category: 'Karya Tulis Ilmiah',
+    badges: ['Online', 'Nasional'],
   },
   {
     icon: '🦠',
@@ -31,5 +39,9 @@ export const events = [
     price: 'Rp 39.000',
     original: 'Rp 60.000',
     discount: '35% OFF',
+    deadline: '25 September 2026',
+    participants: '1.950+ peserta',
+    category: 'Olimpiade SMP',
+    badges: ['Online', 'Nasional'],
   },
 ];

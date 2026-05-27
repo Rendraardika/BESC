@@ -1,18 +1,15 @@
 import bescLogo from '../assets/images/1.png';
 
-export default function LoginPage({ onBack, onRegister }) {
+export default function LoginPage({ onRegister, onLoginSuccess }) {
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <button type="button" onClick={onBack} className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl items-center">
+          <div className="flex items-center gap-3">
             <img src={bescLogo} alt="BESC Logo" className="h-11 w-auto object-contain" />
-          </button>
-          <button type="button" onClick={onBack} className="rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition hover:border-[#1c79c6] hover:text-[#1c79c6]">
-            Kembali
-          </button>
+          </div>
         </div>
       </header>
 
@@ -26,7 +23,10 @@ export default function LoginPage({ onBack, onRegister }) {
             <p className="mt-2 text-sm text-slate-500">Masuk untuk melanjutkan ke dashboard peserta.</p>
           </div>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={(event) => {
+            event.preventDefault();
+            onLoginSuccess();
+          }}>
             <div>
               <label className="mb-1.5 block text-xs font-bold text-slate-700">Email atau Username</label>
               <input className={inputClass} type="text" placeholder="Masukkan email atau username" />

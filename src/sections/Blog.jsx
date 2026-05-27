@@ -17,7 +17,7 @@ export default function Blog() {
                 </div>
                 <h3 className="line-clamp-2 font-['Plus_Jakarta_Sans'] font-extrabold leading-6 text-slate-950">{title}</h3>
                 <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">Pelajari wawasan terbaru dan tips persiapan kompetisi biologi bersama BESC.</p>
-                <button type="button" className="mt-auto rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-bold text-white">Baca Artikel</button>
+                <button type="button" className="mt-auto rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-110">Baca Artikel</button>
               </div>
             </a>
           ))}
