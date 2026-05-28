@@ -2,7 +2,7 @@ import bescLogo from '../assets/images/1.png';
 
 export default function Hero({ onRegister }) {
   return (
-    <section id="home" className="relative overflow-hidden bg-[linear-gradient(180deg,#1c79c6_0%,#044b86_100%)] px-6 py-20 md:px-8">
+    <section id="home" className="relative overflow-hidden hero-bg px-6 py-20 md:px-8">
       <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.22),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.12),transparent_24%)]"></div>
       <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-2">
         <div>
@@ -21,12 +21,7 @@ export default function Hero({ onRegister }) {
             <a href="#tryout" className="rounded-full border border-white/30 bg-white/10 px-7 py-3 font-bold text-white transition hover:bg-white/20">Coba Tryout Gratis</a>
           </div>
         </div>
-        <div className="hidden justify-center lg:flex">
-          <div className="flex flex-col items-center gap-5 rounded-[2rem] border border-white/15 bg-white/10 p-12 backdrop-blur">
-            <img src={bescLogo} alt="Logo BESC" className="h-48 w-48 object-contain drop-shadow-[0_0_30px_rgba(74,222,128,0.45)]" />
-            <div className="text-center text-xs uppercase tracking-[0.12em] text-blue-100">Biology Environmental<br />Smart Competition</div>
-          </div>
-        </div>
+        {/* BESC logo box removed from hero background at user's request */}
       </div>
     </section>
   );

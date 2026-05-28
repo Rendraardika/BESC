@@ -29,3 +29,11 @@ body {
   background: linear-gradient(180deg, #1c79c6, #044b86);
   border-radius: 999px;
 }
+
+/* Hero background image — place your uploaded image at src/assets/images/hero-bg.jpg */
+.hero-bg {
+  background-image: url('./assets/images/beckround.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
