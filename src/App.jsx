@@ -6,6 +6,7 @@ import ProfilePage from './pages/ProfilePage.jsx';
 import OlimpiadePage from './pages/OlimpiadePage.jsx';
 import TryoutPage from './pages/TryoutPage.jsx';
 import CompetitionDetailPage from './pages/CompetitionDetailPage.jsx';
+import EventRegistrationPage from './pages/EventRegistrationPage.jsx';
 import TryoutPackagePage from './pages/TryoutPackagePage.jsx';
 
 const getPageFromHash = () => {
@@ -15,11 +16,12 @@ const getPageFromHash = () => {
   if (window.location.hash === '#olimpiade') return 'olimpiade';
   if (window.location.hash === '#tryout-page') return 'tryout';
   if (window.location.hash === '#detail-kompetisi') return 'competition-detail';
+  if (window.location.hash === '#pendaftaran-event') return 'event-registration';
   if (window.location.hash === '#paket-tryout') return 'tryout-package';
   return 'home';
 };
 
-const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#tryout-page', '#detail-kompetisi', '#paket-tryout'];
+const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#tryout-page', '#detail-kompetisi', '#pendaftaran-event', '#paket-tryout'];
 
 export default function App() {
   const [page, setPage] = useState(getPageFromHash);
@@ -92,6 +94,20 @@ export default function App() {
     setPage('competition-detail');
   };
 
+  const openEventRegistration = () => {
+    if (!user) {
+      localStorage.setItem('besc_after_login', 'event-registration');
+      window.location.hash = 'login';
+      window.scrollTo(0, 0);
+      setPage('login');
+      return;
+    }
+
+    window.location.hash = 'pendaftaran-event';
+    window.scrollTo(0, 0);
+    setPage('event-registration');
+  };
+
   const openTryoutPackage = () => {
     window.location.hash = 'paket-tryout';
     window.scrollTo(0, 0);
@@ -102,6 +118,16 @@ export default function App() {
     const loggedInUser = { name: 'Rendra Ardika' };
     localStorage.setItem('besc_user', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
+    const afterLogin = localStorage.getItem('besc_after_login');
+    localStorage.removeItem('besc_after_login');
+
+    if (afterLogin === 'event-registration') {
+      window.location.hash = 'pendaftaran-event';
+      window.scrollTo(0, 0);
+      setPage('event-registration');
+      return;
+    }
+
     backHome();
   };
 
@@ -177,6 +203,27 @@ export default function App() {
   if (page === 'competition-detail') {
     return (
       <CompetitionDetailPage
+        competitionIndex={competitionIndex}
+        onCompetitionDetail={openCompetitionDetail}
+        onLogin={openLogin}
+        onLogout={handleLogout}
+        onOlimpiade={openOlimpiade}
+        onProfile={openProfile}
+        onRegister={openRegister}
+        onEventRegistration={openEventRegistration}
+        onTryout={openTryout}
+        user={user}
+      />
+    );
+  }
+
+  if (page === 'event-registration') {
+    if (!user) {
+      return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleLoginSuccess} />;
+    }
+
+    return (
+      <EventRegistrationPage
         competitionIndex={competitionIndex}
         onCompetitionDetail={openCompetitionDetail}
         onLogin={openLogin}
