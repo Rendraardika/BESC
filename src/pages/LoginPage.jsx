@@ -1,4 +1,4 @@
-import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
+import bescLogo from '../assets/images/logo-BESCbirutuaFIX.png';
 
 export default function LoginPage({ onRegister, onLoginSuccess }) {
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';

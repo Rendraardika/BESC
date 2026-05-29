@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
+import bescLogo from '../assets/images/logo-BESCbirutuaFIX.png';
 import Button from './Button.jsx';
 
 export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onRegister, user }) {

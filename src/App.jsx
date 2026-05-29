@@ -115,7 +115,7 @@ export default function App() {
   };
 
   const handleLoginSuccess = () => {
-    const loggedInUser = { name: 'Rendra Ardika' };
+    const loggedInUser = { name: 'Ardika' };
     localStorage.setItem('besc_user', JSON.stringify(loggedInUser));
     setUser(loggedInUser);
     const afterLogin = localStorage.getItem('besc_after_login');
@@ -138,7 +138,7 @@ export default function App() {
   };
 
   const handleSaveProfile = (profile) => {
-    const updatedUser = { name: profile.fullName || user?.name || 'Rendra Ardika' };
+    const updatedUser = { name: profile.fullName || user?.name || 'Ardika' };
     localStorage.setItem('besc_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
   };

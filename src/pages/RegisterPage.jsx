@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
+import bescLogo from '../assets/images/logo-BESCbirutuaFIX.png';
 import registerBg from '../assets/images/backround+karakter.png';
 import karakterImg from '../assets/images/karakter.png';
 import indonesiaWilayah from '../indonesia_wilayah.json';

@@ -7,7 +7,7 @@ export default function CTA({ onRegister }) {
           <div className="relative z-10">
             <div className="mb-5 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-100">🚀 Bergabung Sekarang</div>
             <h2 className="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight text-white">Siap Menjadi<br /><span className="text-blue-200">Ilmuwan Muda</span> Terbaik?</h2>
-Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 Februari 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.
+Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 September 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.
           </div>
           <div className="relative z-10 mt-8 flex flex-col gap-3 md:mt-0 md:justify-center">
             <button type="button" onClick={onRegister} className="rounded-full bg-white px-7 py-3 font-bold text-[#044b86]">Daftar Sekarang →</button>

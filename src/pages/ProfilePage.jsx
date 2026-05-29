@@ -6,7 +6,7 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
   const savedProfile = JSON.parse(localStorage.getItem('besc_profile') ?? '{}');
   const [profile, setProfile] = useState({
     fullName: savedProfile.fullName ?? user?.name ?? '',
-    email: savedProfile.email ?? 'rendraardika50@gmail.com',
+    email: savedProfile.email ?? 'ardika50@gmail.com',
     whatsapp: savedProfile.whatsapp ?? '',
     birthDate: savedProfile.birthDate ?? '',
     school: savedProfile.school ?? '',
