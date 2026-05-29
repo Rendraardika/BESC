@@ -41,7 +41,7 @@ export default function RegisterPage({ onLogin }) {
                 <p className="mt-4 text-sm leading-7 text-blue-100">Lengkapi data diri dengan benar agar proses verifikasi peserta berjalan lancar.</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
-                <div className="text-3xl font-extrabold">BESC 2025</div>
+<div className="text-3xl font-extrabold">BESC 2026</div>
                 <div className="mt-2 text-sm text-blue-100">Biology Environmental Smart Competition</div>
               </div>
             </div>

@@ -5,7 +5,7 @@ export default function Timeline() {
   return (
     <section id="jadwal" className="bg-slate-50 px-6 py-20 md:px-8">
       <div className="mx-auto max-w-7xl">
-        <SectionHeader center label="📅 Jadwal" title="Tahapan Kompetisi BESC 2025" sub="Ikuti perjalanan kompetisi dari pendaftaran hingga grand final." />
+        <SectionHeader center label="📅 Jadwal" title="Tahapan Kompetisi BESC 2026" sub="Ikuti perjalanan kompetisi dari pendaftaran hingga grand final." />
         <div className="relative mt-12 grid gap-8 md:grid-cols-4">
           <div className="absolute left-[12%] right-[12%] top-8 hidden h-0.5 bg-gradient-to-r from-[#1c79c6] to-[#044b86] md:block"></div>
           {timeline.map(([num, date, title, desc]) => (
