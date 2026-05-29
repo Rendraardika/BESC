@@ -32,7 +32,7 @@ body {
 
 /* Hero background image — place your uploaded image at src/assets/images/hero-bg.jpg */
 .hero-bg {
-  background-image: url('./assets/images/beckround.png');
+  background-image: url('./assets/images/backround+karakter.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

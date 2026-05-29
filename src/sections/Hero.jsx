@@ -1,4 +1,4 @@
-import bescLogo from '../assets/images/1.png';
+import bescLogo from '../assets/images/logo BESC biru.png';
 
 export default function Hero({ onRegister }) {
   return (

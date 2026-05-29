@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import bescLogo from '../assets/images/1.png';
+import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import Button from './Button.jsx';
 
-export default function Header({ onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
+export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onRegister, user }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
@@ -22,7 +22,7 @@ export default function Header({ onLogin, onLogout, onOlimpiade, onProfile, onTr
       <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 px-6 shadow-[0_8px_30px_rgba(15,23,42,0.06)] backdrop-blur md:px-8">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between gap-8">
           <a href="#home" className="flex shrink-0 items-center gap-3">
-            <img src={bescLogo} alt="BESC Logo" className="h-11 w-auto object-contain" />
+            <img src={bescLogo} alt="BESC Logo" className={`h-50 w-auto object-contain ${isHome ? 'brightness-75 saturate-150' : ''}`} />
           </a>
 
           <ul className="hidden items-center gap-3 lg:flex">
@@ -75,7 +75,10 @@ export default function Header({ onLogin, onLogout, onOlimpiade, onProfile, onTr
                 )}
               </div>
             ) : (
-              <Button variant="ghost" onClick={onLogin}>Login</Button>
+              <>
+                <Button variant="ghost" onClick={onLogin}>Login</Button>
+                <Button variant="primary" onClick={onRegister}>Daftar Sekarang</Button>
+              </>
             )}
           </div>
 
@@ -120,7 +123,13 @@ export default function Header({ onLogin, onLogout, onOlimpiade, onProfile, onTr
                   </button>
                 </div>
               ) : (
-                <Button variant="ghost" onClick={onLogin}>Login</Button>
+                <>
+                  <Button variant="ghost" onClick={onLogin}>Login</Button>
+                  <Button variant="primary" onClick={() => {
+                    setMobileOpen(false);
+                    onRegister();
+                  }}>Daftar Sekarang</Button>
+                </>
               )}
             </div>
           </div>

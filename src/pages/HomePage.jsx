@@ -15,7 +15,7 @@ import FAQ from '../sections/FAQ.jsx';
 export default function HomePage({ onCompetitionDetail, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, user }) {
   return (
     <>
-      <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onTryout={onTryout} user={user} />
+      <Header isHome onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onRegister={onRegister} onTryout={onTryout} user={user} />
       <main>
         <Hero onRegister={onRegister} />
         <StatsStrip />
