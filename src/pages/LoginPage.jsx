@@ -1,23 +1,23 @@
-import bescLogo from '../assets/images/1.png';
+import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 
 export default function LoginPage({ onRegister, onLoginSuccess }) {
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
+      <header className="border-b border-slate-200 bg-white px-6 py-3 md:px-8">
         <div className="mx-auto flex max-w-7xl items-center">
           <div className="flex items-center gap-3">
-            <img src={bescLogo} alt="BESC Logo" className="h-11 w-auto object-contain" />
+            <img src={bescLogo} alt="BESC Logo" className="h-20 w-auto object-contain md:h-24" />
           </div>
         </div>
       </header>
 
-      <section className="grid min-h-[calc(100vh-78px)] place-items-center px-6 py-12 md:px-8">
+      <section className="grid min-h-[calc(100vh-112px)] place-items-center px-6 py-12 md:px-8">
         <div className="w-full max-w-[460px] rounded-[2rem] bg-white p-7 shadow-2xl md:p-9">
           <div className="mb-7 text-center">
-            <div className="mx-auto mb-5 grid h-16 w-16 place-items-center rounded-2xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-2xl font-extrabold text-white">
-              B
+            <div className="mx-auto mb-5 flex h-28 w-56 items-center justify-center px-2">
+              <img src={bescLogo} alt="BESC Logo" className="max-h-24 w-full object-contain" />
             </div>
             <h1 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-slate-950">Masuk Akun</h1>
             <p className="mt-2 text-sm text-slate-500">Masuk untuk melanjutkan ke dashboard peserta.</p>

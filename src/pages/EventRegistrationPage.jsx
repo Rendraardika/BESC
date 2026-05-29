@@ -5,15 +5,16 @@ import { events } from '../data/events.js';
 import eventStudentBoy from '../assets/images/tryout-student-boy.png';
 import eventStudentsGroup from '../assets/images/tryout-students-group.png';
 import eventStudentsPair from '../assets/images/tryout-students-pair.png';
+import qrisBesc from '../assets/images/qris-besc.jpg';
 
 const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
 
-export default function EventRegistrationPage({ competitionIndex = 0, onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
+export default function EventRegistrationPage({ competitionIndex = 0, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
   const [submitted, setSubmitted] = useState(false);
   const event = events[competitionIndex] ?? events[0];
-  const image = eventImages[competitionIndex % eventImages.length];
-  const isFree = event.price.toLowerCase().includes('gratis');
-  const inputClass = 'h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-4 focus:ring-blue-100';
+  const eventImage = eventImages[competitionIndex % eventImages.length];
+  const paymentPrice = event.price.toLowerCase().includes('gratis') ? event.original : event.price;
+  const inputClass = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   const handleSubmit = (submitEvent) => {
     submitEvent.preventDefault();
@@ -23,140 +24,105 @@ export default function EventRegistrationPage({ competitionIndex = 0, onCompetit
   return (
     <>
       <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onTryout={onTryout} user={user} />
-      <main className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef7f3_45%,#ffffff_100%)] px-5 py-10 md:px-8">
-        <div className="mx-auto max-w-7xl">
-          <button type="button" onClick={() => onCompetitionDetail(competitionIndex)} className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-extrabold text-slate-600 shadow-sm transition hover:border-[#1c79c6] hover:text-[#044b86]">
-            <span aria-hidden="true">←</span>
-            Detail Kompetisi
-          </button>
+      <main className="bg-white px-5 py-12 md:px-8">
+        <section className="mx-auto max-w-[1540px] rounded-lg border border-slate-200 bg-white px-6 py-8 shadow-[0_2px_14px_rgba(15,23,42,0.08)] md:px-9 lg:px-10">
+          <h1 className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-slate-950 md:text-3xl">
+            Pendaftaran Berbayar (Premium)
+          </h1>
 
-          <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-            <div className="grid lg:grid-cols-[0.92fr_1.08fr]">
-              <div className="relative bg-[linear-gradient(135deg,#052e2b_0%,#0f766e_54%,#0b3b66_100%)] p-6 text-white md:p-8 lg:p-10">
-                <div className="absolute right-8 top-8 h-28 w-28 rounded-full border border-white/15"></div>
-                <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl"></div>
-                <div className="relative">
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {event.badges.map((badge) => <span key={badge} className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-blue-50">{badge}</span>)}
-                    <span className="rounded-full bg-emerald-300/20 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-50">{event.category}</span>
-                  </div>
-                  <h1 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold leading-tight md:text-4xl">Form Pendaftaran Kompetisi</h1>
-                  <p className="mt-4 max-w-xl text-sm leading-7 text-emerald-50/85">Lengkapi data peserta dan konfirmasi keikutsertaan untuk event yang kamu pilih.</p>
+          <div className="mt-5 rounded-md border-l-4 border-yellow-400 bg-yellow-50 px-5 py-4">
+            <p className="text-base leading-7 text-slate-900">
+              Kamu bisa mengikuti event ini dengan cukup membayar <span className="font-extrabold text-[#7c1cc6]">{paymentPrice}</span>. Submit bukti transfer ke form dibawah ini.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-slate-700">
+              Jika kamu mengalami kesulitan, silakan hubungi admin melalui WhatsApp BESC.
+            </p>
+          </div>
 
-                  <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/12 p-3 backdrop-blur">
-                    <img src={image} alt={event.title} className="h-60 w-full rounded-[1rem] object-cover object-center" />
-                    <div className="p-4">
-                      <h2 className="font-['Plus_Jakarta_Sans'] text-xl font-extrabold leading-8">{event.title}</h2>
-                      <p className="mt-2 text-sm leading-6 text-emerald-50/80">{event.desc}</p>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <SummaryBox label="Biaya" value={event.price} />
-                    <SummaryBox label="Deadline" value={event.deadline} />
-                    <SummaryBox label="Kuota" value={event.participants} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 md:p-8 lg:p-10">
-                {submitted && (
-                  <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold leading-6 text-emerald-800">
-                    Pendaftaran berhasil dikirim. Tim BESC akan memverifikasi data kamu melalui dashboard peserta.
-                  </div>
-                )}
-
-                <div className="mb-7 rounded-2xl border-l-4 border-[#1c79c6] bg-blue-50 p-5">
-                  <div className="font-['Plus_Jakarta_Sans'] text-lg font-extrabold text-slate-950">
-                    {isFree ? 'Konfirmasi Pendaftaran Gratis' : 'Pendaftaran Berbayar'}
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {isFree
-                      ? 'Event ini tidak membutuhkan pembayaran. Pastikan data peserta benar sebelum menekan tombol daftar.'
-                      : `Silakan transfer ${event.price}, lalu unggah bukti pembayaran pada form di bawah.`}
-                  </p>
-                </div>
-
-                {!isFree && (
-                  <div className="mb-8 grid gap-4 md:grid-cols-2">
-                    <PaymentCard title="Bank BCA" value="4690372555" desc="A.n BESC Indonesia" />
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-center">
-                      <div className="mb-4 text-sm font-extrabold text-slate-800">QRIS</div>
-                      <div className="mx-auto grid h-36 w-36 grid-cols-5 gap-1 rounded-xl border-4 border-[#1c79c6] bg-white p-3">
-                        {Array.from({ length: 25 }).map((_, index) => (
-                          <span key={index} className={`rounded-sm ${index % 2 === 0 || index % 7 === 0 ? 'bg-slate-950' : 'bg-slate-200'}`}></span>
-                        ))}
-                      </div>
-                      <div className="mt-4 text-sm font-semibold text-slate-600">A.n BESC Indonesia</div>
-                    </div>
-                  </div>
-                )}
-
-                <form className="grid gap-5" onSubmit={handleSubmit}>
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <Field label="Nama Peserta">
-                      <input className={inputClass} defaultValue={user?.name ?? ''} type="text" required />
-                    </Field>
-                    <Field label="Nomor WhatsApp Peserta">
-                      <input className={inputClass} type="tel" placeholder="08xxxxxxxxxx" required />
-                    </Field>
-                    <Field label="Asal Sekolah">
-                      <input className={inputClass} type="text" placeholder="Nama sekolah" required />
-                    </Field>
-                    <Field label="Kelas">
-                      <select className={inputClass} defaultValue="" required>
-                        <option value="" disabled>Pilih kelas</option>
-                        <option>X</option>
-                        <option>XI</option>
-                        <option>XII</option>
-                        <option>SMP/MTs</option>
-                      </select>
-                    </Field>
-                  </div>
-
-                  <Field label={isFree ? 'Kartu Pelajar / Identitas' : 'Bukti Pembayaran'}>
-                    <input className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-[#1c79c6] file:px-4 file:py-2 file:text-sm file:font-bold file:text-white" type="file" accept="image/*,.pdf" required={!isFree} />
-                    <p className="mt-2 text-xs font-semibold text-slate-500">{isFree ? 'Opsional, unggah jika diminta panitia.' : 'Wajib, ukuran maksimal 5 MB.'}</p>
-                  </Field>
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <Field label="Nama Guru Pendamping">
-                      <input className={inputClass} type="text" placeholder="Opsional" />
-                    </Field>
-                    <Field label="Telepon Guru Pendamping">
-                      <input className={inputClass} type="tel" placeholder="Opsional" />
-                    </Field>
-                  </div>
-
-                  <button type="submit" className="mt-2 w-full rounded-2xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-4 text-sm font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110 md:w-fit md:px-10">
-                    Daftar Kompetisi
-                  </button>
-                </form>
-              </div>
+          {submitted && (
+            <div className="mt-5 rounded-md border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800">
+              Pendaftaran berhasil dikirim. Tim BESC akan memverifikasi data kamu melalui dashboard peserta.
             </div>
-          </section>
-        </div>
+          )}
+
+          <div className="mx-auto mt-8 flex max-w-[980px] flex-col items-center gap-6 rounded-lg bg-slate-50 px-5 py-5 md:flex-row md:justify-center md:px-7">
+            <img src={eventImage} alt={event.title} className="h-36 w-full max-w-[320px] rounded-md object-cover object-center md:w-[320px]" />
+            <h2 className="max-w-[560px] text-center font-['Plus_Jakarta_Sans'] text-xl font-extrabold leading-8 text-slate-950 md:text-2xl">
+              {event.title}
+            </h2>
+          </div>
+
+          <p className="mt-8 text-center text-base text-slate-900">Lakukan pembayaran ke salah satu metode pembayaran dibawah ini :</p>
+
+          <div className="mx-auto mt-6 grid max-w-[980px] gap-6">
+            <PaymentBox title="Bank BCA" value="4690372555" owner="A.n BESC Indonesia" />
+            <div className="rounded-lg border border-slate-300 bg-white px-6 py-10 text-center">
+              <p className="text-base text-slate-900">QRIS</p>
+              <img src={qrisBesc} alt="QRIS BESC" className="mx-auto mt-6 w-full max-w-[360px] rounded-sm border-[8px] border-[#7c1cc6] bg-white object-contain" />
+              <p className="mt-6 text-base text-slate-900">A.n BESC Indonesia</p>
+            </div>
+          </div>
+
+          <form className="mt-8 space-y-7" onSubmit={handleSubmit}>
+            <Field label="Bukti Pembayaran">
+              <input className="h-10 w-full border border-slate-100 bg-white text-sm text-slate-900 file:mr-2 file:h-9 file:border file:border-slate-400 file:bg-slate-100 file:px-3 file:text-sm file:text-slate-950" type="file" accept="image/*,.pdf" required />
+              <p className="mt-2 text-sm text-slate-900">
+                <span className="font-bold text-red-500">Wajib</span>
+                {' '} - Pastikan ukuran foto dibawah <span className="font-extrabold">5mb</span>
+              </p>
+            </Field>
+
+            <Field label="Nama Peserta">
+              <input className={inputClass} defaultValue={user?.name ?? ''} type="text" required />
+            </Field>
+
+            <Field label="Nomor WhatsApp Peserta">
+              <input className={inputClass} type="tel" placeholder="08xxxxxxxxxx" required />
+            </Field>
+
+            <Field label="Asal Sekolah">
+              <input className={inputClass} type="text" placeholder="Nama sekolah" required />
+            </Field>
+
+            <Field label="Kelas">
+              <select className={inputClass} defaultValue="" required>
+                <option value="" disabled>Pilih kelas</option>
+                <option>VII</option>
+                <option>VIII</option>
+                <option>IX</option>
+                <option>X</option>
+                <option>XI</option>
+                <option>XII</option>
+              </select>
+            </Field>
+
+            <Field label="Nama Guru Pendamping">
+              <input className={inputClass} type="text" />
+              <p className="mt-3 text-sm text-slate-900">Opsional - silakan cantumkan untuk dokumentasi dan apresiasi.</p>
+            </Field>
+
+            <Field label="Nomor Telephone Guru Pendamping">
+              <input className={inputClass} type="tel" />
+              <p className="mt-3 text-sm text-slate-900">Opsional - silakan cantumkan untuk dokumentasi dan apresiasi.</p>
+            </Field>
+
+            <button type="submit" className="rounded-md bg-[#f6bd3c] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#e3a928]">
+              Daftar
+            </button>
+          </form>
+        </section>
       </main>
       <Footer />
     </>
   );
 }
 
-function SummaryBox({ label, value }) {
+function PaymentBox({ owner, title, value }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/12 p-4 backdrop-blur">
-      <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-100/70">{label}</div>
-      <div className="mt-1 text-sm font-extrabold text-white">{value}</div>
-    </div>
-  );
-}
-
-function PaymentCard({ desc, title, value }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
-      <div className="text-sm font-semibold text-slate-600">{title}</div>
-      <div className="mt-4 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-[#1c79c6]">{value}</div>
-      <div className="mt-4 text-sm font-semibold text-slate-700">{desc}</div>
+    <div className="rounded-lg border border-slate-300 bg-white px-6 py-12 text-center">
+      <p className="text-base text-slate-900">{title}</p>
+      <p className="mt-7 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-[#7c1cc6]">{value}</p>
+      <p className="mt-7 text-base text-slate-900">{owner}</p>
     </div>
   );
 }
@@ -164,7 +130,7 @@ function PaymentCard({ desc, title, value }) {
 function Field({ children, label }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-extrabold text-slate-700">{label}</span>
+      <span className="mb-3 block text-sm font-semibold text-slate-950">{label}</span>
       {children}
     </label>
   );
