@@ -1,0 +1,8 @@
+.env
+/tmp
+/bin
+/uploads/*
+!/uploads/.gitkeep
+*.exe
+*.test
+coverage.out

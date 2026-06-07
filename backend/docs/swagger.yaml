@@ -1,0 +1,175 @@
+openapi: 3.0.3
+info:
+  title: Online Competition Platform API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /auth/register:
+    post:
+      security: []
+      summary: Register user
+      responses:
+        "201": { description: Created }
+  /auth/login:
+    post:
+      security: []
+      summary: Login user
+      responses:
+        "200": { description: OK }
+  /auth/me:
+    get:
+      summary: Current authenticated user
+      responses:
+        "200": { description: OK }
+  /competitions:
+    get:
+      security: []
+      summary: List competitions
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200": { description: OK }
+  /competitions/{id}:
+    get:
+      security: []
+      summary: Competition detail by id or slug
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /competitions/{competition_id}/register:
+    post:
+      summary: Register for competition
+      parameters:
+        - in: path
+          name: competition_id
+          required: true
+          schema: { type: string }
+      responses:
+        "201": { description: Created }
+  /me/competitions:
+    get:
+      summary: My registered competitions
+      responses:
+        "200": { description: OK }
+  /registrations/{registration_id}/payment-proof:
+    post:
+      summary: Upload payment proof as multipart field proof
+      parameters:
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      responses:
+        "201": { description: Created }
+  /registrations/{registration_id}/payment:
+    get:
+      summary: Payment status
+      parameters:
+        - in: path
+          name: registration_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /competitions/{competition_id}/exam/start:
+    post:
+      summary: Start exam after verified registration
+      parameters:
+        - in: path
+          name: competition_id
+          required: true
+          schema: { type: string }
+      responses:
+        "201": { description: Created }
+  /competitions/{competition_id}/exam/questions:
+    get:
+      summary: Get exam questions without answer keys
+      parameters:
+        - in: path
+          name: competition_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /competitions/{competition_id}/exam/submit:
+    post:
+      summary: Submit exam answers and auto-calculate score
+      parameters:
+        - in: path
+          name: competition_id
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: OK }
+  /proctoring/events:
+    post:
+      summary: Log frontend proctoring event
+      responses:
+        "201": { description: Created }
+  /submissions/{submission_id}/proctoring/snapshots:
+    post:
+      summary: Upload periodic camera snapshot as multipart field snapshot
+      parameters:
+        - in: path
+          name: submission_id
+          required: true
+          schema: { type: string }
+      responses:
+        "201": { description: Created }
+  /admin/competitions:
+    post:
+      summary: Admin create competition
+      responses:
+        "201": { description: Created }
+  /admin/competitions/{id}:
+    put:
+      summary: Admin update competition
+      responses:
+        "200": { description: OK }
+    delete:
+      summary: Admin delete competition
+      responses:
+        "200": { description: OK }
+  /admin/payments/{payment_id}/verify:
+    post:
+      summary: Admin verify or reject payment
+      responses:
+        "200": { description: OK }
+  /admin/submissions:
+    get:
+      summary: Admin monitor submissions
+      responses:
+        "200": { description: OK }
+  /admin/submissions/{submission_id}/proctoring/summary:
+    get:
+      summary: Admin get proctoring summary for a submission
+      responses:
+        "200": { description: OK }
+  /admin/submissions/{submission_id}/proctoring/events:
+    get:
+      summary: Admin list proctoring events for a submission
+      responses:
+        "200": { description: OK }
+  /admin/submissions/{submission_id}/proctoring/snapshots:
+    get:
+      summary: Admin list camera snapshots for a submission
+      responses:
+        "200": { description: OK }
