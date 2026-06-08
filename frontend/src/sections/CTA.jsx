@@ -10,7 +10,6 @@ export default function CTA({ onRegister }) {
 Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 Februari 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.
           </div>
           <div className="relative z-10 mt-8 flex flex-col gap-3 md:mt-0 md:justify-center">
-            <button type="button" onClick={onRegister} className="rounded-full bg-white px-7 py-3 font-bold text-[#044b86]">Daftar Sekarang →</button>
             <a href="#home" className="rounded-full border border-white/30 bg-white/10 px-7 py-3 text-center font-bold text-white">Unduh Panduan PDF</a>
           </div>
         </div>

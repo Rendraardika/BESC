@@ -9,7 +9,10 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
   const [provinsiId, setProvinsiId] = useState('');
   const [form, setForm] = useState({
-    name: '',
+    teamName: '',
+    leaderName: '',
+    member1Name: '',
+    member2Name: '',
     email: '',
     phone: '',
     birthDate: '',
@@ -106,7 +109,11 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
       const auth = await apiRequest('/auth/register', {
         method: 'POST',
         body: JSON.stringify({
-          name: form.name,
+          name: form.leaderName,
+          teamName: form.teamName,
+          leaderName: form.leaderName,
+          member1Name: form.member1Name,
+          member2Name: form.member2Name,
           email: form.email,
           password: form.password,
           phone: form.phone,
@@ -153,13 +160,25 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
             {error && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
             <form className="mt-8 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Kelompok/Tim</label>
+                <input className={inputClass} value={form.teamName} onChange={updateField('teamName')} required />
+              </div>
               <div>
-                <label className="mb-1 block text-xs font-bold text-slate-700">Nama</label>
-                <input className={inputClass} value={form.name} onChange={updateField('name')} required />
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Ketua</label>
+                <input className={inputClass} value={form.leaderName} onChange={updateField('leaderName')} required />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Email</label>
                 <input className={inputClass} type="email" value={form.email} onChange={updateField('email')} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
+                <input className={inputClass} value={form.member1Name} onChange={updateField('member1Name')} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 2</label>
+                <input className={inputClass} value={form.member2Name} onChange={updateField('member2Name')} />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nomor WA Aktif</label>

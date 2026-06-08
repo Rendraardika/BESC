@@ -30,6 +30,9 @@ type User struct {
 	Role        string     `json:"role"`
 	Phone       string     `json:"phone"`
 	Institution string     `json:"institution"`
+	TeamName    string     `json:"team_name"`
+	Member1Name string     `json:"member1_name"`
+	Member2Name string     `json:"member2_name"`
 	Photo       string     `json:"photo,omitempty"`
 	BirthDate   *time.Time `json:"birth_date,omitempty"`
 	Gender      string     `json:"gender"`

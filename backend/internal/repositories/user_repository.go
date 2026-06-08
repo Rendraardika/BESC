@@ -26,8 +26,8 @@ func (r *userRepository) UpdateProfile(id, name, phone, institution string) erro
 }
 
 func (r *userRepository) UpdateFullProfile(user *entities.User) error {
-	result, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ?, photo = ?, birth_date = ?, gender = ?, province = ?, city = ? WHERE id = ?`,
-		user.Name, user.Phone, user.Institution, user.Photo, user.BirthDate, user.Gender, user.Province, user.City, user.ID)
+	result, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ?, team_name = ?, member1_name = ?, member2_name = ?, photo = ?, birth_date = ?, gender = ?, province = ?, city = ? WHERE id = ?`,
+		user.Name, user.Phone, user.Institution, user.TeamName, user.Member1Name, user.Member2Name, user.Photo, user.BirthDate, user.Gender, user.Province, user.City, user.ID)
 	if err != nil {
 		return err
 	}
@@ -51,8 +51,8 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *entities.User) error {
-	query := `INSERT INTO users (id, name, email, password, role, phone, institution) VALUES (?, ?, ?, ?, ?, ?, ?)`
-	_, err := r.db.Exec(query, user.ID, user.Name, user.Email, user.Password, user.Role, user.Phone, user.Institution)
+	query := `INSERT INTO users (id, name, email, password, role, phone, institution, team_name, member1_name, member2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, user.ID, user.Name, user.Email, user.Password, user.Role, user.Phone, user.Institution, user.TeamName, user.Member1Name, user.Member2Name)
 	if err != nil {
 		return err
 	}
@@ -60,18 +60,18 @@ func (r *userRepository) Create(user *entities.User) error {
 }
 
 func (r *userRepository) FindByID(id string) (*entities.User, error) {
-	query := `SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, created_at FROM users WHERE id = ?`
+	query := `SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, team_name, member1_name, member2_name, created_at FROM users WHERE id = ?`
 	return scanUser(r.db.QueryRow(query, id))
 }
 
 func (r *userRepository) FindByEmail(email string) (*entities.User, error) {
-	query := `SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, created_at FROM users WHERE email = ?`
+	query := `SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, team_name, member1_name, member2_name, created_at FROM users WHERE email = ?`
 	return scanUser(r.db.QueryRow(query, email))
 }
 
 func scanUser(row *sql.Row) (*entities.User, error) {
 	var user entities.User
-	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.Phone, &user.Institution, &user.Photo, &user.BirthDate, &user.Gender, &user.Province, &user.City, &user.CreatedAt); err != nil {
+	if err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role, &user.Phone, &user.Institution, &user.Photo, &user.BirthDate, &user.Gender, &user.Province, &user.City, &user.TeamName, &user.Member1Name, &user.Member2Name, &user.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}

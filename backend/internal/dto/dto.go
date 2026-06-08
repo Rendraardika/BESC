@@ -3,11 +3,14 @@ package dto
 import "time"
 
 type RegisterRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=100"`
-	Email       string `json:"email" validate:"required,email"`
-	Password    string `json:"password" validate:"required,min=8,password_strength"`
-	Phone       string `json:"phone" validate:"omitempty,max=30"`
-	Institution string `json:"institution" validate:"omitempty,max=150"`
+	Name         string `json:"name" validate:"required,min=2,max=100"`
+	TeamName     string `json:"team_name" validate:"required,max=150"`
+	Member1Name  string `json:"member1_name" validate:"omitempty,max=150"`
+	Member2Name  string `json:"member2_name" validate:"omitempty,max=150"`
+	Email        string `json:"email" validate:"required,email"`
+	Password     string `json:"password" validate:"required,min=8,password_strength"`
+	Phone        string `json:"phone" validate:"omitempty,max=30"`
+	Institution  string `json:"institution" validate:"omitempty,max=150"`
 }
 
 type LoginRequest struct {
@@ -20,14 +23,17 @@ type GoogleLoginRequest struct {
 }
 
 type UpdateProfileRequest struct {
-	Name        string `json:"name" validate:"required,min=2,max=100"`
-	Phone       string `json:"phone" validate:"required,max=30"`
-	Institution string `json:"institution" validate:"required,max=150"`
-	Photo       string `json:"photo" validate:"required"`
-	BirthDate   string `json:"birth_date" validate:"required"`
-	Gender      string `json:"gender" validate:"required,max=30"`
-	Province    string `json:"province" validate:"required,max=100"`
-	City        string `json:"city" validate:"required,max=100"`
+	Name         string `json:"name" validate:"required,min=2,max=100"`
+	TeamName     string `json:"team_name" validate:"omitempty,max=150"`
+	Member1Name  string `json:"member1_name" validate:"omitempty,max=150"`
+	Member2Name  string `json:"member2_name" validate:"omitempty,max=150"`
+	Phone        string `json:"phone" validate:"required,max=30"`
+	Institution  string `json:"institution" validate:"required,max=150"`
+	Photo        string `json:"photo" validate:"required"`
+	BirthDate    string `json:"birth_date" validate:"required"`
+	Gender       string `json:"gender" validate:"required,max=30"`
+	Province     string `json:"province" validate:"required,max=100"`
+	City         string `json:"city" validate:"required,max=100"`
 }
 
 type AuthResponse struct {

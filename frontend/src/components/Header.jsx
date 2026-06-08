@@ -79,7 +79,6 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
             ) : (
               <>
                 <Button variant="ghost" onClick={onLogin}>Login</Button>
-                <Button variant="primary" onClick={onRegister}>Daftar Sekarang</Button>
               </>
             )}
           </div>
@@ -129,10 +128,6 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
               ) : (
                 <>
                   <Button variant="ghost" onClick={onLogin}>Login</Button>
-                  <Button variant="primary" onClick={() => {
-                    setMobileOpen(false);
-                    onRegister();
-                  }}>Daftar Sekarang</Button>
                 </>
               )}
             </div>
