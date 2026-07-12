@@ -103,7 +103,7 @@ func (r *paymentRepository) Upsert(payment *entities.Payment) error {
 	_, err := r.db.Exec(`
 		INSERT INTO payments (id, registration_id, proof_image, payment_status)
 		VALUES (?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE proof_image = VALUES(proof_image), payment_status = VALUES(payment_status), validated_by = NULL, validated_at = NULL`,
+		ON DUPLICATE KEY UPDATE id = VALUES(id), proof_image = VALUES(proof_image), payment_status = VALUES(payment_status), validated_by = NULL, validated_at = NULL, created_at = CURRENT_TIMESTAMP`,
 		payment.ID, payment.RegistrationID, payment.ProofImage, payment.PaymentStatus)
 	return err
 }
@@ -136,8 +136,10 @@ func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) erro
 		return err
 	}
 
-	regStatus := entities.RegistrationRejected
-	if status == entities.PaymentVerified {
+	regStatus := entities.RegistrationPending
+	if status == entities.PaymentRejected {
+		regStatus = entities.RegistrationRejected
+	} else if status == entities.PaymentVerified {
 		regStatus = entities.RegistrationVerified
 	}
 	if _, err := tx.Exec(`UPDATE registrations SET status = ? WHERE id = ?`, regStatus, registrationID); err != nil {

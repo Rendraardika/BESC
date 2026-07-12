@@ -1,13 +1,16 @@
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
+import { competitionToEvent } from '../lib/competitions.js';
 import eventStudentBoy from '../assets/images/tryout-student-boy.png';
 import eventStudentsGroup from '../assets/images/tryout-students-group.png';
 import eventStudentsPair from '../assets/images/tryout-students-pair.png';
 
 const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
 
-export default function OlimpiadePage({ onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
+export default function OlimpiadePage({ competitions = [], competitionsLoading = false, onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
+  const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
+
   return (
     <>
       <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onTryout={onTryout} user={user} />
@@ -34,16 +37,31 @@ export default function OlimpiadePage({ onCompetitionDetail, onLogin, onLogout, 
           </div>
 
           <div className="grid gap-7 lg:grid-cols-3">
-            {events.map((event, index) => (
-              <article key={event.title} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_28px_75px_rgba(15,118,110,0.18)]">
+            {competitionsLoading && Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-[580px] animate-pulse rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+                <div className="h-60 rounded-t-[1.75rem] bg-slate-200"></div>
+                <div className="space-y-4 p-6">
+                  <div className="h-6 w-32 rounded-full bg-slate-100"></div>
+                  <div className="h-7 w-4/5 rounded bg-slate-100"></div>
+                  <div className="h-4 w-full rounded bg-slate-100"></div>
+                  <div className="h-4 w-2/3 rounded bg-slate-100"></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="h-16 rounded-2xl bg-slate-100"></div>
+                    <div className="h-16 rounded-2xl bg-slate-100"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!competitionsLoading && displayEvents.map((event, index) => (
+              <article key={event.id || event.title} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_28px_75px_rgba(15,118,110,0.18)]">
                 <div className="relative h-60 overflow-hidden bg-emerald-900">
-                  <img src={eventImages[index % eventImages.length]} alt={event.title} className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
+                  <img src={event.banner || eventImages[index % eventImages.length]} alt={event.title} className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,120,87,0.02)_0%,rgba(6,78,59,0.2)_58%,rgba(2,6,23,0.45)_100%)]"></div>
                   <div className="absolute inset-x-0 top-0 h-20 bg-[linear-gradient(180deg,rgba(255,255,255,0.18),transparent)]"></div>
                   <div className="absolute left-6 top-6 rounded-full bg-white/15 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white backdrop-blur">
                     {event.category}
                   </div>
-                  <div className="absolute right-6 top-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/20 text-2xl shadow-lg backdrop-blur">{event.icon}</div>
+                  <div className="absolute right-6 top-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/20 text-lg font-extrabold text-white shadow-lg backdrop-blur">{event.icon}</div>
                 </div>
 
                 <div className="p-6">
@@ -69,8 +87,8 @@ export default function OlimpiadePage({ onCompetitionDetail, onLogin, onLogout, 
                   <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-5">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-[#0f766e]">{event.price}</span>
-                      <span className="text-xs text-slate-400 line-through">{event.original}</span>
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{event.discount}</span>
+                      {event.original && <span className="text-xs text-slate-400 line-through">{event.original}</span>}
+                      {event.discount && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{event.discount}</span>}
                     </div>
                     <button type="button" onClick={() => onCompetitionDetail(index)} className="rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110">
                       Daftar

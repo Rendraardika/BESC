@@ -55,6 +55,7 @@ export default function App() {
   const [registeredEventTitle, setRegisteredEventTitle] = useState(() => localStorage.getItem('besc_registered_event') || 'kompetisi BESC');
   const [registrations, setRegistrations] = useState([]);
   const [apiCompetitions, setApiCompetitions] = useState([]);
+  const [competitionsLoading, setCompetitionsLoading] = useState(false);
   const [examCompetition, setExamCompetition] = useState(() => {
     const savedCompetition = localStorage.getItem('besc_exam_competition');
     return savedCompetition ? JSON.parse(savedCompetition) : null;
@@ -88,8 +89,13 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    apiRequest('/competitions?limit=100').then(setApiCompetitions).catch(() => setApiCompetitions([]));
-  }, []);
+    if (!['home', 'olimpiade', 'competition-detail', 'event-registration', 'tryout-package'].includes(page)) return;
+    setCompetitionsLoading(true);
+    apiRequest('/competitions?limit=100')
+      .then(setApiCompetitions)
+      .catch(() => setApiCompetitions([]))
+      .finally(() => setCompetitionsLoading(false));
+  }, [page]);
 
   useEffect(() => {
     if (!user || user.role === 'admin') return;
@@ -117,6 +123,7 @@ export default function App() {
   };
 
   const openProfile = () => {
+    localStorage.removeItem('besc_after_profile');
     window.location.hash = 'profile';
     window.scrollTo(0, 0);
     setPage('profile');
@@ -252,7 +259,7 @@ export default function App() {
 
     const afterProfile = localStorage.getItem('besc_after_profile');
     localStorage.removeItem('besc_after_profile');
-    if (afterProfile === 'event-registration') {
+    if (afterProfile === 'event-registration' && window.location.hash === '#pendaftaran-event') {
       window.location.hash = 'pendaftaran-event';
       window.scrollTo(0, 0);
       setPage('event-registration');
@@ -301,6 +308,8 @@ export default function App() {
   if (page === 'olimpiade') {
     return (
       <OlimpiadePage
+        competitions={apiCompetitions}
+        competitionsLoading={competitionsLoading}
         onLogin={openLogin}
         onLogout={handleLogout}
         onOlimpiade={openOlimpiade}
@@ -330,9 +339,10 @@ export default function App() {
 
   if (page === 'competition-detail') {
     return (
-      <CompetitionDetailPage
-        competitionIndex={competitionIndex}
-        onCompetitionDetail={openCompetitionDetail}
+        <CompetitionDetailPage
+          competitionIndex={competitionIndex}
+          competitions={apiCompetitions}
+          onCompetitionDetail={openCompetitionDetail}
         onLogin={openLogin}
         onLogout={handleLogout}
         onOlimpiade={openOlimpiade}
@@ -366,9 +376,10 @@ export default function App() {
     }
 
     return (
-      <EventRegistrationPage
-        competitionIndex={competitionIndex}
-        onCompetitionDetail={openCompetitionDetail}
+        <EventRegistrationPage
+          competitionIndex={competitionIndex}
+          competitions={apiCompetitions}
+          onCompetitionDetail={openCompetitionDetail}
         onLogin={openLogin}
         onLogout={handleLogout}
         onOlimpiade={openOlimpiade}

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"net/smtp"
 	"path/filepath"
@@ -49,7 +50,7 @@ func (s *registrationService) Register(userID, competitionID string) (*entities.
 		return nil, err
 	}
 	if existing, err := s.registrations.FindByUserAndCompetition(userID, competitionID); err == nil {
-		return existing, utils.ErrConflict
+		return existing, nil
 	}
 	registration := &entities.Registration{
 		ID:            uuid.NewString(),
@@ -71,6 +72,13 @@ func (s *paymentService) UploadProof(userID, registrationID, proofPath string) (
 	}
 	if registration.UserID != userID {
 		return nil, utils.ErrForbidden
+	}
+	existingPayment, err := s.payments.FindByRegistrationID(registrationID)
+	if err == nil && existingPayment.PaymentStatus == entities.PaymentVerified {
+		return existingPayment, nil
+	}
+	if err != nil && !errors.Is(err, utils.ErrNotFound) {
+		return nil, err
 	}
 	payment := &entities.Payment{
 		ID:             uuid.NewString(),
@@ -94,14 +102,24 @@ func (s *paymentService) Status(userID, registrationID string) (*entities.Paymen
 
 func (s *paymentService) Verify(paymentID, status, adminID string) error {
 	status = strings.ToLower(status)
-	email, competitionTitle, err := s.payments.NotificationDetails(paymentID)
-	if err != nil {
-		return err
+	var email, competitionTitle string
+	var err error
+	if status != entities.PaymentPending {
+		email, competitionTitle, err = s.payments.NotificationDetails(paymentID)
+		if err != nil {
+			return err
+		}
 	}
 	if err := s.payments.UpdateStatus(paymentID, status, adminID); err != nil {
 		return err
 	}
-	return sendPaymentStatusEmail(s.cfg, email, competitionTitle, status)
+	if status == entities.PaymentPending {
+		return nil
+	}
+	if err := sendPaymentStatusEmail(s.cfg, email, competitionTitle, status); err != nil {
+		return fmt.Errorf("status pembayaran berhasil diubah, tetapi email notifikasi gagal dikirim: %w", err)
+	}
+	return nil
 }
 
 func sendPaymentStatusEmail(cfg config.Config, recipient, competitionTitle, status string) error {
@@ -109,11 +127,15 @@ func sendPaymentStatusEmail(cfg config.Config, recipient, competitionTitle, stat
 		return fmt.Errorf("smtp is not configured")
 	}
 	subject := "Status Pembayaran BESC"
-	message := "Pembayaran kamu untuk " + competitionTitle + " telah " + status + "."
+	message := ""
 	if status == entities.PaymentVerified {
-		message = "Selamat, pembayaran kamu untuk " + competitionTitle + " telah diverifikasi. Pendaftaran kompetisi kamu telah aktif."
+		subject = "Pembayaran BESC Diverifikasi"
+		message = "Halo,\r\n\r\nSelamat, pembayaran kamu untuk " + competitionTitle + " telah diverifikasi.\r\n\r\nPendaftaran kompetisi kamu sekarang aktif. Silakan cek akun BESC kamu untuk melihat status pendaftaran dan informasi kompetisi.\r\n\r\nTerima kasih,\r\nTim BESC"
 	} else if status == entities.PaymentRejected {
-		message = "Pembayaran kamu untuk " + competitionTitle + " ditolak. Silakan periksa kembali bukti pembayaran dan hubungi admin BESC."
+		subject = "Pembayaran BESC Ditolak"
+		message = "Halo,\r\n\r\nMohon maaf, bukti pembayaran kamu untuk " + competitionTitle + " belum dapat diverifikasi.\r\n\r\nSilakan periksa kembali bukti pembayaran yang diunggah. Jika ada kekeliruan, unggah ulang bukti pembayaran atau hubungi admin BESC untuk bantuan.\r\n\r\nTerima kasih,\r\nTim BESC"
+	} else {
+		return nil
 	}
 	from := cfg.MailFrom
 	if from == "" {

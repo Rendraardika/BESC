@@ -1,0 +1,2 @@
+ALTER TABLE competitions
+  MODIFY COLUMN banner MEDIUMTEXT NOT NULL;

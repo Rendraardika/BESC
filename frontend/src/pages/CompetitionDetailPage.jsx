@@ -1,6 +1,7 @@
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
+import { competitionToEvent } from '../lib/competitions.js';
 import eventStudentBoy from '../assets/images/tryout-student-boy.png';
 import eventStudentsGroup from '../assets/images/tryout-students-group.png';
 import eventStudentsPair from '../assets/images/tryout-students-pair.png';
@@ -34,10 +35,11 @@ const faqs = [
   ['Siapa yang bisa mengikuti kompetisi ini?', 'Peserta dapat mengikuti sesuai jenjang yang tercantum pada kategori lomba, seperti SMP atau SMA.'],
 ];
 
-export default function CompetitionDetailPage({ competitionIndex = 0, onCompetitionDetail, onEventRegistration, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
-  const event = events[competitionIndex] ?? events[0];
-  const heroImage = eventImages[competitionIndex % eventImages.length];
-  const relatedEvents = events.filter((item) => item.title !== event.title);
+export default function CompetitionDetailPage({ competitionIndex = 0, competitions = [], onCompetitionDetail, onEventRegistration, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
+  const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
+  const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
+  const heroImage = event.banner || eventImages[competitionIndex % eventImages.length];
+  const relatedEvents = displayEvents.filter((item) => item.title !== event.title);
 
   return (
     <>
@@ -178,8 +180,8 @@ export default function CompetitionDetailPage({ competitionIndex = 0, onCompetit
             <InfoSection title="Kompetisi Lainnya">
               <div className="grid gap-5 md:grid-cols-2">
                 {relatedEvents.map((item) => {
-                  const index = events.findIndex((eventItem) => eventItem.title === item.title);
-                  const image = eventImages[index % eventImages.length];
+                  const index = displayEvents.findIndex((eventItem) => eventItem.title === item.title);
+                  const image = item.banner || eventImages[index % eventImages.length];
                   return (
                     <button key={item.title} type="button" onClick={() => onCompetitionDetail(index)} className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl">
                       <div className="relative h-40 overflow-hidden bg-emerald-900">

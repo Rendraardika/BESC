@@ -2,21 +2,23 @@ import { useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
+import { competitionToEvent } from '../lib/competitions.js';
 import eventStudentBoy from '../assets/images/tryout-student-boy.png';
 import eventStudentsGroup from '../assets/images/tryout-students-group.png';
 import eventStudentsPair from '../assets/images/tryout-students-pair.png';
 import qrisBesc from '../assets/images/qris-besc.jpg';
-import { apiRequest } from '../lib/api.js';
+import { API_URL, apiRequest } from '../lib/api.js';
 
 const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
 
-export default function EventRegistrationPage({ competitionIndex = 0, onLogin, onLogout, onOlimpiade, onProfile, onRegistrationSuccess, onTryout, user }) {
+export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegistrationSuccess, onTryout, user }) {
   const savedProfile = JSON.parse(localStorage.getItem(`besc_profile_${user?.id || user?.email || 'guest'}`) ?? '{}');
   const [proof, setProof] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const event = events[competitionIndex] ?? events[0];
-  const eventImage = eventImages[competitionIndex % eventImages.length];
+  const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
+  const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
+  const eventImage = event.banner || eventImages[competitionIndex % eventImages.length];
   const paymentPrice = event.price.toLowerCase().includes('gratis') ? event.original : event.price;
   const inputClass = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
@@ -31,8 +33,8 @@ export default function EventRegistrationPage({ competitionIndex = 0, onLogin, o
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('besc_token');
-      const competition = await apiRequest(`/competitions?limit=100`);
-      const selectedCompetition = competition.find((item) => item.title === event.title) || competition[competitionIndex];
+      const competition = competitions.length ? competitions : await apiRequest(`/competitions?limit=100`);
+      const selectedCompetition = event.competition || competition.find((item) => item.title === event.title) || competition[competitionIndex];
       if (!selectedCompetition) throw new Error('Kompetisi belum tersedia di database.');
 
       const registration = await apiRequest(`/competitions/${selectedCompetition.id}/register`, {
@@ -42,11 +44,16 @@ export default function EventRegistrationPage({ competitionIndex = 0, onLogin, o
 
       const formData = new FormData();
       formData.append('proof', proof);
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1'}/registrations/${registration.id}/payment-proof`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      let response;
+      try {
+        response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+      } catch (uploadError) {
+        throw new Error(`Tidak bisa mengunggah bukti pembayaran ke server API (${API_URL}). Pastikan backend berjalan dan VITE_API_URL sudah benar.`);
+      }
       const body = await response.json().catch(() => ({}));
       if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal mengunggah bukti pembayaran.');
 
@@ -138,7 +145,6 @@ export default function EventRegistrationPage({ competitionIndex = 0, onLogin, o
               <p className="mt-3 text-sm text-slate-900">Opsional - silakan cantumkan untuk dokumentasi dan apresiasi.</p>
             </Field>
 
-            {error && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
             <button type="submit" disabled={isSubmitting} className="rounded-md bg-[#f6bd3c] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#e3a928] disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? 'Mengirim...' : 'Daftar'}
             </button>

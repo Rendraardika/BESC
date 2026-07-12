@@ -61,13 +61,13 @@ func (r *adminDashboardRepository) Summary() (*entities.AdminDashboard, error) {
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.id, COALESCE(p.id, ''), u.name, u.email, COALESCE(u.photo, ''), c.title, r.status, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''), r.created_at
+		SELECT r.id, COALESCE(p.id, ''), u.name, u.email, COALESCE(u.photo, ''), c.title, r.status, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''), COALESCE(p.created_at, r.created_at)
 		FROM registrations r
 		JOIN users u ON u.id = r.user_id
 		JOIN competitions c ON c.id = r.competition_id
 		LEFT JOIN payments p ON p.registration_id = r.id
-		ORDER BY r.created_at DESC
-		LIMIT 8
+		ORDER BY COALESCE(p.created_at, r.created_at) DESC
+		LIMIT 50
 	`)
 	if err != nil {
 		return nil, err

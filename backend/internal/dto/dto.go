@@ -45,7 +45,7 @@ type CompetitionRequest struct {
 	Title                string     `json:"title" validate:"required,max=200"`
 	Slug                 string     `json:"slug" validate:"required,max=220"`
 	Description          string     `json:"description" validate:"required"`
-	Banner               string     `json:"banner" validate:"omitempty,max=255"`
+	Banner               string     `json:"banner" validate:"omitempty"`
 	Price                float64    `json:"price" validate:"gte=0"`
 	StartTime            time.Time  `json:"start_time" validate:"required"`
 	EndTime              time.Time  `json:"end_time" validate:"required"`
@@ -71,7 +71,7 @@ type QuestionRequest struct {
 }
 
 type VerifyPaymentRequest struct {
-	Status string `json:"status" validate:"required,oneof=verified rejected"`
+	Status string `json:"status" validate:"required,oneof=pending verified rejected"`
 }
 
 type SubmitExamRequest struct {

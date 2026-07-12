@@ -1,10 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
-import { apiRequest } from '../lib/api.js';
+import { API_URL, apiRequest } from '../lib/api.js';
 
 const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Pembayaran', 'Bank Soal', 'Hasil Ujian', 'Pengaturan'];
 
 const initials = (name = '') => name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'B';
+
+const getProofURL = (proofImage = '') => {
+  const apiBase = API_URL.replace('/api/v1', '');
+  return `${apiBase}/${proofImage.replaceAll('\\', '/').replace(/^\/+/, '')}`;
+};
+
+const downloadPaymentProof = async (activity) => {
+  const proofURL = getProofURL(activity.proof_image);
+  const response = await fetch(proofURL);
+  if (!response.ok) throw new Error('Gagal mengunduh bukti pembayaran.');
+
+  const blob = await response.blob();
+  const extension = proofURL.split('.').pop()?.split('?')[0] || 'jpg';
+  const participantName = (activity.user_name || 'peserta').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const fileURL = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = fileURL;
+  link.download = `bukti-pembayaran-${participantName || 'peserta'}.${extension}`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(fileURL);
+};
 
 export default function AdminDashboardPage({ admin, onLogout }) {
   const [dashboard, setDashboard] = useState(null);
@@ -70,11 +93,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   ] : [];
 
   const updatePaymentStatus = async (paymentID, status) => {
-    if (!paymentID || status === 'pending') return;
-    if (!reviewedPayments.has(paymentID)) {
-      setError('Buka dan periksa bukti pembayaran terlebih dahulu sebelum mengubah status.');
-      return;
-    }
+    if (!paymentID) return;
     setUpdatingPayment(paymentID);
     setError('');
     try {
@@ -97,6 +116,16 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const reviewProof = (activity) => {
     setProofActivity(activity);
     setReviewedPayments((current) => new Set([...current, activity.payment_id]));
+  };
+
+  const handleDownloadProof = async (activity) => {
+    try {
+      setError('');
+      await downloadPaymentProof(activity);
+      setReviewedPayments((current) => new Set([...current, activity.payment_id]));
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   const deleteParticipant = async (participant) => {
@@ -313,12 +342,12 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             <button key={item.id} type="button" onClick={() => deleteCompetition(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button>,
           ])} />}
 
-          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Periksa bukti transfer sebelum mengubah status pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => [
+          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah kapan saja sesuai hasil pemeriksaan admin." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => [
             <div key={item.id} className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700">{item.user_photo ? <img src={item.user_photo} alt={item.user_name} className="h-full w-full object-cover" /> : initials(item.user_name)}</span><div><div className="font-bold">{item.user_name}</div><div className="text-xs text-slate-400">{item.user_email}</div></div></div>,
             item.competition_title,
             new Date(item.created_at).toLocaleDateString('id-ID'),
-            <button key={item.id} type="button" onClick={() => reviewProof(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat Bukti</button>,
-            <select key={item.id} value={item.payment_status} disabled={updatingPayment === item.payment_id || !reviewedPayments.has(item.payment_id)} onChange={(event) => updatePaymentStatus(item.payment_id, event.target.value)} title={!reviewedPayments.has(item.payment_id) ? 'Periksa bukti pembayaran terlebih dahulu' : 'Ubah status pembayaran'} className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600 outline-none disabled:cursor-not-allowed disabled:opacity-50">
+            <div key={item.id} className="flex flex-wrap gap-2"><button type="button" onClick={() => reviewProof(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat Bukti</button><button type="button" onClick={() => handleDownloadProof(item)} className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-extrabold text-teal-700">Download</button></div>,
+            <select key={item.id} value={item.payment_status} disabled={updatingPayment === item.payment_id} onChange={(event) => updatePaymentStatus(item.payment_id, event.target.value)} title="Ubah status pembayaran" className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600 outline-none disabled:cursor-not-allowed disabled:opacity-50">
               <option value="pending">Pending</option>
               <option value="verified">Verified</option>
               <option value="rejected">Rejected</option>
@@ -348,7 +377,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       </section>
       {selectedParticipant && <ParticipantModal participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} onDelete={() => deleteParticipant(selectedParticipant)} />}
       {showCompetitionForm && <CompetitionForm onClose={() => setShowCompetitionForm(false)} onSubmit={createCompetition} />}
-      {proofActivity && <ProofModal activity={proofActivity} onClose={() => setProofActivity(null)} />}
+      {proofActivity && <ProofModal activity={proofActivity} onClose={() => setProofActivity(null)} onDownload={handleDownloadProof} />}
     </main>
   );
 }
@@ -425,8 +454,7 @@ function QuestionEditor({ onClose, onSave, question }) {
   return <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/60 p-4" onClick={onClose}><form onSubmit={submit} className="content-transition flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}><header className="flex shrink-0 items-start justify-between border-b border-slate-200 px-6 py-5"><div><h3 className="text-xl font-extrabold text-[#17324d]">{question.id ? 'Edit Soal' : 'Tambah Soal'}</h3><p className="mt-1 text-xs text-slate-500">Lengkapi pertanyaan, pilihan jawaban, dan kunci jawaban.</p></div><button type="button" onClick={onClose} className="text-xl text-slate-400">×</button></header><div className="min-h-0 flex-1 overflow-y-auto px-6 py-5"><FormField label="Pertanyaan"><textarea className="min-h-24 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" value={form.question} onChange={(e) => update('question', e.target.value)} required /></FormField><div className="mt-4 grid gap-4 sm:grid-cols-2">{['a','b','c','d'].map((key) => <FormField key={key} label={`Pilihan ${key.toUpperCase()}`}><input className={input} value={form[`option_${key}`]} onChange={(e) => update(`option_${key}`, e.target.value)} required /></FormField>)}<FormField label="Kunci Jawaban"><select className={input} value={form.correct_answer} onChange={(e) => update('correct_answer', e.target.value)}>{['A','B','C','D'].map((value) => <option key={value}>{value}</option>)}</select></FormField><FormField label="Bobot Nilai"><input className={input} type="number" min="1" value={form.score} onChange={(e) => update('score', e.target.value)} required /></FormField></div></div><footer className="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-5 py-2.5 text-xs font-extrabold text-slate-600">Batal</button><button type="submit" disabled={saving} className="rounded-lg bg-[#0d9488] px-5 py-2.5 text-xs font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">{saving ? 'Menyimpan...' : 'Simpan Soal'}</button></footer></form></div>;
 }
 
-function ProofModal({ activity, onClose }) {
-  const apiBase = (import.meta.env.VITE_API_URL || 'http://localhost:8081/api/v1').replace('/api/v1', '');
-  const proofURL = `${apiBase}/${activity.proof_image.replaceAll('\\', '/').replace(/^\/+/, '')}`;
+function ProofModal({ activity, onClose, onDownload }) {
+  const proofURL = getProofURL(activity.proof_image);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} • {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">×</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3"><img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /></div><div className="mt-4 flex justify-end"><a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a></div></section></div>;
 }
