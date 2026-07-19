@@ -110,10 +110,9 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
         method: 'POST',
         body: JSON.stringify({
           name: form.leaderName,
-          teamName: form.teamName,
-          leaderName: form.leaderName,
-          member1Name: form.member1Name,
-          member2Name: form.member2Name,
+          team_name: form.teamName,
+          member1_name: form.member1Name,
+          member2_name: form.member2Name,
           email: form.email,
           password: form.password,
           phone: form.phone,

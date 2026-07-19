@@ -35,11 +35,40 @@ const faqs = [
   ['Siapa yang bisa mengikuti kompetisi ini?', 'Peserta dapat mengikuti sesuai jenjang yang tercantum pada kategori lomba, seperti SMP atau SMA.'],
 ];
 
-export default function CompetitionDetailPage({ competitionIndex = 0, competitions = [], onCompetitionDetail, onEventRegistration, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
+export default function CompetitionDetailPage({ competitionIndex = 0, competitions = [], onCompetitionDetail, onEventRegistration, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, onVerifiedCompetition, registrations = [], user }) {
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
   const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
+  const competition = event.competition || competitions[competitionIndex];
+  const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
+  const isVerified = registration?.status === 'verified';
+  const isRejected = registration?.status === 'rejected' || registration?.payment_status === 'rejected';
   const heroImage = event.banner || eventImages[competitionIndex % eventImages.length];
   const relatedEvents = displayEvents.filter((item) => item.title !== event.title);
+  const registrationStatus = isVerified
+    ? 'Pembayaran Terverifikasi'
+    : isRejected
+      ? 'Pembayaran Ditolak'
+      : registration
+        ? 'Menunggu Verifikasi'
+        : 'Pendaftaran Dibuka';
+  const actionLabel = isVerified ? 'Lihat Ketentuan Ujian' : isRejected ? 'Upload Ulang Bukti' : registration ? 'Menunggu Verifikasi' : 'Daftar Sekarang';
+  const actionHint = isVerified
+    ? 'Pembayaran kamu sudah dikonfirmasi admin. Kamu bisa membuka ketentuan ujian.'
+    : isRejected
+      ? 'Bukti pembayaran belum diterima. Silakan upload ulang bukti yang benar.'
+      : registration
+        ? 'Bukti pembayaran sudah diterima dan sedang diperiksa admin.'
+        : 'Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.';
+
+  const handlePrimaryAction = () => {
+    if (isVerified && registration) {
+      onVerifiedCompetition?.(registration);
+      return;
+    }
+    if (!registration || isRejected) {
+      onEventRegistration();
+    }
+  };
 
   return (
     <>
@@ -84,8 +113,8 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
                   </div>
 
                   <div className="mt-9 flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={onEventRegistration} className="rounded-full bg-white px-7 py-3 text-sm font-extrabold text-[#044b86] shadow-xl shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-50">
-                      Daftar Sekarang
+                    <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected} className="rounded-full bg-white px-7 py-3 text-sm font-extrabold text-[#044b86] shadow-xl shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-white/70 disabled:text-slate-500 disabled:shadow-none">
+                      {actionLabel}
                     </button>
                     <button type="button" onClick={() => document.getElementById('detail-timeline')?.scrollIntoView({ behavior: 'smooth' })} className="rounded-full border border-white/20 bg-white/10 px-7 py-3 text-sm font-extrabold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15">
                       Lihat Timeline
@@ -213,14 +242,14 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
               </div>
               <div className="mt-6 space-y-3 border-y border-slate-100 py-5">
                 <SidebarRow label="Deadline" value={event.deadline} />
-                <SidebarRow label="Status" value="Pendaftaran Dibuka" />
+                <SidebarRow label="Status" value={registrationStatus} />
                 <SidebarRow label="Kuota" value={event.participants} />
                 <SidebarRow label="Kategori" value={event.category} />
               </div>
-              <button type="button" onClick={onEventRegistration} className="mt-6 w-full rounded-2xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110">
-                Daftar Sekarang
+              <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected} className="mt-6 w-full rounded-2xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:bg-none disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100">
+                {actionLabel}
               </button>
-              <p className="mt-4 text-center text-xs leading-5 text-slate-500">Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.</p>
+              <p className="mt-4 text-center text-xs leading-5 text-slate-500">{actionHint}</p>
             </div>
           </aside>
         </div>

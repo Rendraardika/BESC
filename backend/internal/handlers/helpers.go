@@ -41,12 +41,14 @@ func handleError(c *fiber.Ctx, err error) error {
 		return response.Error(c, fiber.StatusForbidden, "forbidden", nil)
 	case errors.Is(err, utils.ErrConflict):
 		return response.Error(c, fiber.StatusConflict, "resource already exists", nil)
+	case errors.Is(err, utils.ErrConfiguration):
+		return response.Error(c, fiber.StatusServiceUnavailable, "server configuration is incomplete", nil)
 	case errors.Is(err, utils.ErrInvalidInput):
 		return response.Error(c, fiber.StatusBadRequest, "invalid input", nil)
 	case errors.Is(err, utils.ErrPaymentPending):
 		return response.Error(c, fiber.StatusForbidden, "payment is not verified", nil)
 	case errors.Is(err, utils.ErrExamSubmitted):
-		return response.Error(c, fiber.StatusConflict, "exam already submitted", nil)
+		return response.Error(c, fiber.StatusConflict, "ujian untuk lomba ini sudah pernah dikerjakan", nil)
 	default:
 		return response.Error(c, fiber.StatusInternalServerError, "internal server error", err.Error())
 	}

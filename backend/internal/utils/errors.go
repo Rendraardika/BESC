@@ -7,6 +7,7 @@ var (
 	ErrUnauthorized   = errors.New("unauthorized")
 	ErrForbidden      = errors.New("forbidden")
 	ErrConflict       = errors.New("resource already exists")
+	ErrConfiguration  = errors.New("configuration error")
 	ErrInvalidInput   = errors.New("invalid input")
 	ErrPaymentPending = errors.New("payment is not verified")
 	ErrExamSubmitted  = errors.New("exam already submitted")

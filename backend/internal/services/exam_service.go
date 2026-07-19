@@ -40,6 +40,9 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 		return nil, err
 	}
 	if existing, err := s.submissions.FindActive(userID, competitionID); err == nil {
+		if existing.Status == entities.SubmissionSubmitted {
+			return nil, utils.ErrExamSubmitted
+		}
 		return existing, nil
 	}
 	submission := &entities.Submission{
@@ -63,6 +66,9 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 		if err != nil {
 			return nil, err
 		}
+	}
+	if submission.Status == entities.SubmissionSubmitted {
+		return nil, utils.ErrExamSubmitted
 	}
 
 	questions, err := s.questions.ListByCompetition(competitionID, true)

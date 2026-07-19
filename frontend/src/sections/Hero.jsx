@@ -1,6 +1,4 @@
-import bescLogo from '../assets/images/logo BESC biru.png';
-
-export default function Hero({ onRegister }) {
+export default function Hero({ onCompetitions }) {
   return (
     <section id="home" className="relative overflow-hidden hero-bg px-6 py-20 md:px-8">
       <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.22),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.12),transparent_24%)]"></div>
@@ -17,11 +15,12 @@ export default function Hero({ onRegister }) {
             BESC (Biology Environmental Smart Competition) hadir untuk membersamai pelajar Indonesia meraih prestasi terbaik di bidang biologi melalui kompetisi, tryout, dan pembelajaran berkualitas.
           </p>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={onRegister} className="rounded-full bg-white px-7 py-3 font-bold text-[#044b86] transition hover:-translate-y-1 hover:bg-blue-50 hover:shadow-xl">Ikuti Kompetisi →</button>
+            <button type="button" onClick={onCompetitions} className="rounded-full bg-white px-7 py-3 font-bold text-[#044b86] transition hover:-translate-y-1 hover:bg-blue-50 hover:shadow-xl">
+              Ikuti Kompetisi -&gt;
+            </button>
             <a href="#tryout" className="rounded-full border border-white/30 bg-white/10 px-7 py-3 font-bold text-white transition hover:bg-white/20">Coba Tryout Gratis</a>
           </div>
         </div>
-        {/* BESC logo box removed from hero background at user's request */}
       </div>
     </section>
   );

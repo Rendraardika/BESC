@@ -95,7 +95,7 @@ func (s *authService) Login(input dto.LoginRequest) (*dto.AuthResponse, error) {
 
 func (s *authService) GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthResponse, error) {
 	if s.cfg.GoogleClientID == "" {
-		return nil, errors.New("google client id is not configured")
+		return nil, fmt.Errorf("%w: google client id is not configured", utils.ErrConfiguration)
 	}
 
 	profile, err := verifyGoogleCredential(input.Credential, s.cfg.GoogleClientID)
@@ -105,7 +105,10 @@ func (s *authService) GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthRespon
 
 	email := strings.ToLower(profile.Email)
 	user, err := s.users.FindByEmail(email)
-	if err != nil {
+	if err != nil && !errors.Is(err, utils.ErrNotFound) {
+		return nil, err
+	}
+	if errors.Is(err, utils.ErrNotFound) {
 		randomPassword, hashErr := utils.HashPassword(uuid.NewString())
 		if hashErr != nil {
 			return nil, hashErr

@@ -6,6 +6,9 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('user', 'admin') NOT NULL DEFAULT 'user',
   phone VARCHAR(30) NOT NULL DEFAULT '',
   institution VARCHAR(150) NOT NULL DEFAULT '',
+  team_name VARCHAR(150) NOT NULL DEFAULT '',
+  member1_name VARCHAR(150) NOT NULL DEFAULT '',
+  member2_name VARCHAR(150) NOT NULL DEFAULT '',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_users_role (role)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

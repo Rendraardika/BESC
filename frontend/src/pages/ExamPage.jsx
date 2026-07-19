@@ -1,24 +1,47 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../lib/api.js';
 
-const formatTime = (seconds) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+const TAB_SWITCH_LIMIT = 3;
+
+const formatTime = (seconds) => {
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  return `${String(minutes).padStart(2, '0')}m:${String(rest).padStart(2, '0')}s`;
+};
+
+const options = [
+  ['A', 'option_a'],
+  ['B', 'option_b'],
+  ['C', 'option_c'],
+  ['D', 'option_d'],
+];
 
 export default function ExamPage({ competition, onFinish }) {
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [submissionID, setSubmissionID] = useState('');
   const [remaining, setRemaining] = useState((competition.duration_minutes || 60) * 60);
   const [violations, setViolations] = useState(0);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
   const answersRef = useRef({});
+  const questionButtonsRef = useRef([]);
+  const violationsRef = useRef(0);
+  const submittingRef = useRef(false);
+  const lockedRef = useRef(false);
   const token = localStorage.getItem('besc_token');
-  const limit = competition.tab_switch_limit || 5;
+  const currentQuestion = questions[currentIndex];
+  const answeredCount = Object.keys(answers).length;
 
   useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { violationsRef.current = violations; }, [violations]);
+  useEffect(() => { submittingRef.current = submitting; }, [submitting]);
+  useEffect(() => { lockedRef.current = locked; }, [locked]);
+  useEffect(() => {
+    questionButtonsRef.current[currentIndex]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [currentIndex]);
 
   const logEvent = async (eventType, metadata = '') => {
     if (!submissionID) return;
@@ -32,66 +55,63 @@ export default function ExamPage({ competition, onFinish }) {
   };
 
   const submit = async ({ forced = false, reason = '' } = {}) => {
-    if (submitting || locked) return;
+    if (submittingRef.current || lockedRef.current) return;
     if (!forced && Object.keys(answersRef.current).length !== questions.length) {
       setError('Jawab seluruh soal sebelum menyelesaikan ujian.');
       return;
     }
+
+    setError('');
     setSubmitting(true);
-    if (forced) setLocked(true);
+    submittingRef.current = true;
+    if (forced) {
+      setLocked(true);
+      lockedRef.current = true;
+    }
+
     try {
       const result = await apiRequest(`/competitions/${competition.competition_id}/exam/submit`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ answers: questions.filter((q) => answersRef.current[q.id]).map((q) => ({ question_id: q.id, answer: answersRef.current[q.id] })) }),
+        body: JSON.stringify({
+          answers: questions
+            .filter((question) => answersRef.current[question.id])
+            .map((question) => ({ question_id: question.id, answer: answersRef.current[question.id] })),
+        }),
       });
       if (reason) alert(reason);
       onFinish(result);
     } catch (err) {
       setError(err.message);
-      if (!forced) setLocked(false);
+      if (!forced) {
+        setLocked(false);
+        lockedRef.current = false;
+      }
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
   useEffect(() => {
-    let snapshotTimer;
     const load = async () => {
       try {
-        const submission = await apiRequest(`/competitions/${competition.competition_id}/exam/start`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+        const submission = await apiRequest(`/competitions/${competition.competition_id}/exam/start`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setSubmissionID(submission.id);
-        setQuestions(await apiRequest(`/competitions/${competition.competition_id}/exam/questions`, { headers: { Authorization: `Bearer ${token}` } }));
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-        await apiRequest('/proctoring/events', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ submission_id: submission.id, event_type: 'camera_on' }) });
-        snapshotTimer = window.setInterval(() => captureSnapshot(submission.id), 30000);
+        const examQuestions = await apiRequest(`/competitions/${competition.competition_id}/exam/questions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setQuestions(examQuestions);
       } catch (err) {
-        setError(`Kamera wajib aktif untuk mengikuti ujian. ${err.message}`);
+        setError(err.message);
         setLocked(true);
       }
     };
     load();
-    return () => {
-      window.clearInterval(snapshotTimer);
-      streamRef.current?.getTracks().forEach((track) => track.stop());
-    };
   }, [competition.competition_id, token]);
-
-  const captureSnapshot = (id = submissionID) => {
-    const video = videoRef.current;
-    if (!video || !id || video.videoWidth === 0) return;
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d').drawImage(video, 0, 0);
-    canvas.toBlob(async (blob) => {
-      const body = new FormData();
-      body.append('snapshot', blob, 'snapshot.jpg');
-      try { await apiRequest(`/submissions/${id}/proctoring/snapshots`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body }); } catch {}
-    }, 'image/jpeg', 0.72);
-  };
 
   useEffect(() => {
     if (!submissionID || locked) return undefined;
@@ -108,14 +128,19 @@ export default function ExamPage({ competition, onFinish }) {
 
   useEffect(() => {
     const visibility = async () => {
-      if (!document.hidden || !submissionID || locked) return;
-      const next = violations + 1;
+      if (!document.hidden || !submissionID || lockedRef.current) return;
+      const next = violationsRef.current + 1;
       setViolations(next);
-      await logEvent('tab_switch', `Pelanggaran ${next} dari ${limit}`);
-      if (next >= limit) submit({ forced: true, reason: `Batas pindah tab (${limit} kali) tercapai. Ujian dihentikan dan jawaban terakhir telah dikirim.` });
-      else setError(`Peringatan: Anda berpindah tab ${next}/${limit} kali. Ujian akan dihentikan saat batas tercapai.`);
+      await logEvent('tab_switch', `Pelanggaran ${next} dari ${TAB_SWITCH_LIMIT}`);
+      if (next >= TAB_SWITCH_LIMIT) {
+        submit({ forced: true, reason: `Batas pindah tab (${TAB_SWITCH_LIMIT} kali) tercapai. Ujian dihentikan dan jawaban terakhir telah dikirim.` });
+      }
     };
-    const block = (event) => { event.preventDefault(); logEvent(event.type === 'contextmenu' ? 'right_click' : 'copy_attempt'); };
+    const block = (event) => {
+      event.preventDefault();
+      logEvent(event.type === 'contextmenu' ? 'right_click' : 'copy_attempt');
+    };
+
     document.addEventListener('visibilitychange', visibility);
     document.addEventListener('copy', block);
     document.addEventListener('cut', block);
@@ -126,21 +151,120 @@ export default function ExamPage({ competition, onFinish }) {
       document.removeEventListener('cut', block);
       document.removeEventListener('contextmenu', block);
     };
-  }, [submissionID, violations, limit, locked]);
+  }, [submissionID]);
+
+  const selectAnswer = (questionID, answer) => {
+    setError('');
+    setAnswers((current) => ({ ...current, [questionID]: answer }));
+  };
+
+  const goToQuestion = (index) => {
+    setError('');
+    setCurrentIndex(index);
+  };
 
   return (
-    <main className="min-h-screen select-none bg-[#f4f8f7] px-5 py-8">
-      <section className="mx-auto max-w-5xl">
-        <header className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-4 border border-slate-200 bg-white px-6 py-4 shadow-sm">
-          <div><div className="text-xs font-extrabold uppercase text-teal-600">Ujian BESC</div><h1 className="mt-1 text-xl font-extrabold">{competition.competition_title}</h1></div>
-          <div className="flex items-center gap-4">
-            <video ref={videoRef} autoPlay muted playsInline className="h-16 w-24 rounded-lg bg-slate-900 object-cover" />
-            <div><div className="text-lg font-extrabold text-red-600">{formatTime(remaining)}</div><div className="text-xs font-bold text-slate-500">{Object.keys(answers).length}/{questions.length} terjawab • Tab {violations}/{limit}</div></div>
+    <main className="min-h-screen select-none bg-white text-[#1f2937]">
+      <header className="sticky top-0 z-20 flex h-[72px] items-center justify-end border-b border-slate-200 bg-white px-6 md:px-7">
+        <div className="grid h-10 min-w-[122px] place-items-center rounded border border-slate-200 bg-white px-4 font-mono text-base text-red-500 shadow-sm">
+          {formatTime(remaining)}
+        </div>
+      </header>
+
+      <section className="grid min-h-[calc(100vh-72px)] md:grid-cols-[310px_minmax(0,1fr)]">
+        <aside className="border-b border-slate-200 bg-white md:sticky md:top-[72px] md:h-[calc(100vh-72px)] md:border-b-0 md:border-r">
+          <div className="flex h-full flex-col">
+            <div className="border-b border-slate-200 p-5">
+              <h1 className="max-w-[240px] text-lg font-extrabold leading-7 text-slate-700">
+                Soal kategori: {competition.competition_title || 'Ujian BESC'}
+              </h1>
+              <div className="mt-5 text-sm font-bold text-slate-500">
+                {answeredCount}/{questions.length} terjawab
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-5 md:overflow-x-hidden md:overflow-y-auto">
+              <div className="grid w-max grid-flow-col grid-rows-2 gap-3 md:w-full md:grid-flow-row md:grid-cols-5 md:grid-rows-none">
+                {questions.map((question, index) => {
+                  const answered = Boolean(answers[question.id]);
+                  const active = index === currentIndex;
+                  return (
+                    <button
+                      key={question.id}
+                      ref={(element) => { questionButtonsRef.current[index] = element; }}
+                      type="button"
+                      onClick={() => goToQuestion(index)}
+                      className={`grid h-10 w-10 place-items-center rounded-lg border text-sm font-bold shadow-sm transition ${active ? 'border-[#29384a] bg-[#29384a] text-white' : answered ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-slate-300 bg-white text-slate-700 hover:border-[#29384a]'}`}
+                    >
+                      {index + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-        </header>
-        {error && <div className="mt-5 rounded-lg bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
-        <div className="mt-5 space-y-4">{questions.map((q, index) => <article key={q.id} className="rounded-lg border border-slate-200 bg-white p-6"><div className="text-xs font-extrabold text-teal-600">Soal {index + 1}</div><h2 className="mt-3 font-bold leading-7">{q.question}</h2><div className="mt-5 grid gap-3">{[['A', q.option_a], ['B', q.option_b], ['C', q.option_c], ['D', q.option_d]].map(([key, value]) => <label key={key} className={`flex cursor-pointer gap-3 rounded-lg border p-4 text-sm font-semibold ${answers[q.id] === key ? 'border-teal-500 bg-teal-50' : 'border-slate-200'}`}><input disabled={locked} type="radio" name={q.id} checked={answers[q.id] === key} onChange={() => setAnswers((current) => ({ ...current, [q.id]: key }))} />{key}. {value}</label>)}</div></article>)}</div>
-        <div className="mt-6 flex justify-end"><button type="button" disabled={submitting || locked || questions.length === 0} onClick={() => submit()} className="rounded-lg bg-[#0d9488] px-6 py-3 text-sm font-extrabold text-white disabled:opacity-50">{submitting ? 'Mengirim...' : 'Selesai & Kirim Jawaban'}</button></div>
+        </aside>
+
+        <section className="px-7 py-10 md:px-8 lg:px-12">
+          {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
+
+          {!currentQuestion ? (
+            <div className="text-sm font-semibold text-slate-500">Memuat soal...</div>
+          ) : (
+            <article className="max-w-3xl">
+              <h2 className="text-base leading-8 text-slate-800 md:text-lg">{currentQuestion.question}</h2>
+
+              <div className="mt-10 space-y-4">
+                {options.map(([label, field]) => (
+                  <label key={label} className="flex cursor-pointer items-start gap-4 text-base leading-7 text-slate-800">
+                    <input
+                      disabled={locked}
+                      type="radio"
+                      name={currentQuestion.id}
+                      checked={answers[currentQuestion.id] === label}
+                      onChange={() => selectAnswer(currentQuestion.id, label)}
+                      className="mt-1 h-5 w-5 shrink-0 accent-[#29384a]"
+                    />
+                    <span>{currentQuestion[field]}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-8 border-t border-slate-200 pt-10">
+                <div className="flex items-center justify-between gap-4">
+                  <button
+                    type="button"
+                    disabled={currentIndex === 0}
+                    onClick={() => goToQuestion(Math.max(0, currentIndex - 1))}
+                    className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-400 transition hover:text-[#29384a] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <span className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-xl leading-none">&lsaquo;</span>
+                    Sebelumnya
+                  </button>
+                  {currentIndex === questions.length - 1 ? (
+                    <button
+                      type="button"
+                      disabled={submitting || locked || questions.length === 0}
+                      onClick={() => submit()}
+                      className="rounded-lg bg-[#0d9488] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#087f75] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {submitting ? 'Mengirim...' : 'Selesai & Kirim Jawaban'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => goToQuestion(Math.min(questions.length - 1, currentIndex + 1))}
+                      className="inline-flex items-center gap-2 text-sm font-extrabold text-slate-400 transition hover:text-[#29384a]"
+                    >
+                      Selanjutnya
+                      <span className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-xl leading-none">&rsaquo;</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </article>
+          )}
+        </section>
       </section>
     </main>
   );

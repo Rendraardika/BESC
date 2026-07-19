@@ -98,16 +98,38 @@ export default function App() {
   }, [page]);
 
   useEffect(() => {
-    if (!user || user.role === 'admin') return;
+    if (!user || user.role === 'admin') {
+      setRegistrations([]);
+      return;
+    }
+    if (!['home', 'olimpiade', 'competition-detail', 'event-registration', 'exam-rules'].includes(page)) return;
     apiRequest('/me/competitions?limit=100', { headers: { Authorization: `Bearer ${localStorage.getItem('besc_token')}` } })
       .then(setRegistrations)
       .catch(() => setRegistrations([]));
-  }, [user]);
+  }, [user, page]);
 
   const openRegister = () => {
     window.location.hash = 'daftar';
     window.scrollTo(0, 0);
     setPage('register');
+  };
+
+  const openCompetitions = () => {
+    const scrollToCompetitions = () => {
+      document.getElementById('kompetisi')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    if (page !== 'home') {
+      window.location.hash = 'kompetisi';
+      setPage('home');
+      window.setTimeout(scrollToCompetitions, 0);
+      return;
+    }
+
+    if (window.location.hash !== '#kompetisi') {
+      window.location.hash = 'kompetisi';
+    }
+    scrollToCompetitions();
   };
 
   const openLogin = () => {
@@ -350,6 +372,8 @@ export default function App() {
         onRegister={openRegister}
         onEventRegistration={openEventRegistration}
         onTryout={openTryout}
+        onVerifiedCompetition={openExamRules}
+        registrations={registrations}
         user={user}
       />
     );
@@ -427,5 +451,5 @@ export default function App() {
     );
   }
 
-  return <HomePage competitions={apiCompetitions} onCompetitionDetail={openCompetitionDetail} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onTryout={openTryout} onTryoutPackage={openTryoutPackage} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
+  return <HomePage competitions={apiCompetitions} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onTryout={openTryout} onTryoutPackage={openTryoutPackage} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
 }

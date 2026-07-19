@@ -405,7 +405,7 @@ function ParticipantModal({ onClose, onDelete, participant }) {
 }
 
 function CompetitionForm({ onClose, onSubmit }) {
-  const [form, setForm] = useState({ title: '', slug: '', description: '', banner: '', category: 'Olimpiade', level: 'SMA', badges: 'Online,Nasional', quota: 0, price: 0, original_price: 0, duration_minutes: 60, tab_switch_limit: 5, start_time: '', end_time: '', registration_deadline: '', status: 'draft' });
+  const [form, setForm] = useState({ title: '', slug: '', description: '', banner: '', category: 'Olimpiade', level: 'SMA', badges: 'Online,Nasional', quota: 0, price: 0, original_price: 0, duration_minutes: 60, tab_switch_limit: 3, start_time: '', end_time: '', registration_deadline: '', status: 'draft' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const update = (field, value) => setForm((current) => ({ ...current, [field]: value, ...(field === 'title' ? { slug: value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') } : {}) }));

@@ -12,12 +12,12 @@ import Blog from '../sections/Blog.jsx';
 import CTA from '../sections/CTA.jsx';
 import FAQ from '../sections/FAQ.jsx';
 
-export default function HomePage({ competitions, onCompetitionDetail, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, onVerifiedCompetition, registrations, user }) {
+export default function HomePage({ competitions, onCompetitionDetail, onCompetitions, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, onVerifiedCompetition, registrations, user }) {
   return (
     <>
       <Header isHome onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onRegister={onRegister} onTryout={onTryout} user={user} />
       <main>
-        <Hero onRegister={onRegister} />
+        <Hero onCompetitions={onCompetitions} />
         <StatsStrip />
         <Events competitions={competitions} onCompetitionDetail={onCompetitionDetail} onVerifiedCompetition={onVerifiedCompetition} registrations={registrations} />
         <Tryout onTryoutPackage={onTryoutPackage} />

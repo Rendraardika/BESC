@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -31,7 +32,7 @@ type Config struct {
 }
 
 func Load() Config {
-	_ = godotenv.Load()
+	_ = godotenv.Load(".env", "backend/.env")
 
 	expiresHours, err := strconv.Atoi(getEnv("JWT_EXPIRES_HOURS", "24"))
 	if err != nil || expiresHours <= 0 {
@@ -66,7 +67,7 @@ func (c Config) MySQLDSN() string {
 }
 
 func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
+	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
 		return value
 	}
 	return fallback
