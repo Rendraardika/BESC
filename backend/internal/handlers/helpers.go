@@ -45,6 +45,8 @@ func handleError(c *fiber.Ctx, err error) error {
 		return response.Error(c, fiber.StatusServiceUnavailable, "server configuration is incomplete", nil)
 	case errors.Is(err, utils.ErrInvalidInput):
 		return response.Error(c, fiber.StatusBadRequest, "invalid input", nil)
+	case errors.Is(err, utils.ErrProfileIncomplete):
+		return response.Error(c, fiber.StatusForbidden, "profile is incomplete", nil)
 	case errors.Is(err, utils.ErrPaymentPending):
 		return response.Error(c, fiber.StatusForbidden, "payment is not verified", nil)
 	case errors.Is(err, utils.ErrExamSubmitted):

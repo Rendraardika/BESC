@@ -26,14 +26,31 @@ type AuthService interface {
 }
 
 func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileRequest) (*entities.User, error) {
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
 	birthDate, err := time.Parse("2006-01-02", input.BirthDate)
 	if err != nil {
 		return nil, utils.ErrInvalidInput
 	}
-	user := &entities.User{
-		ID: userID, Name: input.Name, Phone: input.Phone, Institution: input.Institution,
-		Photo: input.Photo, BirthDate: &birthDate, Gender: input.Gender, Province: input.Province, City: input.City,
+	user.Name = input.Name
+	user.Phone = input.Phone
+	user.Institution = input.Institution
+	if input.TeamName != "" {
+		user.TeamName = input.TeamName
 	}
+	if input.Member1Name != "" {
+		user.Member1Name = input.Member1Name
+	}
+	if input.Member2Name != "" {
+		user.Member2Name = input.Member2Name
+	}
+	user.Photo = input.Photo
+	user.BirthDate = &birthDate
+	user.Gender = input.Gender
+	user.Province = input.Province
+	user.City = input.City
 	if err := s.users.UpdateFullProfile(user); err != nil {
 		return nil, err
 	}
@@ -63,6 +80,9 @@ func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, er
 		Role:        entities.RoleUser,
 		Phone:       input.Phone,
 		Institution: input.Institution,
+		TeamName:    input.TeamName,
+		Member1Name: input.Member1Name,
+		Member2Name: input.Member2Name,
 	}
 	if err := s.users.Create(user); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
@@ -70,6 +90,7 @@ func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, er
 		}
 		return nil, err
 	}
+	user.RefreshProfileComplete()
 
 	token, err := utils.GenerateToken(user.ID, user.Role, s.cfg.JWTSecret, s.cfg.JWTExpires)
 	if err != nil {
@@ -123,6 +144,7 @@ func (s *authService) GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthRespon
 		if createErr := s.users.Create(user); createErr != nil {
 			return nil, createErr
 		}
+		user.RefreshProfileComplete()
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Role, s.cfg.JWTSecret, s.cfg.JWTExpires)

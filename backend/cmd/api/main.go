@@ -45,7 +45,7 @@ func main() {
 
 	authService := services.NewAuthService(userRepo, cfg)
 	competitionService := services.NewCompetitionService(competitionRepo)
-	registrationService := services.NewRegistrationService(registrationRepo, competitionRepo)
+	registrationService := services.NewRegistrationService(registrationRepo, competitionRepo, userRepo)
 	paymentService := services.NewPaymentService(registrationRepo, paymentRepo, cfg)
 	examService := services.NewExamService(registrationRepo, questionRepo, submissionRepo)
 	questionService := services.NewQuestionService(questionRepo)

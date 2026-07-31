@@ -33,12 +33,12 @@ const getPageFromHash = () => {
 
 const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#tryout-page', '#detail-kompetisi', '#pendaftaran-event', '#pendaftaran-berhasil', '#paket-tryout', '#admin-login', '#admin-dashboard', '#ketentuan-ujian', '#kerjakan-soal'];
 
-const isProfileComplete = () => {
-  const user = JSON.parse(localStorage.getItem('besc_user') ?? '{}');
-  const key = `besc_profile_${user.id || user.email || 'guest'}`;
-  const profile = JSON.parse(localStorage.getItem(key) ?? '{}');
-  return ['photo', 'fullName', 'email', 'whatsapp', 'birthDate', 'school', 'gender', 'province', 'city']
-    .every((field) => Boolean(profile[field]));
+const isProfileComplete = (currentUser) => Boolean(currentUser?.profile_complete);
+
+const profileStorageKey = (currentUser) => `besc_profile_${currentUser?.id || currentUser?.email || 'guest'}`;
+
+const removeProfileCache = (currentUser) => {
+  localStorage.removeItem(profileStorageKey(currentUser));
 };
 
 export default function App() {
@@ -47,6 +47,7 @@ export default function App() {
     const savedUser = localStorage.getItem('besc_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+  const [authChecked, setAuthChecked] = useState(() => !localStorage.getItem('besc_token'));
   const [admin, setAdmin] = useState(() => {
     const savedAdmin = localStorage.getItem('besc_admin');
     return savedAdmin ? JSON.parse(savedAdmin) : null;
@@ -64,9 +65,29 @@ export default function App() {
   useEffect(() => {
     if (window.location.hash !== '#reset-session') return;
     ['besc_user', 'besc_token', 'besc_after_profile', 'besc_after_login'].forEach((key) => localStorage.removeItem(key));
+    Object.keys(localStorage).filter((key) => key.startsWith('besc_profile_')).forEach((key) => localStorage.removeItem(key));
     setUser(null);
+    setAuthChecked(true);
     window.location.hash = 'login';
     setPage('login');
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('besc_token');
+    if (!token) {
+      setAuthChecked(true);
+      return;
+    }
+    apiRequest('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then((serverUser) => {
+        localStorage.setItem('besc_user', JSON.stringify(serverUser));
+        setUser(serverUser);
+      })
+      .catch(() => {
+        clearAuthSession();
+        setUser(null);
+      })
+      .finally(() => setAuthChecked(true));
   }, []);
 
   useEffect(() => {
@@ -199,10 +220,17 @@ export default function App() {
 
     saveAuthSession(auth);
     setUser(auth.user);
+    setAuthChecked(true);
     const afterLogin = localStorage.getItem('besc_after_login');
     localStorage.removeItem('besc_after_login');
 
     if (afterLogin === 'event-registration') {
+      if (isProfileComplete(auth.user)) {
+        window.location.hash = 'pendaftaran-event';
+        window.scrollTo(0, 0);
+        setPage('event-registration');
+        return;
+      }
       localStorage.setItem('besc_after_profile', 'event-registration');
       window.location.hash = 'profile';
       window.scrollTo(0, 0);
@@ -250,9 +278,10 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    removeProfileCache(user);
     clearAuthSession();
-    localStorage.removeItem('besc_profile');
     setUser(null);
+    setAuthChecked(true);
     backHome();
   };
 
@@ -275,7 +304,7 @@ export default function App() {
   };
 
   const handleSaveProfile = (profile) => {
-    const updatedUser = { ...user, ...profile.backendUser, name: profile.fullName || user?.name || 'Rendra Ardika', photo: profile.photo };
+    const updatedUser = { ...user, ...profile.backendUser };
     localStorage.setItem('besc_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
 
@@ -380,10 +409,13 @@ export default function App() {
   }
 
   if (page === 'event-registration') {
+    if (!authChecked) {
+      return null;
+    }
     if (!user) {
       return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
     }
-    if (!isProfileComplete()) {
+    if (!isProfileComplete(user)) {
       localStorage.setItem('besc_after_profile', 'event-registration');
       return (
         <ProfilePage

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { apiRequest } from '../lib/api.js';
@@ -6,18 +6,22 @@ import indonesiaWilayah from '../indonesia_wilayah.json';
 
 export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile, onRegister, onSaveProfile, onTryout, user }) {
   const profileStorageKey = `besc_profile_${user?.id || user?.email || 'guest'}`;
-  const savedProfile = JSON.parse(localStorage.getItem(profileStorageKey) ?? '{}');
-  const [profile, setProfile] = useState({
-    photo: savedProfile.photo ?? user?.photo ?? '',
-    fullName: savedProfile.fullName ?? user?.name ?? '',
-    email: user?.email ?? savedProfile.email ?? '',
-    whatsapp: savedProfile.whatsapp ?? user?.phone ?? '',
-    birthDate: savedProfile.birthDate ?? '',
-    school: savedProfile.school ?? user?.institution ?? '',
-    gender: savedProfile.gender ?? user?.gender ?? '',
-    province: savedProfile.province ?? user?.province ?? '',
-    city: savedProfile.city ?? user?.city ?? '',
-  });
+  const readCachedProfile = () => JSON.parse(localStorage.getItem(profileStorageKey) ?? '{}');
+  const profileFromServer = () => {
+    const savedProfile = readCachedProfile();
+    return {
+      photo: user?.photo || savedProfile.photo || '',
+      fullName: user?.name || savedProfile.fullName || '',
+      email: user?.email || savedProfile.email || '',
+      whatsapp: user?.phone || savedProfile.whatsapp || '',
+      birthDate: user?.birth_date ? String(user.birth_date).slice(0, 10) : savedProfile.birthDate || '',
+      school: user?.institution || savedProfile.school || '',
+      gender: user?.gender || savedProfile.gender || '',
+      province: user?.province || savedProfile.province || '',
+      city: user?.city || savedProfile.city || '',
+    };
+  };
+  const [profile, setProfile] = useState(profileFromServer);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -28,6 +32,10 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
   }, [selectedProvince]);
 
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+
+  useEffect(() => {
+    setProfile(profileFromServer());
+  }, [user]);
 
   const updateProfile = (field, value) => {
     setProfile((currentProfile) => ({ ...currentProfile, [field]: value }));

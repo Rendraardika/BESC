@@ -77,5 +77,6 @@ func scanUser(row *sql.Row) (*entities.User, error) {
 		}
 		return nil, err
 	}
+	user.RefreshProfileComplete()
 	return &user, nil
 }

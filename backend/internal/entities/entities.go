@@ -1,6 +1,9 @@
 package entities
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 const (
 	RoleUser  = "user"
@@ -23,22 +26,35 @@ const (
 )
 
 type User struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Email       string     `json:"email"`
-	Password    string     `json:"-"`
-	Role        string     `json:"role"`
-	Phone       string     `json:"phone"`
-	Institution string     `json:"institution"`
-	TeamName    string     `json:"team_name"`
-	Member1Name string     `json:"member1_name"`
-	Member2Name string     `json:"member2_name"`
-	Photo       string     `json:"photo,omitempty"`
-	BirthDate   *time.Time `json:"birth_date,omitempty"`
-	Gender      string     `json:"gender"`
-	Province    string     `json:"province"`
-	City        string     `json:"city"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID              string     `json:"id"`
+	Name            string     `json:"name"`
+	Email           string     `json:"email"`
+	Password        string     `json:"-"`
+	Role            string     `json:"role"`
+	Phone           string     `json:"phone"`
+	Institution     string     `json:"institution"`
+	TeamName        string     `json:"team_name"`
+	Member1Name     string     `json:"member1_name"`
+	Member2Name     string     `json:"member2_name"`
+	Photo           string     `json:"photo,omitempty"`
+	BirthDate       *time.Time `json:"birth_date,omitempty"`
+	Gender          string     `json:"gender"`
+	Province        string     `json:"province"`
+	City            string     `json:"city"`
+	CreatedAt       time.Time  `json:"created_at"`
+	ProfileComplete bool       `json:"profile_complete"`
+}
+
+func (u *User) RefreshProfileComplete() {
+	u.ProfileComplete = strings.TrimSpace(u.Name) != "" &&
+		strings.TrimSpace(u.Email) != "" &&
+		strings.TrimSpace(u.Phone) != "" &&
+		strings.TrimSpace(u.Institution) != "" &&
+		strings.TrimSpace(u.Photo) != "" &&
+		u.BirthDate != nil &&
+		strings.TrimSpace(u.Gender) != "" &&
+		strings.TrimSpace(u.Province) != "" &&
+		strings.TrimSpace(u.City) != ""
 }
 
 type Competition struct {

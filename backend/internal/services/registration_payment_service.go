@@ -29,6 +29,7 @@ type PaymentService interface {
 type registrationService struct {
 	registrations repositories.RegistrationRepository
 	competitions  repositories.CompetitionRepository
+	users         repositories.UserRepository
 }
 
 type paymentService struct {
@@ -37,8 +38,8 @@ type paymentService struct {
 	cfg           config.Config
 }
 
-func NewRegistrationService(registrations repositories.RegistrationRepository, competitions repositories.CompetitionRepository) RegistrationService {
-	return &registrationService{registrations: registrations, competitions: competitions}
+func NewRegistrationService(registrations repositories.RegistrationRepository, competitions repositories.CompetitionRepository, users repositories.UserRepository) RegistrationService {
+	return &registrationService{registrations: registrations, competitions: competitions, users: users}
 }
 
 func NewPaymentService(registrations repositories.RegistrationRepository, payments repositories.PaymentRepository, cfg config.Config) PaymentService {
@@ -48,6 +49,13 @@ func NewPaymentService(registrations repositories.RegistrationRepository, paymen
 func (s *registrationService) Register(userID, competitionID string) (*entities.Registration, error) {
 	if _, err := s.competitions.FindByID(competitionID); err != nil {
 		return nil, err
+	}
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if !user.ProfileComplete {
+		return nil, utils.ErrProfileIncomplete
 	}
 	if existing, err := s.registrations.FindByUserAndCompetition(userID, competitionID); err == nil {
 		return existing, nil

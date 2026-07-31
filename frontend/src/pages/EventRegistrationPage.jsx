@@ -112,15 +112,15 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
             </Field>
 
             <Field label="Nama Peserta">
-              <input className={inputClass} defaultValue={savedProfile.fullName ?? user?.name ?? ''} type="text" />
+              <input className={inputClass} defaultValue={user?.name || savedProfile.fullName || ''} type="text" />
             </Field>
 
             <Field label="Nomor WhatsApp Peserta">
-              <input className={inputClass} defaultValue={savedProfile.whatsapp ?? ''} type="tel" placeholder="08xxxxxxxxxx" />
+              <input className={inputClass} defaultValue={user?.phone || savedProfile.whatsapp || ''} type="tel" placeholder="08xxxxxxxxxx" />
             </Field>
 
             <Field label="Asal Sekolah">
-              <input className={inputClass} defaultValue={savedProfile.school ?? ''} type="text" placeholder="Nama sekolah" />
+              <input className={inputClass} defaultValue={user?.institution || savedProfile.school || ''} type="text" placeholder="Nama sekolah" />
             </Field>
 
             <Field label="Kelas">
