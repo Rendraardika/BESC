@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/go-sql-driver/mysql"
+
 	"online-competition-platform/internal/entities"
 	"online-competition-platform/internal/utils"
 )
@@ -35,15 +37,28 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 	rows, err := r.db.Query(`
 		SELECT s.id, s.user_id, s.competition_id, s.started_at, s.submitted_at, s.score, s.status, s.violation_count,
 			u.name, u.email, c.title,
-			COALESCE(SUM(CASE WHEN a.answer = q.correct_answer THEN 1 ELSE 0 END), 0),
-			COALESCE(SUM(CASE WHEN a.answer <> q.correct_answer THEN 1 ELSE 0 END), 0),
-			COUNT(a.id)
+			COALESCE(answer_stats.correct_count, 0),
+			COALESCE(answer_stats.wrong_count, 0),
+			COALESCE(answer_stats.answered_questions, 0),
+			GREATEST(COALESCE(question_stats.total_questions, 0) - COALESCE(answer_stats.answered_questions, 0), 0),
+			COALESCE(question_stats.total_questions, 0)
 		FROM submissions s
 		JOIN users u ON u.id = s.user_id
 		JOIN competitions c ON c.id = s.competition_id
-		LEFT JOIN answers a ON a.submission_id = s.id
-		LEFT JOIN questions q ON q.id = a.question_id
-		GROUP BY s.id, u.name, u.email, c.title
+		LEFT JOIN (
+			SELECT competition_id, COUNT(*) AS total_questions
+			FROM questions
+			GROUP BY competition_id
+		) question_stats ON question_stats.competition_id = s.competition_id
+		LEFT JOIN (
+			SELECT a.submission_id,
+				COUNT(*) AS answered_questions,
+				SUM(CASE WHEN a.answer = q.correct_answer THEN 1 ELSE 0 END) AS correct_count,
+				SUM(CASE WHEN a.answer <> q.correct_answer THEN 1 ELSE 0 END) AS wrong_count
+			FROM answers a
+			JOIN questions q ON q.id = a.question_id
+			GROUP BY a.submission_id
+		) answer_stats ON answer_stats.submission_id = s.id
 		ORDER BY s.started_at DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		return nil, 0, err
@@ -52,7 +67,7 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 	items := []entities.SubmissionDetail{}
 	for rows.Next() {
 		var item entities.SubmissionDetail
-		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.CorrectCount, &item.WrongCount, &item.TotalQuestions); err != nil {
+		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.CorrectCount, &item.WrongCount, &item.AnsweredQuestions, &item.UnansweredQuestions, &item.TotalQuestions); err != nil {
 			return nil, 0, err
 		}
 		items = append(items, item)
@@ -72,14 +87,14 @@ func NewSubmissionRepository(db *sql.DB) SubmissionRepository {
 }
 
 func (r *questionRepository) Create(question *entities.Question) error {
-	_, err := r.db.Exec(`INSERT INTO questions (id, competition_id, question, option_a, option_b, option_c, option_d, correct_answer, score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		question.ID, question.CompetitionID, question.Question, question.OptionA, question.OptionB, question.OptionC, question.OptionD, question.CorrectAnswer, question.Score)
+	_, err := r.db.Exec(`INSERT INTO questions (id, competition_id, question, image, option_a, option_b, option_c, option_d, option_e, correct_answer, score, wrong_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		question.ID, question.CompetitionID, question.Question, question.Image, question.OptionA, question.OptionB, question.OptionC, question.OptionD, question.OptionE, question.CorrectAnswer, question.Score, question.WrongScore)
 	return err
 }
 
 func (r *questionRepository) Update(question *entities.Question) error {
-	result, err := r.db.Exec(`UPDATE questions SET question = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, correct_answer = ?, score = ? WHERE id = ?`,
-		question.Question, question.OptionA, question.OptionB, question.OptionC, question.OptionD, question.CorrectAnswer, question.Score, question.ID)
+	result, err := r.db.Exec(`UPDATE questions SET question = ?, image = ?, option_a = ?, option_b = ?, option_c = ?, option_d = ?, option_e = ?, correct_answer = ?, score = ?, wrong_score = ? WHERE id = ?`,
+		question.Question, question.Image, question.OptionA, question.OptionB, question.OptionC, question.OptionD, question.OptionE, question.CorrectAnswer, question.Score, question.WrongScore, question.ID)
 	if err != nil {
 		return err
 	}
@@ -95,11 +110,11 @@ func (r *questionRepository) Delete(id string) error {
 }
 
 func (r *questionRepository) FindByID(id string) (*entities.Question, error) {
-	return scanQuestion(r.db.QueryRow(`SELECT id, competition_id, question, option_a, option_b, option_c, option_d, correct_answer, score FROM questions WHERE id = ?`, id), true)
+	return scanQuestion(r.db.QueryRow(`SELECT id, competition_id, question, COALESCE(image, ''), option_a, option_b, option_c, option_d, option_e, correct_answer, score, wrong_score FROM questions WHERE id = ?`, id), true)
 }
 
 func (r *questionRepository) ListByCompetition(competitionID string, includeAnswer bool) ([]entities.Question, error) {
-	rows, err := r.db.Query(`SELECT id, competition_id, question, option_a, option_b, option_c, option_d, correct_answer, score FROM questions WHERE competition_id = ? ORDER BY id`, competitionID)
+	rows, err := r.db.Query(`SELECT id, competition_id, question, COALESCE(image, ''), option_a, option_b, option_c, option_d, option_e, correct_answer, score, wrong_score FROM questions WHERE competition_id = ? ORDER BY id`, competitionID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +123,7 @@ func (r *questionRepository) ListByCompetition(competitionID string, includeAnsw
 	items := []entities.Question{}
 	for rows.Next() {
 		var item entities.Question
-		if err := rows.Scan(&item.ID, &item.CompetitionID, &item.Question, &item.OptionA, &item.OptionB, &item.OptionC, &item.OptionD, &item.CorrectAnswer, &item.Score); err != nil {
+		if err := rows.Scan(&item.ID, &item.CompetitionID, &item.Question, &item.Image, &item.OptionA, &item.OptionB, &item.OptionC, &item.OptionD, &item.OptionE, &item.CorrectAnswer, &item.Score, &item.WrongScore); err != nil {
 			return nil, err
 		}
 		if !includeAnswer {
@@ -122,11 +137,19 @@ func (r *questionRepository) ListByCompetition(competitionID string, includeAnsw
 func (r *submissionRepository) Start(submission *entities.Submission) error {
 	_, err := r.db.Exec(`INSERT INTO submissions (id, user_id, competition_id, started_at, score, status) VALUES (?, ?, ?, ?, ?, ?)`,
 		submission.ID, submission.UserID, submission.CompetitionID, submission.StartedAt, submission.Score, submission.Status)
+	if isDuplicateKeyError(err) {
+		return utils.ErrConflict
+	}
 	return err
 }
 
 func (r *submissionRepository) FindByID(id string) (*entities.Submission, error) {
 	return scanSubmission(r.db.QueryRow(`SELECT id, user_id, competition_id, started_at, submitted_at, score, status, violation_count FROM submissions WHERE id = ?`, id))
+}
+
+func isDuplicateKeyError(err error) bool {
+	var mysqlErr *mysql.MySQLError
+	return errors.As(err, &mysqlErr) && mysqlErr.Number == 1062
 }
 
 func (r *submissionRepository) FindActive(userID, competitionID string) (*entities.Submission, error) {
@@ -195,7 +218,7 @@ func (r *submissionRepository) List(page, limit int) ([]entities.Submission, int
 
 func scanQuestion(row *sql.Row, includeAnswer bool) (*entities.Question, error) {
 	var item entities.Question
-	if err := row.Scan(&item.ID, &item.CompetitionID, &item.Question, &item.OptionA, &item.OptionB, &item.OptionC, &item.OptionD, &item.CorrectAnswer, &item.Score); err != nil {
+	if err := row.Scan(&item.ID, &item.CompetitionID, &item.Question, &item.Image, &item.OptionA, &item.OptionB, &item.OptionC, &item.OptionD, &item.OptionE, &item.CorrectAnswer, &item.Score, &item.WrongScore); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}

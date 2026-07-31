@@ -92,12 +92,15 @@ type Question struct {
 	ID            string  `json:"id"`
 	CompetitionID string  `json:"competition_id"`
 	Question      string  `json:"question"`
+	Image         string  `json:"image,omitempty"`
 	OptionA       string  `json:"option_a"`
 	OptionB       string  `json:"option_b"`
 	OptionC       string  `json:"option_c"`
 	OptionD       string  `json:"option_d"`
+	OptionE       string  `json:"option_e"`
 	CorrectAnswer string  `json:"correct_answer,omitempty"`
 	Score         float64 `json:"score"`
+	WrongScore    float64 `json:"wrong_score"`
 }
 
 type Submission struct {
@@ -113,12 +116,14 @@ type Submission struct {
 
 type SubmissionDetail struct {
 	Submission
-	UserName         string `json:"user_name"`
-	UserEmail        string `json:"user_email"`
-	CompetitionTitle string `json:"competition_title"`
-	CorrectCount     int    `json:"correct_count"`
-	WrongCount       int    `json:"wrong_count"`
-	TotalQuestions   int    `json:"total_questions"`
+	UserName            string `json:"user_name"`
+	UserEmail           string `json:"user_email"`
+	CompetitionTitle    string `json:"competition_title"`
+	CorrectCount        int    `json:"correct_count"`
+	WrongCount          int    `json:"wrong_count"`
+	AnsweredQuestions   int    `json:"answered_questions"`
+	UnansweredQuestions int    `json:"unanswered_questions"`
+	TotalQuestions      int    `json:"total_questions"`
 }
 
 type Answer struct {
