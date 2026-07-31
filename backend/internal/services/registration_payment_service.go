@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/smtp"
 	"path/filepath"
 	"strings"
@@ -24,6 +25,7 @@ type PaymentService interface {
 	UploadProof(userID, registrationID, proofPath string) (*entities.Payment, error)
 	Status(userID, registrationID string) (*entities.Payment, error)
 	Verify(paymentID, status, adminID string) error
+	ProofPath(paymentID string) (string, error)
 }
 
 type registrationService struct {
@@ -125,9 +127,17 @@ func (s *paymentService) Verify(paymentID, status, adminID string) error {
 		return nil
 	}
 	if err := sendPaymentStatusEmail(s.cfg, email, competitionTitle, status); err != nil {
-		return fmt.Errorf("status pembayaran berhasil diubah, tetapi email notifikasi gagal dikirim: %w", err)
+		log.Printf("payment status updated but notification email failed for payment %s: %v", paymentID, err)
 	}
 	return nil
+}
+
+func (s *paymentService) ProofPath(paymentID string) (string, error) {
+	payment, err := s.payments.FindByID(paymentID)
+	if err != nil {
+		return "", err
+	}
+	return payment.ProofImage, nil
 }
 
 func sendPaymentStatusEmail(cfg config.Config, recipient, competitionTitle, status string) error {

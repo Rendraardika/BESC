@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,13 +14,18 @@ import (
 	"online-competition-platform/config"
 	"online-competition-platform/database"
 	"online-competition-platform/internal/handlers"
+	"online-competition-platform/internal/middleware"
 	"online-competition-platform/internal/repositories"
 	"online-competition-platform/internal/routes"
 	"online-competition-platform/internal/services"
+	"online-competition-platform/pkg/response"
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("configuration error: %v", err)
+	}
 
 	db, err := database.Connect(cfg.MySQLDSN())
 	if err != nil {
@@ -27,11 +33,14 @@ func main() {
 	}
 	defer db.Close()
 
-	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "payments"), 0755); err != nil {
-		log.Fatalf("failed to create upload directory: %v", err)
-	}
-	if err := os.MkdirAll(filepath.Join(cfg.UploadDir, "proctoring"), 0755); err != nil {
-		log.Fatalf("failed to create upload directory: %v", err)
+	for _, dir := range []string{
+		filepath.Join(cfg.UploadDir, "public"),
+		filepath.Join(cfg.UploadDir, "private", "payments"),
+		filepath.Join(cfg.UploadDir, "private", "proctoring"),
+	} {
+		if err := os.MkdirAll(dir, 0750); err != nil {
+			log.Fatalf("failed to create upload directory: %v", err)
+		}
 	}
 
 	userRepo := repositories.NewUserRepository(db)
@@ -55,19 +64,26 @@ func main() {
 	app := fiber.New(fiber.Config{
 		AppName: "Online Competition Platform API",
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"success": false,
-				"message": "internal server error",
-				"errors":  err.Error(),
-			})
+			var fiberErr *fiber.Error
+			if errors.As(err, &fiberErr) && fiberErr.Code < fiber.StatusInternalServerError {
+				return response.Error(c, fiberErr.Code, fiberErr.Message, nil)
+			}
+			log.Printf("unhandled fiber error: method=%s path=%s error=%v", c.Method(), c.Path(), err)
+			return response.Error(c, fiber.StatusInternalServerError, "internal server error", nil)
 		},
 	})
 	app.Use(recover.New())
 	app.Use(logger.New())
-	app.Use(cors.New(cors.Config{AllowOrigins: cfg.CORSAllowOrigins}))
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     cfg.CORSAllowOrigins,
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowCredentials: true,
+	}))
+	app.Use(middleware.OriginGuard(cfg.CORSAllowOrigins))
 
 	routes.Register(app, routes.Handlers{
-		Auth:           handlers.NewAuthHandler(authService),
+		Auth:           handlers.NewAuthHandler(authService, cfg),
 		Competition:    handlers.NewCompetitionHandler(competitionService),
 		Registration:   handlers.NewRegistrationHandler(registrationService),
 		Payment:        handlers.NewPaymentHandler(paymentService, cfg),

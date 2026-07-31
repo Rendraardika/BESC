@@ -1,0 +1,2 @@
+ALTER TABLE questions
+  ADD COLUMN image MEDIUMTEXT NULL AFTER question;

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,12 +59,13 @@ func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileReques
 }
 
 type authService struct {
-	users repositories.UserRepository
-	cfg   config.Config
+	users                  repositories.UserRepository
+	cfg                    config.Config
+	verifyGoogleCredential googleCredentialVerifier
 }
 
 func NewAuthService(users repositories.UserRepository, cfg config.Config) AuthService {
-	return &authService{users: users, cfg: cfg}
+	return &authService{users: users, cfg: cfg, verifyGoogleCredential: verifyGoogleCredential}
 }
 
 func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, error) {
@@ -92,11 +94,7 @@ func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, er
 	}
 	user.RefreshProfileComplete()
 
-	token, err := utils.GenerateToken(user.ID, user.Role, s.cfg.JWTSecret, s.cfg.JWTExpires)
-	if err != nil {
-		return nil, err
-	}
-	return &dto.AuthResponse{Token: token, User: user}, nil
+	return &dto.AuthResponse{User: user}, nil
 }
 
 func (s *authService) Login(input dto.LoginRequest) (*dto.AuthResponse, error) {
@@ -119,8 +117,11 @@ func (s *authService) GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthRespon
 		return nil, fmt.Errorf("%w: google client id is not configured", utils.ErrConfiguration)
 	}
 
-	profile, err := verifyGoogleCredential(input.Credential, s.cfg.GoogleClientID)
+	profile, err := s.verifyGoogleCredential(input.Credential, s.cfg.GoogleClientID)
 	if err != nil {
+		if errors.Is(err, utils.ErrExternalService) {
+			return nil, err
+		}
 		return nil, utils.ErrUnauthorized
 	}
 
@@ -142,9 +143,17 @@ func (s *authService) GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthRespon
 			Role:     entities.RoleUser,
 		}
 		if createErr := s.users.Create(user); createErr != nil {
-			return nil, createErr
+			if strings.Contains(strings.ToLower(createErr.Error()), "duplicate") {
+				user, err = s.users.FindByEmail(email)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, createErr
+			}
+		} else {
+			user.RefreshProfileComplete()
 		}
-		user.RefreshProfileComplete()
 	}
 
 	token, err := utils.GenerateToken(user.ID, user.Role, s.cfg.JWTSecret, s.cfg.JWTExpires)
@@ -159,32 +168,87 @@ func (s *authService) CurrentUser(userID string) (*entities.User, error) {
 }
 
 type googleTokenInfo struct {
-	Audience      string `json:"aud"`
-	Email         string `json:"email"`
-	EmailVerified string `json:"email_verified"`
-	Name          string `json:"name"`
+	Audience      string              `json:"aud"`
+	Email         string              `json:"email"`
+	EmailVerified googleEmailVerified `json:"email_verified"`
+	Expiration    string              `json:"exp"`
+	Issuer        string              `json:"iss"`
+	Name          string              `json:"name"`
+	Subject       string              `json:"sub"`
 }
 
+type googleCredentialVerifier func(credential string, clientID string) (*googleTokenInfo, error)
+
+const defaultGoogleTokenInfoEndpoint = "https://oauth2.googleapis.com/tokeninfo"
+
+var (
+	googleTokenInfoEndpoint = defaultGoogleTokenInfoEndpoint
+	googleHTTPClient        = &http.Client{Timeout: 5 * time.Second}
+)
+
 func verifyGoogleCredential(credential string, clientID string) (*googleTokenInfo, error) {
-	resp, err := http.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + credential)
+	req, err := http.NewRequest(http.MethodGet, googleTokenInfoEndpoint, nil)
 	if err != nil {
 		return nil, err
+	}
+	query := req.URL.Query()
+	query.Set("id_token", credential)
+	req.URL.RawQuery = query.Encode()
+
+	resp, err := googleHTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("%w: google token verification request failed", utils.ErrExternalService)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("google token verification failed: %s", resp.Status)
+		return nil, utils.ErrUnauthorized
 	}
 
 	var profile googleTokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
 		return nil, err
 	}
-	if profile.Audience != clientID || profile.Email == "" || profile.EmailVerified != "true" {
+	if !profile.validFor(clientID, time.Now()) {
 		return nil, utils.ErrUnauthorized
 	}
 	if profile.Name == "" {
 		profile.Name = profile.Email
 	}
 	return &profile, nil
+}
+
+func (p googleTokenInfo) validFor(clientID string, now time.Time) bool {
+	if p.Audience != clientID || p.Email == "" || !bool(p.EmailVerified) || p.Subject == "" {
+		return false
+	}
+	if p.Issuer != "accounts.google.com" && p.Issuer != "https://accounts.google.com" {
+		return false
+	}
+	expiresAt, err := strconv.ParseInt(p.Expiration, 10, 64)
+	if err != nil {
+		return false
+	}
+	return now.Unix() < expiresAt
+}
+
+type googleEmailVerified bool
+
+func (v *googleEmailVerified) UnmarshalJSON(data []byte) error {
+	var boolValue bool
+	if err := json.Unmarshal(data, &boolValue); err == nil {
+		*v = googleEmailVerified(boolValue)
+		return nil
+	}
+
+	var stringValue string
+	if err := json.Unmarshal(data, &stringValue); err == nil {
+		parsed, parseErr := strconv.ParseBool(stringValue)
+		if parseErr != nil {
+			return parseErr
+		}
+		*v = googleEmailVerified(parsed)
+		return nil
+	}
+	return fmt.Errorf("invalid email_verified value")
 }

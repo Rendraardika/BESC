@@ -8,6 +8,7 @@ var (
 	ErrForbidden         = errors.New("forbidden")
 	ErrConflict          = errors.New("resource already exists")
 	ErrConfiguration     = errors.New("configuration error")
+	ErrExternalService   = errors.New("external service unavailable")
 	ErrInvalidInput      = errors.New("invalid input")
 	ErrProfileIncomplete = errors.New("profile is incomplete")
 	ErrPaymentPending    = errors.New("payment is not verified")

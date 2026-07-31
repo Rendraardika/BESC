@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -29,6 +28,9 @@ func (h *ProctoringHandler) LogEvent(c *fiber.Ctx) error {
 	if err := bindAndValidate(c, &input); err != nil {
 		return err
 	}
+	if !dto.IsAllowedProctoringEventType(input.EventType) {
+		return response.Error(c, fiber.StatusBadRequest, "invalid proctoring event type", nil)
+	}
 
 	event, err := h.service.LogEvent(userID(c), input, c.IP(), c.Get("User-Agent"))
 	if err != nil {
@@ -43,25 +45,35 @@ func (h *ProctoringHandler) UploadSnapshot(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, "snapshot image is required", nil)
 	}
 
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
-		return response.Error(c, fiber.StatusBadRequest, "snapshot must be jpg, jpeg, png, or webp", nil)
-	}
-
-	filename := fmt.Sprintf("%s%s", uuid.NewString(), ext)
-	relativePath := filepath.Join(h.cfg.UploadDir, "proctoring", c.Params("submission_id"), filename)
-	if err := os.MkdirAll(filepath.Dir(relativePath), 0755); err != nil {
-		return handleError(c, err)
-	}
-	if err := c.SaveFile(file, relativePath); err != nil {
-		return handleError(c, err)
-	}
-
-	snapshot, err := h.service.SaveSnapshot(userID(c), c.Params("submission_id"), relativePath)
+	ext, err := validateSensitiveImageUpload(file)
 	if err != nil {
+		return uploadValidationResponse(c, err)
+	}
+
+	filename := fmt.Sprintf("snapshot_%s%s", uuid.NewString(), ext)
+	storageKey := privateUploadKey("proctoring", c.Params("submission_id"), filename)
+	diskPath := uploadDiskPath(h.cfg, storageKey)
+	if err := os.MkdirAll(filepath.Dir(diskPath), 0750); err != nil {
+		return handleError(c, err)
+	}
+	if err := c.SaveFile(file, diskPath); err != nil {
+		return handleError(c, err)
+	}
+
+	snapshot, err := h.service.SaveSnapshot(userID(c), c.Params("submission_id"), storageKey)
+	if err != nil {
+		_ = os.Remove(diskPath)
 		return handleError(c, err)
 	}
 	return response.JSON(c, fiber.StatusCreated, "proctoring snapshot uploaded", snapshot)
+}
+
+func (h *ProctoringHandler) SnapshotImage(c *fiber.Ctx) error {
+	path, err := h.service.SnapshotPath(c.Params("snapshot_id"))
+	if err != nil {
+		return handleError(c, err)
+	}
+	return servePrivateFile(c, h.cfg, path)
 }
 
 func (h *ProctoringHandler) Events(c *fiber.Ctx) error {

@@ -32,14 +32,12 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('besc_token');
       const competition = competitions.length ? competitions : await apiRequest(`/competitions?limit=100`);
       const selectedCompetition = event.competition || competition.find((item) => item.title === event.title) || competition[competitionIndex];
       if (!selectedCompetition) throw new Error('Kompetisi belum tersedia di database.');
 
       const registration = await apiRequest(`/competitions/${selectedCompetition.id}/register`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
 
       const formData = new FormData();
@@ -48,7 +46,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       try {
         response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
           body: formData,
         });
       } catch (uploadError) {

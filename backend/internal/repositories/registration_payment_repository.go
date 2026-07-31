@@ -20,6 +20,7 @@ type RegistrationRepository interface {
 type PaymentRepository interface {
 	Upsert(payment *entities.Payment) error
 	FindByRegistrationID(registrationID string) (*entities.Payment, error)
+	FindByID(paymentID string) (*entities.Payment, error)
 	UpdateStatus(paymentID, status, adminID string) error
 	NotificationDetails(paymentID string) (string, string, error)
 }
@@ -110,6 +111,10 @@ func (r *paymentRepository) Upsert(payment *entities.Payment) error {
 
 func (r *paymentRepository) FindByRegistrationID(registrationID string) (*entities.Payment, error) {
 	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, created_at FROM payments WHERE registration_id = ?`, registrationID))
+}
+
+func (r *paymentRepository) FindByID(paymentID string) (*entities.Payment, error) {
+	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, created_at FROM payments WHERE id = ?`, paymentID))
 }
 
 func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) error {

@@ -10,7 +10,7 @@ const getProofURL = (activity) => `${API_URL}/admin/payments/${activity.payment_
 
 const downloadPaymentProof = async (activity) => {
   const response = await fetch(getProofURL(activity), {
-    headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
+    credentials: 'include',
   });
   if (!response.ok) throw new Error('Gagal mengunduh bukti pembayaran.');
 
@@ -46,9 +46,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const data = await apiRequest('/admin/dashboard', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
-        });
+        const data = await apiRequest('/admin/dashboard');
         setDashboard(data);
       } catch (err) {
         setError(err.message);
@@ -60,15 +58,14 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   useEffect(() => {
     const loadPageData = async () => {
       try {
-        const headers = { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` };
         if (activePage === 'Peserta' && participants.length === 0) {
-          setParticipants(await apiRequest('/admin/participants', { headers }));
+          setParticipants(await apiRequest('/admin/participants'));
         }
         if ((activePage === 'Kompetisi' || activePage === 'Bank Soal') && competitions.length === 0) {
-          setCompetitions(await apiRequest('/competitions?limit=100', { headers }));
+          setCompetitions(await apiRequest('/competitions?limit=100'));
         }
         if (activePage === 'Hasil Ujian') {
-          setSubmissions(await apiRequest('/admin/submissions?limit=100', { headers }));
+          setSubmissions(await apiRequest('/admin/submissions?limit=100'));
         }
       } catch (err) {
         setError(err.message);
@@ -97,12 +94,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
     try {
       await apiRequest(`/admin/payments/${paymentID}/verify`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
         body: JSON.stringify({ status }),
       });
-      const refreshed = await apiRequest('/admin/dashboard', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
-      });
+      const refreshed = await apiRequest('/admin/dashboard');
       setDashboard(refreshed);
     } catch (err) {
       setError(err.message);
@@ -131,7 +125,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
     try {
       await apiRequest(`/admin/participants/${participant.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
       });
       setParticipants((items) => items.filter((item) => item.id !== participant.id));
       setSelectedParticipant(null);
@@ -143,7 +136,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const createCompetition = async (form) => {
     const created = await apiRequest('/admin/competitions', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
       body: JSON.stringify(form),
     });
     setCompetitions((items) => [created, ...items]);
@@ -154,7 +146,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
     if (!window.confirm(`Hapus kompetisi ${competition.title}?`)) return;
     await apiRequest(`/admin/competitions/${competition.id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
     });
     setCompetitions((items) => items.filter((item) => item.id !== competition.id));
   };
@@ -162,15 +153,12 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const openQuestions = async (competition) => {
     setQuestionCompetition(competition);
     setActivePage('Kelola Soal');
-    setQuestions(await apiRequest(`/admin/competitions/${competition.id}/questions`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
-    }));
+    setQuestions(await apiRequest(`/admin/competitions/${competition.id}/questions`));
   };
 
   const createQuestion = async (input) => {
     const created = await apiRequest(`/admin/competitions/${questionCompetition.id}/questions`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
       body: JSON.stringify(input),
     });
     setQuestions((items) => [...items, created]);
@@ -179,7 +167,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const updateQuestion = async (questionID, input) => {
     const updated = await apiRequest(`/admin/questions/${questionID}`, {
       method: 'PUT',
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
       body: JSON.stringify(input),
     });
     setQuestions((items) => items.map((item) => item.id === questionID ? updated : item));
@@ -187,7 +174,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
 
   const deleteQuestion = async (question) => {
     if (!window.confirm('Hapus soal ini?')) return;
-    await apiRequest(`/admin/questions/${question.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` } });
+    await apiRequest(`/admin/questions/${question.id}`, { method: 'DELETE' });
     setQuestions((items) => items.filter((item) => item.id !== question.id));
   };
 
@@ -464,7 +451,7 @@ function ProofModal({ activity, onClose, onDownload }) {
     const loadProof = async () => {
       try {
         const response = await fetch(getProofURL(activity), {
-          headers: { Authorization: `Bearer ${localStorage.getItem('besc_admin_token')}` },
+          credentials: 'include',
         });
         if (!response.ok) throw new Error('Gagal membuka bukti pembayaran.');
         objectURL = URL.createObjectURL(await response.blob());

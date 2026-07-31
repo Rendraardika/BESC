@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiRequest } from '../lib/api.js';
 
-const TAB_SWITCH_LIMIT = 3;
+const DEFAULT_TAB_SWITCH_LIMIT = 3;
 
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60);
@@ -14,6 +14,7 @@ const options = [
   ['B', 'option_b'],
   ['C', 'option_c'],
   ['D', 'option_d'],
+  ['E', 'option_e'],
 ];
 
 export default function ExamPage({ competition, onFinish }) {
@@ -23,6 +24,7 @@ export default function ExamPage({ competition, onFinish }) {
   const [submissionID, setSubmissionID] = useState('');
   const [remaining, setRemaining] = useState((competition.duration_minutes || 60) * 60);
   const [violations, setViolations] = useState(0);
+  const [tabSwitchLimit, setTabSwitchLimit] = useState(Number(competition.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT));
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
@@ -31,7 +33,7 @@ export default function ExamPage({ competition, onFinish }) {
   const violationsRef = useRef(0);
   const submittingRef = useRef(false);
   const lockedRef = useRef(false);
-  const token = localStorage.getItem('besc_token');
+  const tabSwitchLimitRef = useRef(Number(competition.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT));
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
 
@@ -39,6 +41,7 @@ export default function ExamPage({ competition, onFinish }) {
   useEffect(() => { violationsRef.current = violations; }, [violations]);
   useEffect(() => { submittingRef.current = submitting; }, [submitting]);
   useEffect(() => { lockedRef.current = locked; }, [locked]);
+  useEffect(() => { tabSwitchLimitRef.current = tabSwitchLimit; }, [tabSwitchLimit]);
   useEffect(() => {
     questionButtonsRef.current[currentIndex]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [currentIndex]);
@@ -46,9 +49,8 @@ export default function ExamPage({ competition, onFinish }) {
   const logEvent = async (eventType, metadata = '') => {
     if (!submissionID) return;
     try {
-      await apiRequest('/proctoring/events', {
+      return await apiRequest('/proctoring/events', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({ submission_id: submissionID, event_type: eventType, metadata }),
       });
     } catch {}
@@ -56,11 +58,6 @@ export default function ExamPage({ competition, onFinish }) {
 
   const submit = async ({ forced = false, reason = '' } = {}) => {
     if (submittingRef.current || lockedRef.current) return;
-    if (!forced && Object.keys(answersRef.current).length !== questions.length) {
-      setError('Jawab seluruh soal sebelum menyelesaikan ujian.');
-      return;
-    }
-
     setError('');
     setSubmitting(true);
     submittingRef.current = true;
@@ -72,7 +69,6 @@ export default function ExamPage({ competition, onFinish }) {
     try {
       const result = await apiRequest(`/competitions/${competition.competition_id}/exam/submit`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           answers: questions
             .filter((question) => answersRef.current[question.id])
@@ -98,12 +94,17 @@ export default function ExamPage({ competition, onFinish }) {
       try {
         const submission = await apiRequest(`/competitions/${competition.competition_id}/exam/start`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
         });
         setSubmissionID(submission.id);
-        const examQuestions = await apiRequest(`/competitions/${competition.competition_id}/exam/questions`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        setViolations(Number(submission.violation_count || 0));
+        apiRequest(`/competitions/${competition.competition_id}`)
+          .then((competitionDetail) => {
+            const limit = Number(competitionDetail.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT);
+            setTabSwitchLimit(limit);
+            tabSwitchLimitRef.current = limit;
+          })
+          .catch(() => {});
+        const examQuestions = await apiRequest(`/competitions/${competition.competition_id}/exam/questions`);
         setQuestions(examQuestions);
       } catch (err) {
         setError(err.message);
@@ -111,7 +112,7 @@ export default function ExamPage({ competition, onFinish }) {
       }
     };
     load();
-  }, [competition.competition_id, token]);
+  }, [competition.competition_id]);
 
   useEffect(() => {
     if (!submissionID || locked) return undefined;
@@ -129,11 +130,14 @@ export default function ExamPage({ competition, onFinish }) {
   useEffect(() => {
     const visibility = async () => {
       if (!document.hidden || !submissionID || lockedRef.current) return;
-      const next = violationsRef.current + 1;
-      setViolations(next);
-      await logEvent('tab_switch', `Pelanggaran ${next} dari ${TAB_SWITCH_LIMIT}`);
-      if (next >= TAB_SWITCH_LIMIT) {
-        submit({ forced: true, reason: `Batas pindah tab (${TAB_SWITCH_LIMIT} kali) tercapai. Ujian dihentikan dan jawaban terakhir telah dikirim.` });
+      const event = await logEvent('tab_switch', 'visibilitychange');
+      const next = Number(event?.violation_count || violationsRef.current);
+      if (next > 0) {
+        setViolations(next);
+      }
+      const limit = tabSwitchLimitRef.current || DEFAULT_TAB_SWITCH_LIMIT;
+      if (next >= limit) {
+        submit({ forced: true, reason: `Batas pindah tab (${limit} kali) tercapai. Ujian dihentikan dan jawaban terakhir telah dikirim.` });
       }
     };
     const block = (event) => {
@@ -213,6 +217,11 @@ export default function ExamPage({ competition, onFinish }) {
           ) : (
             <article className="max-w-3xl">
               <h2 className="text-base leading-8 text-slate-800 md:text-lg">{currentQuestion.question}</h2>
+              {currentQuestion.image && (
+                <div className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <img src={currentQuestion.image} alt="Gambar soal" className="max-h-[420px] w-full object-contain" />
+                </div>
+              )}
 
               <div className="mt-10 space-y-4">
                 {options.map(([label, field]) => (

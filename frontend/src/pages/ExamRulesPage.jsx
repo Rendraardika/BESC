@@ -5,21 +5,20 @@ const rules = [
   'Pastikan koneksi internet stabil sebelum memulai.',
   'Jangan refresh atau menutup halaman selama ujian.',
   'Kerjakan seluruh soal secara mandiri.',
-  'Jawaban akan dinilai otomatis oleh sistem.',
+  'Benar bernilai positif, salah bernilai negatif, tidak dijawab bernilai 0, dan skor akhir minimal 0.',
   'Waktu ujian berjalan setelah tombol mulai ditekan.',
 ];
 
 export default function ExamRulesPage({ competition, onBack, onStart }) {
   const [agreed, setAgreed] = useState(false);
-  const [summary, setSummary] = useState({ questions: 0, points: 0 });
+  const [summary, setSummary] = useState({ questions: 0, points: 0, penalties: 0 });
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiRequest(`/competitions/${competition.competition_id}/exam/questions`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('besc_token')}` },
-    }).then((questions) => setSummary({
+    apiRequest(`/competitions/${competition.competition_id}/exam/questions`).then((questions) => setSummary({
       questions: questions.length,
       points: questions.reduce((total, item) => total + Number(item.score || 0), 0),
+      penalties: questions.reduce((total, item) => total + Number(item.wrong_score || 0), 0),
     })).catch((err) => setError(err.message));
   }, [competition.competition_id]);
 
@@ -27,6 +26,7 @@ export default function ExamRulesPage({ competition, onBack, onStart }) {
     ['Soal', summary.questions || '-', 'Jumlah soal ujian'],
     ['Durasi', '60 menit', 'Waktu pengerjaan'],
     ['Total Poin', summary.points || '-', 'Nilai maksimal'],
+    ['Penalti Salah', summary.penalties || '0', 'Akumulasi pengurang maksimal'],
   ];
 
   return (
@@ -50,7 +50,7 @@ export default function ExamRulesPage({ competition, onBack, onStart }) {
         <div className="p-6 md:p-9">
           {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-4">
             {stats.map(([label, value, note]) => (
               <article key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-5">
                 <div className="text-[10px] font-extrabold uppercase tracking-wider text-teal-600">{label}</div>

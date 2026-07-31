@@ -1,5 +1,19 @@
-ALTER TABLE submissions
-  ADD COLUMN IF NOT EXISTS violation_count INT NOT NULL DEFAULT 0;
+SET @schema_name = DATABASE();
+
+SET @add_violation_count = (
+  SELECT IF(
+    COUNT(*) = 0,
+    'ALTER TABLE submissions ADD COLUMN violation_count INT NOT NULL DEFAULT 0',
+    'SELECT 1'
+  )
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @schema_name
+    AND TABLE_NAME = 'submissions'
+    AND COLUMN_NAME = 'violation_count'
+);
+PREPARE stmt FROM @add_violation_count;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS proctoring_events (
   id CHAR(36) PRIMARY KEY,

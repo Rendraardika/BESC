@@ -150,14 +150,15 @@ type Answer struct {
 }
 
 type ProctoringEvent struct {
-	ID           string    `json:"id"`
-	SubmissionID string    `json:"submission_id"`
-	UserID       string    `json:"user_id"`
-	EventType    string    `json:"event_type"`
-	Metadata     string    `json:"metadata,omitempty"`
-	IPAddress    string    `json:"ip_address,omitempty"`
-	UserAgent    string    `json:"user_agent,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
+	ID             string    `json:"id"`
+	SubmissionID   string    `json:"submission_id"`
+	UserID         string    `json:"user_id"`
+	EventType      string    `json:"event_type"`
+	Metadata       string    `json:"metadata,omitempty"`
+	IPAddress      string    `json:"ip_address,omitempty"`
+	UserAgent      string    `json:"user_agent,omitempty"`
+	CreatedAt      time.Time `json:"created_at"`
+	ViolationCount int       `json:"violation_count,omitempty"`
 }
 
 type ProctoringSnapshot struct {

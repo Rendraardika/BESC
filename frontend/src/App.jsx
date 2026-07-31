@@ -47,7 +47,7 @@ export default function App() {
     const savedUser = localStorage.getItem('besc_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
-  const [authChecked, setAuthChecked] = useState(() => !localStorage.getItem('besc_token'));
+  const [authChecked, setAuthChecked] = useState(false);
   const [admin, setAdmin] = useState(() => {
     const savedAdmin = localStorage.getItem('besc_admin');
     return savedAdmin ? JSON.parse(savedAdmin) : null;
@@ -64,7 +64,7 @@ export default function App() {
 
   useEffect(() => {
     if (window.location.hash !== '#reset-session') return;
-    ['besc_user', 'besc_token', 'besc_after_profile', 'besc_after_login'].forEach((key) => localStorage.removeItem(key));
+    ['besc_user', 'besc_admin', 'besc_token', 'besc_admin_token', 'besc_after_profile', 'besc_after_login'].forEach((key) => localStorage.removeItem(key));
     Object.keys(localStorage).filter((key) => key.startsWith('besc_profile_')).forEach((key) => localStorage.removeItem(key));
     setUser(null);
     setAuthChecked(true);
@@ -73,19 +73,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('besc_token');
-    if (!token) {
-      setAuthChecked(true);
-      return;
-    }
-    apiRequest('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+    localStorage.removeItem('besc_token');
+    localStorage.removeItem('besc_admin_token');
+    apiRequest('/auth/me')
       .then((serverUser) => {
+        if (serverUser.role === 'admin') {
+          localStorage.setItem('besc_admin', JSON.stringify(serverUser));
+          localStorage.removeItem('besc_user');
+          setAdmin(serverUser);
+          setUser(null);
+          return;
+        }
         localStorage.setItem('besc_user', JSON.stringify(serverUser));
+        localStorage.removeItem('besc_admin');
         setUser(serverUser);
+        setAdmin(null);
       })
       .catch(() => {
         clearAuthSession();
         setUser(null);
+        setAdmin(null);
       })
       .finally(() => setAuthChecked(true));
   }, []);
@@ -124,7 +131,7 @@ export default function App() {
       return;
     }
     if (!['home', 'olimpiade', 'competition-detail', 'event-registration', 'exam-rules'].includes(page)) return;
-    apiRequest('/me/competitions?limit=100', { headers: { Authorization: `Bearer ${localStorage.getItem('besc_token')}` } })
+    apiRequest('/me/competitions?limit=100')
       .then(setRegistrations)
       .catch(() => setRegistrations([]));
   }, [user, page]);
@@ -277,7 +284,8 @@ export default function App() {
     setPage('exam');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {});
     removeProfileCache(user);
     clearAuthSession();
     setUser(null);
@@ -286,15 +294,19 @@ export default function App() {
   };
 
   const handleAdminLoginSuccess = (auth) => {
-    localStorage.setItem('besc_admin_token', auth.token);
+    localStorage.removeItem('besc_token');
+    localStorage.removeItem('besc_admin_token');
     localStorage.setItem('besc_admin', JSON.stringify(auth.user));
+    localStorage.removeItem('besc_user');
+    setUser(null);
     setAdmin(auth.user);
     window.location.hash = 'admin-dashboard';
     window.scrollTo(0, 0);
     setPage('admin-dashboard');
   };
 
-  const handleAdminLogout = () => {
+  const handleAdminLogout = async () => {
+    await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {});
     localStorage.removeItem('besc_admin_token');
     localStorage.removeItem('besc_admin');
     setAdmin(null);
@@ -330,6 +342,9 @@ export default function App() {
   }
 
   if (page === 'admin-dashboard') {
+    if (!authChecked) {
+      return null;
+    }
     if (!admin) {
       return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
     }
@@ -338,6 +353,9 @@ export default function App() {
   }
 
   if (page === 'profile') {
+    if (!authChecked) {
+      return null;
+    }
     if (!user) {
       return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
     }

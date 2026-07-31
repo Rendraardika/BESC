@@ -3,6 +3,7 @@ package repositories
 import (
 	"database/sql"
 	"errors"
+	"strings"
 
 	"online-competition-platform/internal/entities"
 	"online-competition-platform/internal/utils"
@@ -29,14 +30,14 @@ func (r *competitionRepository) Create(item *entities.Competition) error {
 	query := `INSERT INTO competitions (id, title, slug, description, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	_, err := r.db.Exec(query, item.ID, item.Title, item.Slug, item.Description, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit)
-	return err
+	return competitionWriteError(err)
 }
 
 func (r *competitionRepository) Update(item *entities.Competition) error {
 	query := `UPDATE competitions SET title = ?, slug = ?, description = ?, banner = ?, price = ?, start_time = ?, end_time = ?, status = ?, category = ?, level = ?, badges = ?, quota = ?, original_price = ?, registration_deadline = ?, duration_minutes = ?, tab_switch_limit = ? WHERE id = ?`
 	result, err := r.db.Exec(query, item.Title, item.Slug, item.Description, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit, item.ID)
 	if err != nil {
-		return err
+		return competitionWriteError(err)
 	}
 	return rowsAffected(result)
 }
@@ -100,4 +101,18 @@ func rowsAffected(result sql.Result) error {
 		return utils.ErrNotFound
 	}
 	return nil
+}
+
+func competitionWriteError(err error) error {
+	if err == nil {
+		return nil
+	}
+	message := err.Error()
+	if strings.Contains(message, "Duplicate entry") {
+		return utils.ErrConflict
+	}
+	if strings.Contains(message, "Data too long") {
+		return utils.ErrInvalidInput
+	}
+	return err
 }

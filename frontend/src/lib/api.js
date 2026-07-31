@@ -6,6 +6,7 @@ export async function apiRequest(path, options = {}) {
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
+      credentials: options.credentials || 'include',
       headers: {
         ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...(options.headers || {}),
@@ -22,11 +23,15 @@ export async function apiRequest(path, options = {}) {
 }
 
 export function saveAuthSession(auth) {
-  localStorage.setItem('besc_token', auth.token);
+  localStorage.removeItem('besc_token');
+  localStorage.removeItem('besc_admin_token');
+  localStorage.removeItem('besc_admin');
   localStorage.setItem('besc_user', JSON.stringify(auth.user));
 }
 
 export function clearAuthSession() {
   localStorage.removeItem('besc_token');
+  localStorage.removeItem('besc_admin_token');
   localStorage.removeItem('besc_user');
+  localStorage.removeItem('besc_admin');
 }

@@ -12,9 +12,15 @@ import (
 	"online-competition-platform/internal/utils"
 )
 
+const (
+	minProctoringEventInterval    = 1 * time.Second
+	minProctoringSnapshotInterval = 30 * time.Second
+)
+
 type ProctoringService interface {
 	LogEvent(userID string, input dto.ProctoringEventRequest, ipAddress, userAgent string) (*entities.ProctoringEvent, error)
 	SaveSnapshot(userID, submissionID, imagePath string) (*entities.ProctoringSnapshot, error)
+	SnapshotPath(snapshotID string) (string, error)
 	Events(submissionID string, page, limit int) ([]entities.ProctoringEvent, int, error)
 	Snapshots(submissionID string, page, limit int) ([]entities.ProctoringSnapshot, int, error)
 	Summary(submissionID string) (*entities.ProctoringSummary, error)
@@ -30,12 +36,26 @@ func NewProctoringService(submissions repositories.SubmissionRepository, proctor
 }
 
 func (s *proctoringService) LogEvent(userID string, input dto.ProctoringEventRequest, ipAddress, userAgent string) (*entities.ProctoringEvent, error) {
+	if !dto.IsAllowedProctoringEventType(input.EventType) {
+		return nil, utils.ErrInvalidInput
+	}
+
 	submission, err := s.submissions.FindByID(input.SubmissionID)
 	if err != nil {
 		return nil, err
 	}
 	if submission.UserID != userID {
 		return nil, utils.ErrForbidden
+	}
+	if submission.Status != entities.SubmissionStarted {
+		return nil, utils.ErrExamSubmitted
+	}
+	recent, err := s.proctoring.HasRecentEvent(input.SubmissionID, input.EventType, time.Now().Add(-minProctoringEventInterval))
+	if err != nil {
+		return nil, err
+	}
+	if recent {
+		return nil, utils.ErrConflict
 	}
 
 	event := &entities.ProctoringEvent{
@@ -61,6 +81,16 @@ func (s *proctoringService) SaveSnapshot(userID, submissionID, imagePath string)
 	if submission.UserID != userID {
 		return nil, utils.ErrForbidden
 	}
+	if submission.Status != entities.SubmissionStarted {
+		return nil, utils.ErrExamSubmitted
+	}
+	recent, err := s.proctoring.HasRecentSnapshot(submissionID, time.Now().Add(-minProctoringSnapshotInterval))
+	if err != nil {
+		return nil, err
+	}
+	if recent {
+		return nil, utils.ErrConflict
+	}
 
 	snapshot := &entities.ProctoringSnapshot{
 		ID:           uuid.NewString(),
@@ -73,6 +103,14 @@ func (s *proctoringService) SaveSnapshot(userID, submissionID, imagePath string)
 		return nil, err
 	}
 	return snapshot, nil
+}
+
+func (s *proctoringService) SnapshotPath(snapshotID string) (string, error) {
+	snapshot, err := s.proctoring.FindSnapshotByID(snapshotID)
+	if err != nil {
+		return "", err
+	}
+	return snapshot.ImagePath, nil
 }
 
 func (s *proctoringService) Events(submissionID string, page, limit int) ([]entities.ProctoringEvent, int, error) {

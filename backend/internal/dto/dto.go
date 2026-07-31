@@ -3,14 +3,14 @@ package dto
 import "time"
 
 type RegisterRequest struct {
-	Name         string `json:"name" validate:"required,min=2,max=100"`
-	TeamName     string `json:"team_name" validate:"required,max=150"`
-	Member1Name  string `json:"member1_name" validate:"omitempty,max=150"`
-	Member2Name  string `json:"member2_name" validate:"omitempty,max=150"`
-	Email        string `json:"email" validate:"required,email"`
-	Password     string `json:"password" validate:"required,min=8,password_strength"`
-	Phone        string `json:"phone" validate:"omitempty,max=30"`
-	Institution  string `json:"institution" validate:"omitempty,max=150"`
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	TeamName    string `json:"team_name" validate:"required,max=150"`
+	Member1Name string `json:"member1_name" validate:"omitempty,max=150"`
+	Member2Name string `json:"member2_name" validate:"omitempty,max=150"`
+	Email       string `json:"email" validate:"required,email"`
+	Password    string `json:"password" validate:"required,min=8,password_strength"`
+	Phone       string `json:"phone" validate:"omitempty,max=30"`
+	Institution string `json:"institution" validate:"omitempty,max=150"`
 }
 
 type LoginRequest struct {
@@ -23,21 +23,21 @@ type GoogleLoginRequest struct {
 }
 
 type UpdateProfileRequest struct {
-	Name         string `json:"name" validate:"required,min=2,max=100"`
-	TeamName     string `json:"team_name" validate:"omitempty,max=150"`
-	Member1Name  string `json:"member1_name" validate:"omitempty,max=150"`
-	Member2Name  string `json:"member2_name" validate:"omitempty,max=150"`
-	Phone        string `json:"phone" validate:"required,max=30"`
-	Institution  string `json:"institution" validate:"required,max=150"`
-	Photo        string `json:"photo" validate:"required"`
-	BirthDate    string `json:"birth_date" validate:"required"`
-	Gender       string `json:"gender" validate:"required,max=30"`
-	Province     string `json:"province" validate:"required,max=100"`
-	City         string `json:"city" validate:"required,max=100"`
+	Name        string `json:"name" validate:"required,min=2,max=100"`
+	TeamName    string `json:"team_name" validate:"omitempty,max=150"`
+	Member1Name string `json:"member1_name" validate:"omitempty,max=150"`
+	Member2Name string `json:"member2_name" validate:"omitempty,max=150"`
+	Phone       string `json:"phone" validate:"required,max=30"`
+	Institution string `json:"institution" validate:"required,max=150"`
+	Photo       string `json:"photo" validate:"required"`
+	BirthDate   string `json:"birth_date" validate:"required"`
+	Gender      string `json:"gender" validate:"required,max=30"`
+	Province    string `json:"province" validate:"required,max=100"`
+	City        string `json:"city" validate:"required,max=100"`
 }
 
 type AuthResponse struct {
-	Token string      `json:"token"`
+	Token string      `json:"token,omitempty"`
 	User  interface{} `json:"user"`
 }
 
@@ -62,12 +62,15 @@ type CompetitionRequest struct {
 
 type QuestionRequest struct {
 	Question      string  `json:"question" validate:"required"`
+	Image         string  `json:"image" validate:"omitempty"`
 	OptionA       string  `json:"option_a" validate:"required"`
 	OptionB       string  `json:"option_b" validate:"required"`
 	OptionC       string  `json:"option_c" validate:"required"`
 	OptionD       string  `json:"option_d" validate:"required"`
-	CorrectAnswer string  `json:"correct_answer" validate:"required,oneof=A B C D"`
+	OptionE       string  `json:"option_e" validate:"required"`
+	CorrectAnswer string  `json:"correct_answer" validate:"required,oneof=A B C D E"`
 	Score         float64 `json:"score" validate:"required,gt=0"`
+	WrongScore    float64 `json:"wrong_score" validate:"gte=0"`
 }
 
 type VerifyPaymentRequest struct {
@@ -75,12 +78,12 @@ type VerifyPaymentRequest struct {
 }
 
 type SubmitExamRequest struct {
-	Answers []AnswerRequest `json:"answers" validate:"required,min=1,dive"`
+	Answers []AnswerRequest `json:"answers" validate:"omitempty,dive"`
 }
 
 type AnswerRequest struct {
 	QuestionID string `json:"question_id" validate:"required,uuid"`
-	Answer     string `json:"answer" validate:"required,oneof=A B C D"`
+	Answer     string `json:"answer" validate:"required,oneof=A B C D E"`
 }
 
 type SubmissionResult struct {
@@ -93,4 +96,21 @@ type ProctoringEventRequest struct {
 	SubmissionID string `json:"submission_id" validate:"required,uuid"`
 	EventType    string `json:"event_type" validate:"required,oneof=page_leave tab_switch fullscreen_exit camera_off camera_on copy_attempt right_click screenshot_attempt devtools_attempt"`
 	Metadata     string `json:"metadata" validate:"omitempty,max=1000"`
+}
+
+var allowedProctoringEventTypes = map[string]struct{}{
+	"page_leave":         {},
+	"tab_switch":         {},
+	"fullscreen_exit":    {},
+	"camera_off":         {},
+	"camera_on":          {},
+	"copy_attempt":       {},
+	"right_click":        {},
+	"screenshot_attempt": {},
+	"devtools_attempt":   {},
+}
+
+func IsAllowedProctoringEventType(eventType string) bool {
+	_, ok := allowedProctoringEventTypes[eventType]
+	return ok
 }

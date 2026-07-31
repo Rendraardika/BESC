@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -54,23 +53,33 @@ func (h *PaymentHandler) UploadProof(c *fiber.Ctx) error {
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, "proof image is required", nil)
 	}
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" {
-		return response.Error(c, fiber.StatusBadRequest, "proof must be jpg, jpeg, png, or webp", nil)
-	}
-	filename := fmt.Sprintf("%s%s", uuid.NewString(), ext)
-	relativePath := filepath.Join(h.cfg.UploadDir, "payments", filename)
-	if err := os.MkdirAll(filepath.Dir(relativePath), 0755); err != nil {
-		return handleError(c, err)
-	}
-	if err := c.SaveFile(file, relativePath); err != nil {
-		return handleError(c, err)
-	}
-	payment, err := h.service.UploadProof(userID(c), c.Params("registration_id"), relativePath)
+	ext, err := validateSensitiveImageUpload(file)
 	if err != nil {
+		return uploadValidationResponse(c, err)
+	}
+	filename := fmt.Sprintf("payment_%s%s", uuid.NewString(), ext)
+	storageKey := privateUploadKey("payments", filename)
+	diskPath := uploadDiskPath(h.cfg, storageKey)
+	if err := os.MkdirAll(filepath.Dir(diskPath), 0750); err != nil {
+		return handleError(c, err)
+	}
+	if err := c.SaveFile(file, diskPath); err != nil {
+		return handleError(c, err)
+	}
+	payment, err := h.service.UploadProof(userID(c), c.Params("registration_id"), storageKey)
+	if err != nil {
+		_ = os.Remove(diskPath)
 		return handleError(c, err)
 	}
 	return response.JSON(c, fiber.StatusCreated, "payment proof uploaded", payment)
+}
+
+func (h *PaymentHandler) Proof(c *fiber.Ctx) error {
+	path, err := h.service.ProofPath(c.Params("payment_id"))
+	if err != nil {
+		return handleError(c, err)
+	}
+	return servePrivateFile(c, h.cfg, path)
 }
 
 func (h *PaymentHandler) Status(c *fiber.Ctx) error {

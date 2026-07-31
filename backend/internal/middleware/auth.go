@@ -12,11 +12,15 @@ import (
 
 func JWT(secret string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		header := c.Get("Authorization")
-		if header == "" || !strings.HasPrefix(header, "Bearer ") {
-			return response.Error(c, fiber.StatusUnauthorized, "missing bearer token", nil)
+		token := c.Cookies(utils.AuthCookieName)
+		if token == "" {
+			header := c.Get("Authorization")
+			if header == "" || !strings.HasPrefix(header, "Bearer ") {
+				return response.Error(c, fiber.StatusUnauthorized, "missing authentication token", nil)
+			}
+			token = strings.TrimPrefix(header, "Bearer ")
 		}
-		claims, err := utils.ParseToken(strings.TrimPrefix(header, "Bearer "), secret)
+		claims, err := utils.ParseToken(token, secret)
 		if err != nil {
 			return response.Error(c, fiber.StatusUnauthorized, "invalid or expired token", nil)
 		}

@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"path/filepath"
+
 	"github.com/gofiber/fiber/v2"
 
 	"online-competition-platform/config"
@@ -23,13 +25,14 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
-	app.Static("/uploads", cfg.UploadDir)
+	app.Static("/uploads", filepath.Join(cfg.UploadDir, "public"))
 	app.Static("/docs", "./docs")
 
 	api := app.Group("/api/v1")
 	api.Post("/auth/register", h.Auth.Register)
 	api.Post("/auth/login", h.Auth.Login)
 	api.Post("/auth/google", h.Auth.GoogleLogin)
+	api.Post("/auth/logout", h.Auth.Logout)
 	api.Get("/competitions", h.Competition.List)
 	api.Get("/competitions/:id", h.Competition.Detail)
 
@@ -55,6 +58,7 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Put("/competitions/:id", h.Competition.Update)
 	admin.Delete("/competitions/:id", h.Competition.Delete)
 	admin.Post("/payments/:payment_id/verify", h.Payment.Verify)
+	admin.Get("/payments/:payment_id/proof", h.Payment.Proof)
 	admin.Get("/submissions", h.Exam.Monitor)
 	admin.Get("/competitions/:competition_id/questions", h.Question.List)
 	admin.Post("/competitions/:competition_id/questions", h.Question.Create)
@@ -63,4 +67,5 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/submissions/:submission_id/proctoring/summary", h.Proctoring.Summary)
 	admin.Get("/submissions/:submission_id/proctoring/events", h.Proctoring.Events)
 	admin.Get("/submissions/:submission_id/proctoring/snapshots", h.Proctoring.Snapshots)
+	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
 }

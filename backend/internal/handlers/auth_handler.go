@@ -1,19 +1,24 @@
 package handlers
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 
+	"online-competition-platform/config"
 	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/services"
+	"online-competition-platform/internal/utils"
 	"online-competition-platform/pkg/response"
 )
 
 type AuthHandler struct {
 	service services.AuthService
+	cfg     config.Config
 }
 
-func NewAuthHandler(service services.AuthService) *AuthHandler {
-	return &AuthHandler{service: service}
+func NewAuthHandler(service services.AuthService, cfg config.Config) *AuthHandler {
+	return &AuthHandler{service: service, cfg: cfg}
 }
 
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
@@ -25,6 +30,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	if err != nil {
 		return handleError(c, err)
 	}
+	result.Token = ""
 	return response.JSON(c, fiber.StatusCreated, "registered successfully", result)
 }
 
@@ -37,6 +43,8 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return handleError(c, err)
 	}
+	h.setSessionCookie(c, result.Token)
+	result.Token = ""
 	return response.JSON(c, fiber.StatusOK, "logged in successfully", result)
 }
 
@@ -49,7 +57,14 @@ func (h *AuthHandler) GoogleLogin(c *fiber.Ctx) error {
 	if err != nil {
 		return handleError(c, err)
 	}
+	h.setSessionCookie(c, result.Token)
+	result.Token = ""
 	return response.JSON(c, fiber.StatusOK, "logged in with google successfully", result)
+}
+
+func (h *AuthHandler) Logout(c *fiber.Ctx) error {
+	h.clearSessionCookie(c)
+	return response.JSON(c, fiber.StatusOK, "logged out successfully", nil)
 }
 
 func (h *AuthHandler) Me(c *fiber.Ctx) error {
@@ -70,4 +85,30 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 		return handleError(c, err)
 	}
 	return response.JSON(c, fiber.StatusOK, "profile updated", user)
+}
+
+func (h *AuthHandler) setSessionCookie(c *fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     utils.AuthCookieName,
+		Value:    token,
+		Path:     "/",
+		Expires:  time.Now().Add(h.cfg.JWTExpires),
+		MaxAge:   int(h.cfg.JWTExpires.Seconds()),
+		Secure:   h.cfg.AppEnv == "production",
+		HTTPOnly: true,
+		SameSite: "Lax",
+	})
+}
+
+func (h *AuthHandler) clearSessionCookie(c *fiber.Ctx) {
+	c.Cookie(&fiber.Cookie{
+		Name:     utils.AuthCookieName,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		Secure:   h.cfg.AppEnv == "production",
+		HTTPOnly: true,
+		SameSite: "Lax",
+	})
 }

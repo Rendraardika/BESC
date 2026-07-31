@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,7 +54,20 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 		Score:         0,
 		Status:        entities.SubmissionStarted,
 	}
-	return submission, s.submissions.Start(submission)
+	if err := s.submissions.Start(submission); err != nil {
+		if errors.Is(err, utils.ErrConflict) {
+			existing, findErr := s.submissions.FindActive(userID, competitionID)
+			if findErr != nil {
+				return nil, findErr
+			}
+			if existing.Status == entities.SubmissionSubmitted {
+				return nil, utils.ErrExamSubmitted
+			}
+			return existing, nil
+		}
+		return nil, err
+	}
+	return submission, nil
 }
 
 func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error) {
@@ -82,13 +96,20 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 
 	score := 0.0
 	answers := make([]entities.Answer, 0, len(input.Answers))
+	seenAnswers := make(map[string]bool, len(input.Answers))
 	for _, answerInput := range input.Answers {
 		question, ok := questionMap[answerInput.QuestionID]
 		if !ok {
 			return nil, utils.ErrInvalidInput
 		}
+		if seenAnswers[answerInput.QuestionID] {
+			return nil, utils.ErrInvalidInput
+		}
+		seenAnswers[answerInput.QuestionID] = true
 		if answerInput.Answer == question.CorrectAnswer {
 			score += question.Score
+		} else {
+			score -= question.WrongScore
 		}
 		answers = append(answers, entities.Answer{
 			ID:           uuid.NewString(),
@@ -96,6 +117,9 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 			QuestionID:   answerInput.QuestionID,
 			Answer:       answerInput.Answer,
 		})
+	}
+	if score < 0 {
+		score = 0
 	}
 
 	if err := s.submissions.Submit(submission.ID, answers, score); err != nil {

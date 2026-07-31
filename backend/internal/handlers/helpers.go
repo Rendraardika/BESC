@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +24,7 @@ func pagination(c *fiber.Ctx) (int, int) {
 
 func bindAndValidate(c *fiber.Ctx, input interface{}) error {
 	if err := c.BodyParser(input); err != nil {
-		return response.Error(c, fiber.StatusBadRequest, "invalid request body", err.Error())
+		return response.Error(c, fiber.StatusBadRequest, "invalid request body", nil)
 	}
 	if errors := utils.Validate(input); errors != nil {
 		return response.Error(c, fiber.StatusUnprocessableEntity, "validation failed", errors)
@@ -43,6 +44,8 @@ func handleError(c *fiber.Ctx, err error) error {
 		return response.Error(c, fiber.StatusConflict, "resource already exists", nil)
 	case errors.Is(err, utils.ErrConfiguration):
 		return response.Error(c, fiber.StatusServiceUnavailable, "server configuration is incomplete", nil)
+	case errors.Is(err, utils.ErrExternalService):
+		return response.Error(c, fiber.StatusBadGateway, "external authentication service unavailable", nil)
 	case errors.Is(err, utils.ErrInvalidInput):
 		return response.Error(c, fiber.StatusBadRequest, "invalid input", nil)
 	case errors.Is(err, utils.ErrProfileIncomplete):
@@ -52,6 +55,7 @@ func handleError(c *fiber.Ctx, err error) error {
 	case errors.Is(err, utils.ErrExamSubmitted):
 		return response.Error(c, fiber.StatusConflict, "ujian untuk lomba ini sudah pernah dikerjakan", nil)
 	default:
-		return response.Error(c, fiber.StatusInternalServerError, "internal server error", err.Error())
+		log.Printf("internal handler error: method=%s path=%s error=%v", c.Method(), c.Path(), err)
+		return response.Error(c, fiber.StatusInternalServerError, "internal server error", nil)
 	}
 }

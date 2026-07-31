@@ -28,12 +28,15 @@ func (s *questionService) Create(competitionID string, input dto.QuestionRequest
 		ID:            uuid.NewString(),
 		CompetitionID: competitionID,
 		Question:      input.Question,
+		Image:         input.Image,
 		OptionA:       input.OptionA,
 		OptionB:       input.OptionB,
 		OptionC:       input.OptionC,
 		OptionD:       input.OptionD,
+		OptionE:       input.OptionE,
 		CorrectAnswer: input.CorrectAnswer,
 		Score:         input.Score,
+		WrongScore:    input.WrongScore,
 	}
 	return question, s.questions.Create(question)
 }
@@ -44,12 +47,15 @@ func (s *questionService) Update(id string, input dto.QuestionRequest) (*entitie
 		return nil, err
 	}
 	existing.Question = input.Question
+	existing.Image = input.Image
 	existing.OptionA = input.OptionA
 	existing.OptionB = input.OptionB
 	existing.OptionC = input.OptionC
 	existing.OptionD = input.OptionD
+	existing.OptionE = input.OptionE
 	existing.CorrectAnswer = input.CorrectAnswer
 	existing.Score = input.Score
+	existing.WrongScore = input.WrongScore
 	return existing, s.questions.Update(existing)
 }
 

@@ -22,8 +22,11 @@ VALUES (
   'published'
 ) ON DUPLICATE KEY UPDATE title = VALUES(title);
 
-INSERT INTO questions (id, competition_id, question, option_a, option_b, option_c, option_d, correct_answer, score)
+INSERT INTO questions (id, competition_id, question, option_a, option_b, option_c, option_d, option_e, correct_answer, score, wrong_score)
 VALUES
-  ('44444444-4444-4444-4444-444444444441', '33333333-3333-3333-3333-333333333333', 'What is the chemical symbol for water?', 'H2O', 'O2', 'CO2', 'NaCl', 'A', 10),
-  ('44444444-4444-4444-4444-444444444442', '33333333-3333-3333-3333-333333333333', 'Which planet is known as the Red Planet?', 'Venus', 'Mars', 'Jupiter', 'Mercury', 'B', 10)
-ON DUPLICATE KEY UPDATE question = VALUES(question);
+  ('44444444-4444-4444-4444-444444444441', '33333333-3333-3333-3333-333333333333', 'What is the chemical symbol for water?', 'H2O', 'O2', 'CO2', 'NaCl', 'CH4', 'A', 10, 2),
+  ('44444444-4444-4444-4444-444444444442', '33333333-3333-3333-3333-333333333333', 'Which planet is known as the Red Planet?', 'Venus', 'Mars', 'Jupiter', 'Mercury', 'Saturn', 'B', 10, 2)
+ON DUPLICATE KEY UPDATE
+  question = VALUES(question),
+  option_e = VALUES(option_e),
+  wrong_score = VALUES(wrong_score);

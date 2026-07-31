@@ -52,7 +52,6 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
     try {
       const updatedUser = await apiRequest('/auth/profile', {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${localStorage.getItem('besc_token')}` },
         body: JSON.stringify({
           name: profile.fullName,
           phone: profile.whatsapp,
