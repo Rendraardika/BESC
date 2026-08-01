@@ -9,6 +9,7 @@ import (
 	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/entities"
 	"online-competition-platform/internal/utils"
+    "online-competition-platform/internal/repositories"
 )
 
 func TestExamStartReturnsExistingSubmissionWhenInsertHitsUniqueConflict(t *testing.T) {
@@ -26,9 +27,9 @@ func TestExamStartReturnsExistingSubmissionWhenInsertHitsUniqueConflict(t *testi
 		},
 		startErr: utils.ErrConflict,
 	}
-	service := NewExamService(
+	service := newTestExamService(
 		&fakeRegistrationRepository{registration: verifiedRegistration()},
-		&fakeQuestionRepository{},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
 		submissions,
 	)
 
@@ -44,6 +45,171 @@ func TestExamStartReturnsExistingSubmissionWhenInsertHitsUniqueConflict(t *testi
 	}
 }
 
+func TestExamStartCreatesSubmissionForVerifiedRegistrationWithQuestions(t *testing.T) {
+	submissions := &fakeSubmissionRepository{
+		findActiveResults: []submissionResult{{err: utils.ErrNotFound}},
+	}
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		submissions,
+	)
+
+	result, err := service.Start("user-1", "competition-1")
+	if err != nil {
+		t.Fatalf("expected start to succeed, got %v", err)
+	}
+	if result.Status != entities.SubmissionStarted {
+		t.Fatalf("expected started submission, got %s", result.Status)
+	}
+	if submissions.startCalls != 1 {
+		t.Fatalf("expected one submission insert, got %d", submissions.startCalls)
+	}
+}
+
+func TestExamStartRejectsPendingPayment(t *testing.T) {
+	registration := verifiedRegistration()
+	registration.Status = entities.RegistrationPending
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: registration},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrPaymentPending) {
+		t.Fatalf("expected ErrPaymentPending, got %v", err)
+	}
+}
+
+func TestExamStartRejectsBeforeStartTime(t *testing.T) {
+	service := newTestExamServiceWithCompetition(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeCompetitionRepository{competition: competitionWindow(time.Now().Add(time.Hour), time.Now().Add(2*time.Hour))},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrExamNotStarted) {
+		t.Fatalf("expected ErrExamNotStarted, got %v", err)
+	}
+}
+
+func TestExamStartRejectsAfterEndTime(t *testing.T) {
+	service := newTestExamServiceWithCompetition(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeCompetitionRepository{competition: competitionWindow(time.Now().Add(-2*time.Hour), time.Now().Add(-time.Minute))},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrExamClosed) {
+		t.Fatalf("expected ErrExamClosed, got %v", err)
+	}
+}
+
+func TestExamSubmitRejectsAfterEndTime(t *testing.T) {
+	submissions := &fakeSubmissionRepository{findActiveResults: []submissionResult{{
+		submission: &entities.Submission{
+			ID:            "submission-1",
+			UserID:        "user-1",
+			CompetitionID: "competition-1",
+			Status:        entities.SubmissionStarted,
+		},
+	}}}
+	service := newTestExamServiceWithCompetition(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeCompetitionRepository{competition: competitionWindow(time.Now().Add(-2*time.Hour), time.Now().Add(-time.Minute))},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1", CorrectAnswer: "A", Score: 10}}},
+		submissions,
+	)
+
+	_, err := service.Submit("user-1", "competition-1", dto.SubmitExamRequest{
+		Answers: []dto.AnswerRequest{{QuestionID: "question-1", Answer: "A"}},
+	})
+	if !errors.Is(err, utils.ErrExamClosed) {
+		t.Fatalf("expected ErrExamClosed, got %v", err)
+	}
+	if submissions.submitCalls != 0 {
+		t.Fatalf("expected repository Submit not to be called, got %d", submissions.submitCalls)
+	}
+}
+
+func TestExamStartRejectsRejectedPayment(t *testing.T) {
+	registration := verifiedRegistration()
+	registration.Status = entities.RegistrationRejected
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: registration},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrPaymentPending) {
+		t.Fatalf("expected ErrPaymentPending, got %v", err)
+	}
+}
+
+func TestExamStartRejectsMissingRegistrationOrWrongUser(t *testing.T) {
+	service := newTestExamService(
+		&fakeRegistrationRepository{err: utils.ErrNotFound},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Start("other-user", "competition-1")
+	if !errors.Is(err, utils.ErrNotFound) {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestExamStartRejectsNoQuestionsBeforeCreatingSubmission(t *testing.T) {
+	submissions := &fakeSubmissionRepository{}
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeQuestionRepository{},
+		submissions,
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrNoQuestions) {
+		t.Fatalf("expected ErrNoQuestions, got %v", err)
+	}
+	if submissions.startCalls != 0 {
+		t.Fatalf("submission should not be created when questions are missing, got %d calls", submissions.startCalls)
+	}
+}
+
+func TestExamQuestionsRejectsNoQuestions(t *testing.T) {
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeQuestionRepository{},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.Questions("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrNoQuestions) {
+		t.Fatalf("expected ErrNoQuestions, got %v", err)
+	}
+}
+
+func TestExamStartRejectsAlreadySubmittedExam(t *testing.T) {
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{findActiveResults: []submissionResult{{
+			submission: &entities.Submission{ID: "submission-1", Status: entities.SubmissionSubmitted},
+		}}},
+	)
+
+	_, err := service.Start("user-1", "competition-1")
+	if !errors.Is(err, utils.ErrExamSubmitted) {
+		t.Fatalf("expected ErrExamSubmitted, got %v", err)
+	}
+}
+
 func TestExamSubmitRejectsDuplicateAnswersForSameQuestion(t *testing.T) {
 	submissions := &fakeSubmissionRepository{
 		findActiveResults: []submissionResult{{
@@ -55,7 +221,7 @@ func TestExamSubmitRejectsDuplicateAnswersForSameQuestion(t *testing.T) {
 			},
 		}},
 	}
-	service := NewExamService(
+	service := newTestExamService(
 		&fakeRegistrationRepository{registration: verifiedRegistration()},
 		&fakeQuestionRepository{questions: []entities.Question{{
 			ID:            "question-1",
@@ -103,7 +269,7 @@ func TestExamSubmitSecondCallDoesNotSubmitAgain(t *testing.T) {
 			},
 		},
 	}
-	service := NewExamService(
+	service := newTestExamService(
 		&fakeRegistrationRepository{registration: verifiedRegistration()},
 		&fakeQuestionRepository{questions: []entities.Question{{
 			ID:            "question-1",
@@ -139,6 +305,23 @@ func verifiedRegistration() *entities.Registration {
 		UserID:        "user-1",
 		CompetitionID: "competition-1",
 		Status:        entities.RegistrationVerified,
+	}
+}
+
+func newTestExamService(registrations repositories.RegistrationRepository, questions repositories.QuestionRepository, submissions repositories.SubmissionRepository) ExamService {
+	return newTestExamServiceWithCompetition(registrations, &fakeCompetitionRepository{competition: competitionWindow(time.Now().Add(-time.Hour), time.Now().Add(time.Hour))}, questions, submissions)
+}
+
+func newTestExamServiceWithCompetition(registrations repositories.RegistrationRepository, competitions repositories.CompetitionRepository, questions repositories.QuestionRepository, submissions repositories.SubmissionRepository) ExamService {
+	return NewExamService(registrations, competitions, questions, submissions)
+}
+
+func competitionWindow(start, end time.Time) *entities.Competition {
+	return &entities.Competition{
+		ID:        "competition-1",
+		Status:    entities.CompetitionPublished,
+		StartTime: start,
+		EndTime:   end,
 	}
 }
 
@@ -249,3 +432,19 @@ func (r *fakeSubmissionRepository) List(page, limit int) ([]entities.Submission,
 func (r *fakeSubmissionRepository) ListDetails(page, limit int) ([]entities.SubmissionDetail, int, error) {
 	return nil, 0, nil
 }
+
+type fakeCompetitionRepository struct {
+	competition *entities.Competition
+	err         error
+}
+
+func (r *fakeCompetitionRepository) Create(item *entities.Competition) error { return nil }
+func (r *fakeCompetitionRepository) Update(item *entities.Competition) error { return nil }
+func (r *fakeCompetitionRepository) Delete(id string) error { return nil }
+func (r *fakeCompetitionRepository) FindByID(id string) (*entities.Competition, error) {
+	if r.err != nil { return nil, r.err }
+	if r.competition == nil { return nil, utils.ErrNotFound }
+	return r.competition, nil
+}
+func (r *fakeCompetitionRepository) FindBySlug(slug string) (*entities.Competition, error) { return r.FindByID("") }
+func (r *fakeCompetitionRepository) List(page, limit int) ([]entities.Competition, int, error) { return nil, 0, nil }

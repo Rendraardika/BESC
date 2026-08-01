@@ -50,10 +50,20 @@ func handleError(c *fiber.Ctx, err error) error {
 		return response.Error(c, fiber.StatusBadRequest, "invalid input", nil)
 	case errors.Is(err, utils.ErrProfileIncomplete):
 		return response.Error(c, fiber.StatusForbidden, "profile is incomplete", nil)
+	case errors.Is(err, utils.ErrRegistrationClosed):
+		return response.Error(c, fiber.StatusForbidden, "pendaftaran kompetisi sudah ditutup", nil)
 	case errors.Is(err, utils.ErrPaymentPending):
 		return response.Error(c, fiber.StatusForbidden, "payment is not verified", nil)
+	case errors.Is(err, utils.ErrPaymentProofNotViewed):
+		return response.Error(c, fiber.StatusConflict, "Bukti pembayaran harus dilihat sebelum verifikasi", nil)
+	case errors.Is(err, utils.ErrExamNotStarted):
+		return response.Error(c, fiber.StatusForbidden, "ujian belum dimulai", nil)
+	case errors.Is(err, utils.ErrExamClosed):
+		return response.Error(c, fiber.StatusForbidden, "waktu pengerjaan ujian sudah ditutup", nil)
 	case errors.Is(err, utils.ErrExamSubmitted):
 		return response.Error(c, fiber.StatusConflict, "ujian untuk lomba ini sudah pernah dikerjakan", nil)
+	case errors.Is(err, utils.ErrNoQuestions):
+		return response.Error(c, fiber.StatusConflict, "soal ujian belum tersedia", nil)
 	default:
 		log.Printf("internal handler error: method=%s path=%s error=%v", c.Method(), c.Path(), err)
 		return response.Error(c, fiber.StatusInternalServerError, "internal server error", nil)

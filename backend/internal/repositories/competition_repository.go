@@ -27,15 +27,15 @@ func NewCompetitionRepository(db *sql.DB) CompetitionRepository {
 }
 
 func (r *competitionRepository) Create(item *entities.Competition) error {
-	query := `INSERT INTO competitions (id, title, slug, description, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := r.db.Exec(query, item.ID, item.Title, item.Slug, item.Description, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit)
+	query := `INSERT INTO competitions (id, title, slug, description, participant_requirements, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, item.ID, item.Title, item.Slug, item.Description, item.ParticipantRequirements, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit)
 	return competitionWriteError(err)
 }
 
 func (r *competitionRepository) Update(item *entities.Competition) error {
-	query := `UPDATE competitions SET title = ?, slug = ?, description = ?, banner = ?, price = ?, start_time = ?, end_time = ?, status = ?, category = ?, level = ?, badges = ?, quota = ?, original_price = ?, registration_deadline = ?, duration_minutes = ?, tab_switch_limit = ? WHERE id = ?`
-	result, err := r.db.Exec(query, item.Title, item.Slug, item.Description, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit, item.ID)
+	query := `UPDATE competitions SET title = ?, slug = ?, description = ?, participant_requirements = ?, banner = ?, price = ?, start_time = ?, end_time = ?, status = ?, category = ?, level = ?, badges = ?, quota = ?, original_price = ?, registration_deadline = ?, duration_minutes = ?, tab_switch_limit = ? WHERE id = ?`
+	result, err := r.db.Exec(query, item.Title, item.Slug, item.Description, item.ParticipantRequirements, item.Banner, item.Price, item.StartTime, item.EndTime, item.Status, item.Category, item.Level, item.Badges, item.Quota, item.OriginalPrice, item.RegistrationDeadline, item.DurationMinutes, item.TabSwitchLimit, item.ID)
 	if err != nil {
 		return competitionWriteError(err)
 	}
@@ -51,11 +51,11 @@ func (r *competitionRepository) Delete(id string) error {
 }
 
 func (r *competitionRepository) FindByID(id string) (*entities.Competition, error) {
-	return scanCompetition(r.db.QueryRow(`SELECT id, title, slug, description, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions WHERE id = ?`, id))
+	return scanCompetition(r.db.QueryRow(`SELECT id, title, slug, description, COALESCE(participant_requirements, ''), banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions WHERE id = ?`, id))
 }
 
 func (r *competitionRepository) FindBySlug(slug string) (*entities.Competition, error) {
-	return scanCompetition(r.db.QueryRow(`SELECT id, title, slug, description, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions WHERE slug = ?`, slug))
+	return scanCompetition(r.db.QueryRow(`SELECT id, title, slug, description, COALESCE(participant_requirements, ''), banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions WHERE slug = ?`, slug))
 }
 
 func (r *competitionRepository) List(page, limit int) ([]entities.Competition, int, error) {
@@ -64,7 +64,7 @@ func (r *competitionRepository) List(page, limit int) ([]entities.Competition, i
 	if err := r.db.QueryRow(`SELECT COUNT(*) FROM competitions`).Scan(&total); err != nil {
 		return nil, 0, err
 	}
-	rows, err := r.db.Query(`SELECT id, title, slug, description, banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset)
+	rows, err := r.db.Query(`SELECT id, title, slug, description, COALESCE(participant_requirements, ''), banner, price, start_time, end_time, status, category, level, badges, quota, original_price, registration_deadline, duration_minutes, tab_switch_limit, created_at FROM competitions ORDER BY created_at DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -73,7 +73,7 @@ func (r *competitionRepository) List(page, limit int) ([]entities.Competition, i
 	items := []entities.Competition{}
 	for rows.Next() {
 		var item entities.Competition
-		if err := rows.Scan(&item.ID, &item.Title, &item.Slug, &item.Description, &item.Banner, &item.Price, &item.StartTime, &item.EndTime, &item.Status, &item.Category, &item.Level, &item.Badges, &item.Quota, &item.OriginalPrice, &item.RegistrationDeadline, &item.DurationMinutes, &item.TabSwitchLimit, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Title, &item.Slug, &item.Description, &item.ParticipantRequirements, &item.Banner, &item.Price, &item.StartTime, &item.EndTime, &item.Status, &item.Category, &item.Level, &item.Badges, &item.Quota, &item.OriginalPrice, &item.RegistrationDeadline, &item.DurationMinutes, &item.TabSwitchLimit, &item.CreatedAt); err != nil {
 			return nil, 0, err
 		}
 		items = append(items, item)
@@ -83,12 +83,20 @@ func (r *competitionRepository) List(page, limit int) ([]entities.Competition, i
 
 func scanCompetition(row *sql.Row) (*entities.Competition, error) {
 	var item entities.Competition
-	if err := row.Scan(&item.ID, &item.Title, &item.Slug, &item.Description, &item.Banner, &item.Price, &item.StartTime, &item.EndTime, &item.Status, &item.Category, &item.Level, &item.Badges, &item.Quota, &item.OriginalPrice, &item.RegistrationDeadline, &item.DurationMinutes, &item.TabSwitchLimit, &item.CreatedAt); err != nil {
+	if err := row.Scan(&item.ID, &item.Title, &item.Slug, &item.Description, &item.ParticipantRequirements, &item.Banner, &item.Price, &item.StartTime, &item.EndTime, &item.Status, &item.Category, &item.Level, &item.Badges, &item.Quota, &item.OriginalPrice, &item.RegistrationDeadline, &item.DurationMinutes, &item.TabSwitchLimit, &item.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}
 		return nil, err
 	}
+	// Normalize times to UTC to avoid timezone mismatches between DB and server
+	item.StartTime = item.StartTime.UTC()
+	item.EndTime = item.EndTime.UTC()
+	if item.RegistrationDeadline != nil {
+		t := item.RegistrationDeadline.UTC()
+		item.RegistrationDeadline = &t
+	}
+	item.CreatedAt = item.CreatedAt.UTC()
 	return &item, nil
 }
 

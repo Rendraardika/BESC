@@ -8,7 +8,6 @@ import Materi from '../sections/Materi.jsx';
 import Timeline from '../sections/Timeline.jsx';
 import WhyBesc from '../sections/WhyBesc.jsx';
 import Testimonials from '../sections/Testimonials.jsx';
-import Blog from '../sections/Blog.jsx';
 import CTA from '../sections/CTA.jsx';
 import FAQ from '../sections/FAQ.jsx';
 
@@ -25,7 +24,6 @@ export default function HomePage({ competitions, onCompetitionDetail, onCompetit
         <Timeline />
         <WhyBesc />
         <Testimonials />
-        <Blog />
         <CTA onRegister={onRegister} />
         <FAQ />
       </main>

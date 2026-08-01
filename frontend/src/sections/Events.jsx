@@ -29,7 +29,6 @@ export default function Events({ competitions, onCompetitionDetail, onVerifiedCo
               <div className="relative h-44 overflow-hidden bg-emerald-900">
                 <img src={image} alt={event.title} className="h-full w-full object-cover object-center transition duration-500 hover:scale-105" />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,120,87,0.02)_0%,rgba(6,78,59,0.18)_55%,rgba(2,6,23,0.34)_100%)]"></div>
-                <div className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-2xl bg-white/20 text-xl shadow-lg backdrop-blur">{event.icon}</div>
               </div>
               <div className="p-5">
                 <div className="mb-3 flex flex-wrap gap-2">

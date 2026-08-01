@@ -42,22 +42,23 @@ type AuthResponse struct {
 }
 
 type CompetitionRequest struct {
-	Title                string     `json:"title" validate:"required,max=200"`
-	Slug                 string     `json:"slug" validate:"required,max=220"`
-	Description          string     `json:"description" validate:"required"`
-	Banner               string     `json:"banner" validate:"omitempty"`
-	Price                float64    `json:"price" validate:"gte=0"`
-	StartTime            time.Time  `json:"start_time" validate:"required"`
-	EndTime              time.Time  `json:"end_time" validate:"required"`
-	Status               string     `json:"status" validate:"required,oneof=draft published closed"`
-	Category             string     `json:"category" validate:"required,max=100"`
-	Level                string     `json:"level" validate:"required,max=50"`
-	Badges               string     `json:"badges" validate:"omitempty,max=255"`
-	Quota                int        `json:"quota" validate:"gte=0"`
-	OriginalPrice        float64    `json:"original_price" validate:"gte=0"`
-	RegistrationDeadline *time.Time `json:"registration_deadline"`
-	DurationMinutes      int        `json:"duration_minutes" validate:"gte=1,lte=600"`
-	TabSwitchLimit       int        `json:"tab_switch_limit" validate:"gte=1,lte=20"`
+	Title                   string     `json:"title" validate:"required,max=200"`
+	Slug                    string     `json:"slug" validate:"required,max=220"`
+	Description             string     `json:"description" validate:"required"`
+	ParticipantRequirements string     `json:"participant_requirements" validate:"omitempty"`
+	Banner                  string     `json:"banner" validate:"omitempty"`
+	Price                   float64    `json:"price" validate:"gte=0"`
+	StartTime               time.Time  `json:"start_time" validate:"required"`
+	EndTime                 time.Time  `json:"end_time" validate:"required"`
+	Status                  string     `json:"status" validate:"required,oneof=draft published closed"`
+	Category                string     `json:"category" validate:"required,max=100"`
+	Level                   string     `json:"level" validate:"required,max=50"`
+	Badges                  string     `json:"badges" validate:"omitempty,max=255"`
+	Quota                   int        `json:"quota" validate:"gte=0"`
+	OriginalPrice           float64    `json:"original_price" validate:"gte=0"`
+	RegistrationDeadline    *time.Time `json:"registration_deadline"`
+	DurationMinutes         int        `json:"duration_minutes" validate:"gte=1,lte=600"`
+	TabSwitchLimit          int        `json:"tab_switch_limit" validate:"gte=1,lte=20"`
 }
 
 type QuestionRequest struct {

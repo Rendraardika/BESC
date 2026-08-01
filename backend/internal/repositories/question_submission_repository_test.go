@@ -53,6 +53,59 @@ func TestSubmissionListDetailsStats(t *testing.T) {
 	assertSubmissionStats(t, byID, "sub-full", submissionStats{total: 10, answered: 10, correct: 10, wrong: 0, unanswered: 0})
 }
 
+func TestSubmissionListDetailsRanking(t *testing.T) {
+	dsn := os.Getenv("BESC_TEST_MYSQL_DSN")
+	if dsn == "" {
+		t.Skip("set BESC_TEST_MYSQL_DSN to run MySQL repository integration tests")
+	}
+
+	db, err := sql.Open("mysql", ensureMySQLParam(dsn, "parseTime", "true"))
+	if err != nil {
+		t.Fatalf("open mysql: %v", err)
+	}
+	defer db.Close()
+
+	dbName := fmt.Sprintf("besc_rank_%d", time.Now().UnixNano())
+	execSQL(t, db, fmt.Sprintf("CREATE DATABASE `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", dbName))
+	defer execSQL(t, db, fmt.Sprintf("DROP DATABASE IF EXISTS `%s`", dbName))
+	execSQL(t, db, fmt.Sprintf("USE `%s`", dbName))
+	createSubmissionDetailStatsSchema(t, db)
+
+	for _, userID := range []string{"user-a", "user-b", "user-c", "user-d"} {
+		execSQL(t, db, `INSERT INTO users (id, name, email) VALUES (?, ?, ?)`, userID, userID, userID+"@example.com")
+	}
+	execSQL(t, db, `INSERT INTO competitions (id, title) VALUES ('comp-rank', 'Ranking Test'), ('comp-other', 'Other Competition')`)
+	execSQL(t, db, `INSERT INTO submissions (id, user_id, competition_id, started_at, submitted_at, score, status) VALUES
+		('sub-a', 'user-a', 'comp-rank', '2026-01-01 10:00:00', '2026-01-01 10:50:00', 90, 'submitted'),
+		('sub-b', 'user-b', 'comp-rank', '2026-01-01 10:00:00', '2026-01-01 10:40:00', 90, 'submitted'),
+		('sub-c', 'user-c', 'comp-rank', '2026-01-01 10:00:00', '2026-01-01 10:20:00', 80, 'submitted'),
+		('sub-started', 'user-d', 'comp-rank', '2026-01-01 10:00:00', NULL, 100, 'started'),
+		('sub-other', 'user-d', 'comp-other', '2026-01-01 10:00:00', '2026-01-01 10:10:00', 100, 'submitted')`)
+
+	repo := NewSubmissionRepository(db)
+	items, total, err := repo.ListDetails(1, 10)
+	if err != nil {
+		t.Fatalf("list details: %v", err)
+	}
+	if total != 4 {
+		t.Fatalf("expected 4 submitted submissions, got %d", total)
+	}
+
+	got := []string{}
+	for _, item := range items {
+		if item.CompetitionID == "comp-rank" {
+			got = append(got, item.ID)
+		}
+	}
+	expected := []string{"sub-b", "sub-a", "sub-c"}
+	if strings.Join(got, ",") != strings.Join(expected, ",") {
+		t.Fatalf("expected ranking %v, got %v", expected, got)
+	}
+	if items[0].ID != "sub-other" || items[0].DurationSeconds != 600 {
+		t.Fatalf("expected first competition group item sub-other with 600 seconds, got %s %d", items[0].ID, items[0].DurationSeconds)
+	}
+}
+
 type submissionStats struct {
 	total      int
 	answered   int
@@ -124,10 +177,10 @@ func seedSubmissionDetailStats(t *testing.T, db *sql.DB) {
 	for _, competitionID := range []string{"comp-zero", "comp-partial", "comp-full"} {
 		execSQL(t, db, `INSERT INTO competitions (id, title) VALUES (?, ?)`, competitionID, competitionID)
 	}
-	execSQL(t, db, `INSERT INTO submissions (id, user_id, competition_id, started_at, score, status) VALUES
-		('sub-zero', 'user-1', 'comp-zero', '2026-01-01 10:00:00', 0, 'submitted'),
-		('sub-partial', 'user-1', 'comp-partial', '2026-01-01 11:00:00', 41, 'submitted'),
-		('sub-full', 'user-1', 'comp-full', '2026-01-01 12:00:00', 100, 'submitted')`)
+	execSQL(t, db, `INSERT INTO submissions (id, user_id, competition_id, started_at, submitted_at, score, status) VALUES
+		('sub-zero', 'user-1', 'comp-zero', '2026-01-01 10:00:00', '2026-01-01 10:30:00', 0, 'submitted'),
+		('sub-partial', 'user-1', 'comp-partial', '2026-01-01 11:00:00', '2026-01-01 11:30:00', 41, 'submitted'),
+		('sub-full', 'user-1', 'comp-full', '2026-01-01 12:00:00', '2026-01-01 12:30:00', 100, 'submitted')`)
 
 	for _, competitionID := range []string{"comp-zero", "comp-partial", "comp-full"} {
 		for index := 1; index <= 10; index++ {

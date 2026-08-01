@@ -26,11 +26,14 @@ export default function ExamPage({ competition, onFinish }) {
   const [violations, setViolations] = useState(0);
   const [tabSwitchLimit, setTabSwitchLimit] = useState(Number(competition.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT));
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [locked, setLocked] = useState(false);
   const answersRef = useRef({});
+  const questionsRef = useRef([]);
   const questionButtonsRef = useRef([]);
   const violationsRef = useRef(0);
+  const noticeTimerRef = useRef(null);
   const submittingRef = useRef(false);
   const lockedRef = useRef(false);
   const tabSwitchLimitRef = useRef(Number(competition.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT));
@@ -38,6 +41,7 @@ export default function ExamPage({ competition, onFinish }) {
   const answeredCount = Object.keys(answers).length;
 
   useEffect(() => { answersRef.current = answers; }, [answers]);
+  useEffect(() => { questionsRef.current = questions; }, [questions]);
   useEffect(() => { violationsRef.current = violations; }, [violations]);
   useEffect(() => { submittingRef.current = submitting; }, [submitting]);
   useEffect(() => { lockedRef.current = locked; }, [locked]);
@@ -45,6 +49,20 @@ export default function ExamPage({ competition, onFinish }) {
   useEffect(() => {
     questionButtonsRef.current[currentIndex]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [currentIndex]);
+  useEffect(() => () => window.clearTimeout(noticeTimerRef.current), []);
+
+  const showNotice = (message) => {
+    setNotice(message);
+    window.clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = window.setTimeout(() => setNotice(''), 4500);
+  };
+
+  const updateViolationCount = (count) => {
+    const next = Math.max(0, Number(count) || 0);
+    violationsRef.current = next;
+    setViolations(next);
+    return next;
+  };
 
   const logEvent = async (eventType, metadata = '') => {
     if (!submissionID) return;
@@ -70,7 +88,7 @@ export default function ExamPage({ competition, onFinish }) {
       const result = await apiRequest(`/competitions/${competition.competition_id}/exam/submit`, {
         method: 'POST',
         body: JSON.stringify({
-          answers: questions
+          answers: questionsRef.current
             .filter((question) => answersRef.current[question.id])
             .map((question) => ({ question_id: question.id, answer: answersRef.current[question.id] })),
         }),
@@ -96,7 +114,7 @@ export default function ExamPage({ competition, onFinish }) {
           method: 'POST',
         });
         setSubmissionID(submission.id);
-        setViolations(Number(submission.violation_count || 0));
+        updateViolationCount(submission.violation_count || 0);
         apiRequest(`/competitions/${competition.competition_id}`)
           .then((competitionDetail) => {
             const limit = Number(competitionDetail.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT);
@@ -130,13 +148,14 @@ export default function ExamPage({ competition, onFinish }) {
   useEffect(() => {
     const visibility = async () => {
       if (!document.hidden || !submissionID || lockedRef.current) return;
-      const event = await logEvent('tab_switch', 'visibilitychange');
-      const next = Number(event?.violation_count || violationsRef.current);
-      if (next > 0) {
-        setViolations(next);
-      }
       const limit = tabSwitchLimitRef.current || DEFAULT_TAB_SWITCH_LIMIT;
+      const localCount = updateViolationCount(violationsRef.current + 1);
+      showNotice(`Peringatan pindah tab ${Math.min(localCount, limit)}/${limit}. Jika mencapai batas, ujian otomatis dikirim.`);
+      const event = await logEvent('tab_switch', 'visibilitychange');
+      const backendCount = Number(event?.violation_count || 0);
+      const next = backendCount > localCount ? updateViolationCount(backendCount) : localCount;
       if (next >= limit) {
+        showNotice(`Batas pindah tab ${limit} kali tercapai. Ujian sedang dikirim otomatis.`);
         submit({ forced: true, reason: `Batas pindah tab (${limit} kali) tercapai. Ujian dihentikan dan jawaban terakhir telah dikirim.` });
       }
     };
@@ -170,6 +189,9 @@ export default function ExamPage({ competition, onFinish }) {
   return (
     <main className="min-h-screen select-none bg-white text-[#1f2937]">
       <header className="sticky top-0 z-20 flex h-[72px] items-center justify-end border-b border-slate-200 bg-white px-6 md:px-7">
+        <div className="mr-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-extrabold text-amber-700">
+          Tab {violations}/{tabSwitchLimit || DEFAULT_TAB_SWITCH_LIMIT}
+        </div>
         <div className="grid h-10 min-w-[122px] place-items-center rounded border border-slate-200 bg-white px-4 font-mono text-base text-red-500 shadow-sm">
           {formatTime(remaining)}
         </div>
@@ -211,8 +233,9 @@ export default function ExamPage({ competition, onFinish }) {
 
         <section className="px-7 py-10 md:px-8 lg:px-12">
           {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
+          {notice && <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{notice}</div>}
 
-          {!currentQuestion ? (
+          {!currentQuestion && error ? null : !currentQuestion ? (
             <div className="text-sm font-semibold text-slate-500">Memuat soal...</div>
           ) : (
             <article className="max-w-3xl">

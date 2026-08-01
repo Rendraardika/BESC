@@ -21,6 +21,7 @@ type PaymentRepository interface {
 	Upsert(payment *entities.Payment) error
 	FindByRegistrationID(registrationID string) (*entities.Payment, error)
 	FindByID(paymentID string) (*entities.Payment, error)
+	MarkProofViewed(paymentID, adminID string) error
 	UpdateStatus(paymentID, status, adminID string) error
 	NotificationDetails(paymentID string) (string, string, error)
 }
@@ -104,17 +105,25 @@ func (r *paymentRepository) Upsert(payment *entities.Payment) error {
 	_, err := r.db.Exec(`
 		INSERT INTO payments (id, registration_id, proof_image, payment_status)
 		VALUES (?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE id = VALUES(id), proof_image = VALUES(proof_image), payment_status = VALUES(payment_status), validated_by = NULL, validated_at = NULL, created_at = CURRENT_TIMESTAMP`,
+		ON DUPLICATE KEY UPDATE id = VALUES(id), proof_image = VALUES(proof_image), payment_status = VALUES(payment_status), validated_by = NULL, validated_at = NULL, proof_viewed_at = NULL, proof_viewed_by = NULL, created_at = CURRENT_TIMESTAMP`,
 		payment.ID, payment.RegistrationID, payment.ProofImage, payment.PaymentStatus)
 	return err
 }
 
 func (r *paymentRepository) FindByRegistrationID(registrationID string) (*entities.Payment, error) {
-	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, created_at FROM payments WHERE registration_id = ?`, registrationID))
+	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, proof_viewed_at, proof_viewed_by, created_at FROM payments WHERE registration_id = ?`, registrationID))
 }
 
 func (r *paymentRepository) FindByID(paymentID string) (*entities.Payment, error) {
-	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, created_at FROM payments WHERE id = ?`, paymentID))
+	return scanPayment(r.db.QueryRow(`SELECT id, registration_id, proof_image, payment_status, validated_by, validated_at, proof_viewed_at, proof_viewed_by, created_at FROM payments WHERE id = ?`, paymentID))
+}
+
+func (r *paymentRepository) MarkProofViewed(paymentID, adminID string) error {
+	result, err := r.db.Exec(`UPDATE payments SET proof_viewed_at = ?, proof_viewed_by = ? WHERE id = ?`, time.Now(), adminID, paymentID)
+	if err != nil {
+		return err
+	}
+	return rowsAffected(result)
 }
 
 func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) error {
@@ -124,12 +133,18 @@ func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) erro
 	}
 	defer tx.Rollback()
 
-	var registrationID string
-	if err := tx.QueryRow(`SELECT registration_id FROM payments WHERE id = ? FOR UPDATE`, paymentID).Scan(&registrationID); err != nil {
+	var registrationID, proofImage string
+	var proofViewedBy sql.NullString
+	if err := tx.QueryRow(`SELECT registration_id, proof_image, proof_viewed_by FROM payments WHERE id = ? FOR UPDATE`, paymentID).Scan(&registrationID, &proofImage, &proofViewedBy); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return utils.ErrNotFound
 		}
 		return err
+	}
+	if status == entities.PaymentVerified || status == entities.PaymentRejected {
+		if proofImage == "" || !proofViewedBy.Valid || proofViewedBy.String != adminID {
+			return utils.ErrPaymentProofNotViewed
+		}
 	}
 
 	now := time.Now()
@@ -167,7 +182,7 @@ func scanRegistration(row *sql.Row) (*entities.Registration, error) {
 
 func scanPayment(row *sql.Row) (*entities.Payment, error) {
 	var item entities.Payment
-	if err := row.Scan(&item.ID, &item.RegistrationID, &item.ProofImage, &item.PaymentStatus, &item.ValidatedBy, &item.ValidatedAt, &item.CreatedAt); err != nil {
+	if err := row.Scan(&item.ID, &item.RegistrationID, &item.ProofImage, &item.PaymentStatus, &item.ValidatedBy, &item.ValidatedAt, &item.ProofViewedAt, &item.ProofViewedBy, &item.CreatedAt); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}

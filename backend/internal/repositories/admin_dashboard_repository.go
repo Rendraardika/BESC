@@ -61,7 +61,7 @@ func (r *adminDashboardRepository) Summary() (*entities.AdminDashboard, error) {
 	}
 
 	rows, err := r.db.Query(`
-		SELECT r.id, COALESCE(p.id, ''), u.name, u.email, COALESCE(u.photo, ''), c.title, r.status, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''), COALESCE(p.created_at, r.created_at)
+		SELECT r.id, COALESCE(p.id, ''), u.name, u.email, COALESCE(u.photo, ''), c.title, r.status, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''), p.proof_viewed_at, COALESCE(p.proof_viewed_by, ''), COALESCE(p.created_at, r.created_at)
 		FROM registrations r
 		JOIN users u ON u.id = r.user_id
 		JOIN competitions c ON c.id = r.competition_id
@@ -77,7 +77,7 @@ func (r *adminDashboardRepository) Summary() (*entities.AdminDashboard, error) {
 	dashboard.RecentActivities = []entities.AdminDashboardActivity{}
 	for rows.Next() {
 		var activity entities.AdminDashboardActivity
-		if err := rows.Scan(&activity.ID, &activity.PaymentID, &activity.UserName, &activity.UserEmail, &activity.UserPhoto, &activity.CompetitionTitle, &activity.Status, &activity.PaymentStatus, &activity.ProofImage, &activity.CreatedAt); err != nil {
+		if err := rows.Scan(&activity.ID, &activity.PaymentID, &activity.UserName, &activity.UserEmail, &activity.UserPhoto, &activity.CompetitionTitle, &activity.Status, &activity.PaymentStatus, &activity.ProofImage, &activity.ProofViewedAt, &activity.ProofViewedBy, &activity.CreatedAt); err != nil {
 			return nil, err
 		}
 		dashboard.RecentActivities = append(dashboard.RecentActivities, activity)

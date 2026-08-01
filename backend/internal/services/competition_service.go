@@ -2,6 +2,7 @@ package services
 
 import (
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -28,17 +29,18 @@ func NewCompetitionService(competitions repositories.CompetitionRepository) Comp
 
 func (s *competitionService) Create(input dto.CompetitionRequest) (*entities.Competition, error) {
 	item := &entities.Competition{
-		ID:          uuid.NewString(),
-		Title:       input.Title,
-		Slug:        input.Slug,
-		Description: input.Description,
-		Banner:      input.Banner,
-		Price:       input.Price,
-		StartTime:   input.StartTime,
-		EndTime:     input.EndTime,
-		Status:      input.Status,
-		Category:    input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
-		OriginalPrice: input.OriginalPrice, RegistrationDeadline: input.RegistrationDeadline,
+		ID:                      uuid.NewString(),
+		Title:                   input.Title,
+		Slug:                    input.Slug,
+		Description:             input.Description,
+		ParticipantRequirements: input.ParticipantRequirements,
+		Banner:                  input.Banner,
+		Price:                   input.Price,
+		StartTime:               input.StartTime.UTC(),
+		EndTime:                 input.EndTime.UTC(),
+		Status:                  input.Status,
+		Category:                input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
+		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time { if input.RegistrationDeadline == nil { return nil }; t := input.RegistrationDeadline.UTC(); return &t }(),
 		DurationMinutes: input.DurationMinutes, TabSwitchLimit: input.TabSwitchLimit,
 	}
 	return item, s.competitions.Create(item)
@@ -46,17 +48,18 @@ func (s *competitionService) Create(input dto.CompetitionRequest) (*entities.Com
 
 func (s *competitionService) Update(id string, input dto.CompetitionRequest) (*entities.Competition, error) {
 	item := &entities.Competition{
-		ID:          id,
-		Title:       input.Title,
-		Slug:        input.Slug,
-		Description: input.Description,
-		Banner:      input.Banner,
-		Price:       input.Price,
-		StartTime:   input.StartTime,
-		EndTime:     input.EndTime,
-		Status:      input.Status,
-		Category:    input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
-		OriginalPrice: input.OriginalPrice, RegistrationDeadline: input.RegistrationDeadline,
+		ID:                      id,
+		Title:                   input.Title,
+		Slug:                    input.Slug,
+		Description:             input.Description,
+		ParticipantRequirements: input.ParticipantRequirements,
+		Banner:                  input.Banner,
+		Price:                   input.Price,
+		StartTime:               input.StartTime.UTC(),
+		EndTime:                 input.EndTime.UTC(),
+		Status:                  input.Status,
+		Category:                input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
+		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time { if input.RegistrationDeadline == nil { return nil }; t := input.RegistrationDeadline.UTC(); return &t }(),
 		DurationMinutes: input.DurationMinutes, TabSwitchLimit: input.TabSwitchLimit,
 	}
 	return item, s.competitions.Update(item)

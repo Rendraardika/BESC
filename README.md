@@ -57,6 +57,7 @@ mysql -uroot -p competition_platform < database/migrations/008_set_tab_switch_li
 mysql -uroot -p competition_platform < database/migrations/009_add_question_image.sql
 mysql -uroot -p competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
 mysql -uroot -p competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
+mysql -uroot -p competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
 mysql -uroot -p competition_platform < database/seeds/001_seed_data.sql
 ```
 
@@ -232,7 +233,7 @@ Jika upload bukti pembayaran atau snapshot bermasalah, pastikan folder `backend/
 ## Checklist Sebelum Deploy
 
 - Gunakan VPS untuk menjalankan backend Go, MySQL, Nginx, dan frontend build.
-- Jalankan semua migration `001` sampai `011` secara berurutan. Migration `011` menambahkan proteksi database agar satu user tidak memiliki submission ganda pada competition yang sama.
+- Jalankan semua migration `001` sampai `012` secara berurutan. Migration `011` menambahkan proteksi database agar satu user tidak memiliki submission ganda pada competition yang sama, dan migration `012` menambahkan kolom kebutuhan peserta serta status bukti pembayaran dilihat admin.
 - Ganti `JWT_SECRET`, password database, dan akun demo sebelum live.
 - Isi `GOOGLE_CLIENT_ID` di backend dan `VITE_GOOGLE_CLIENT_ID` di frontend dengan OAuth Client ID yang sama.
 - Batasi `CORS_ALLOW_ORIGINS` ke domain frontend. Authentication web memakai cookie `HttpOnly`, jadi production wajib HTTPS dan CORS harus mengizinkan credentials dari origin frontend yang eksplisit.

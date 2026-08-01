@@ -58,24 +58,25 @@ func (u *User) RefreshProfileComplete() {
 }
 
 type Competition struct {
-	ID                   string     `json:"id"`
-	Title                string     `json:"title"`
-	Slug                 string     `json:"slug"`
-	Description          string     `json:"description"`
-	Banner               string     `json:"banner"`
-	Price                float64    `json:"price"`
-	StartTime            time.Time  `json:"start_time"`
-	EndTime              time.Time  `json:"end_time"`
-	Status               string     `json:"status"`
-	Category             string     `json:"category"`
-	Level                string     `json:"level"`
-	Badges               string     `json:"badges"`
-	Quota                int        `json:"quota"`
-	OriginalPrice        float64    `json:"original_price"`
-	RegistrationDeadline *time.Time `json:"registration_deadline,omitempty"`
-	DurationMinutes      int        `json:"duration_minutes"`
-	TabSwitchLimit       int        `json:"tab_switch_limit"`
-	CreatedAt            time.Time  `json:"created_at"`
+	ID                      string     `json:"id"`
+	Title                   string     `json:"title"`
+	Slug                    string     `json:"slug"`
+	Description             string     `json:"description"`
+	ParticipantRequirements string     `json:"participant_requirements,omitempty"`
+	Banner                  string     `json:"banner"`
+	Price                   float64    `json:"price"`
+	StartTime               time.Time  `json:"start_time"`
+	EndTime                 time.Time  `json:"end_time"`
+	Status                  string     `json:"status"`
+	Category                string     `json:"category"`
+	Level                   string     `json:"level"`
+	Badges                  string     `json:"badges"`
+	Quota                   int        `json:"quota"`
+	OriginalPrice           float64    `json:"original_price"`
+	RegistrationDeadline    *time.Time `json:"registration_deadline,omitempty"`
+	DurationMinutes         int        `json:"duration_minutes"`
+	TabSwitchLimit          int        `json:"tab_switch_limit"`
+	CreatedAt               time.Time  `json:"created_at"`
 }
 
 type Registration struct {
@@ -101,6 +102,8 @@ type Payment struct {
 	PaymentStatus  string     `json:"payment_status"`
 	ValidatedBy    *string    `json:"validated_by,omitempty"`
 	ValidatedAt    *time.Time `json:"validated_at,omitempty"`
+	ProofViewedAt  *time.Time `json:"proof_viewed_at,omitempty"`
+	ProofViewedBy  *string    `json:"proof_viewed_by,omitempty"`
 	CreatedAt      time.Time  `json:"created_at"`
 }
 
@@ -140,6 +143,7 @@ type SubmissionDetail struct {
 	AnsweredQuestions   int    `json:"answered_questions"`
 	UnansweredQuestions int    `json:"unanswered_questions"`
 	TotalQuestions      int    `json:"total_questions"`
+	DurationSeconds     int    `json:"duration_seconds"`
 }
 
 type Answer struct {
@@ -177,16 +181,18 @@ type ProctoringSummary struct {
 }
 
 type AdminDashboardActivity struct {
-	ID               string    `json:"id"`
-	PaymentID        string    `json:"payment_id"`
-	UserName         string    `json:"user_name"`
-	UserEmail        string    `json:"user_email"`
-	UserPhoto        string    `json:"user_photo"`
-	CompetitionTitle string    `json:"competition_title"`
-	Status           string    `json:"status"`
-	PaymentStatus    string    `json:"payment_status"`
-	ProofImage       string    `json:"proof_image"`
-	CreatedAt        time.Time `json:"created_at"`
+	ID               string     `json:"id"`
+	PaymentID        string     `json:"payment_id"`
+	UserName         string     `json:"user_name"`
+	UserEmail        string     `json:"user_email"`
+	UserPhoto        string     `json:"user_photo"`
+	CompetitionTitle string     `json:"competition_title"`
+	Status           string     `json:"status"`
+	PaymentStatus    string     `json:"payment_status"`
+	ProofImage       string     `json:"proof_image"`
+	ProofViewedAt    *time.Time `json:"proof_viewed_at,omitempty"`
+	ProofViewedBy    string     `json:"proof_viewed_by,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
 }
 
 type AdminDashboard struct {

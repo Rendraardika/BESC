@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -26,6 +27,7 @@ type PaymentService interface {
 	Status(userID, registrationID string) (*entities.Payment, error)
 	Verify(paymentID, status, adminID string) error
 	ProofPath(paymentID string) (string, error)
+	MarkProofViewed(paymentID, adminID string) error
 }
 
 type registrationService struct {
@@ -49,8 +51,15 @@ func NewPaymentService(registrations repositories.RegistrationRepository, paymen
 }
 
 func (s *registrationService) Register(userID, competitionID string) (*entities.Registration, error) {
-	if _, err := s.competitions.FindByID(competitionID); err != nil {
+	competition, err := s.competitions.FindByID(competitionID)
+	if err != nil {
 		return nil, err
+	}
+	if competition.Status != entities.CompetitionPublished {
+		return nil, utils.ErrRegistrationClosed
+	}
+	if competition.RegistrationDeadline != nil && time.Now().UTC().After((*competition.RegistrationDeadline).UTC()) {
+		return nil, utils.ErrRegistrationClosed
 	}
 	user, err := s.users.FindByID(userID)
 	if err != nil {
@@ -138,6 +147,10 @@ func (s *paymentService) ProofPath(paymentID string) (string, error) {
 		return "", err
 	}
 	return payment.ProofImage, nil
+}
+
+func (s *paymentService) MarkProofViewed(paymentID, adminID string) error {
+	return s.payments.MarkProofViewed(paymentID, adminID)
 }
 
 func sendPaymentStatusEmail(cfg config.Config, recipient, competitionTitle, status string) error {

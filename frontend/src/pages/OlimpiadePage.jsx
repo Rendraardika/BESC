@@ -61,7 +61,6 @@ export default function OlimpiadePage({ competitions = [], competitionsLoading =
                   <div className="absolute left-6 top-6 rounded-full bg-white/15 px-3 py-1 text-xs font-extrabold uppercase tracking-wide text-white backdrop-blur">
                     {event.category}
                   </div>
-                  <div className="absolute right-6 top-6 grid h-12 w-12 place-items-center rounded-2xl bg-white/20 text-lg font-extrabold text-white shadow-lg backdrop-blur">{event.icon}</div>
                 </div>
 
                 <div className="p-6">

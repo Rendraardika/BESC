@@ -20,6 +20,8 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
   const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
   const eventImage = event.banner || eventImages[competitionIndex % eventImages.length];
   const paymentPrice = event.price.toLowerCase().includes('gratis') ? event.original : event.price;
+  const requirementText = event.competition?.participant_requirements || '';
+  const requirements = requirementText.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
   const inputClass = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   const handleSubmit = async (submitEvent) => {
@@ -89,6 +91,17 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
           </div>
 
           <p className="mt-8 text-center text-base text-slate-900">Lakukan pembayaran ke salah satu metode pembayaran dibawah ini :</p>
+
+          <section className="mx-auto mt-6 max-w-[980px] rounded-lg border border-slate-200 bg-slate-50 px-5 py-5">
+            <h3 className="text-base font-extrabold text-slate-950">Persyaratan Peserta</h3>
+            {requirements.length > 0 ? (
+              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-700">
+                {requirements.map((requirement) => <li key={requirement} className="flex gap-2"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1c79c6]"></span><span>{requirement}</span></li>)}
+              </ul>
+            ) : (
+              <p className="mt-3 text-sm leading-6 text-slate-600">Belum ada persyaratan khusus yang ditambahkan oleh panitia.</p>
+            )}
+          </section>
 
           <div className="mx-auto mt-6 grid max-w-[980px] gap-6">
             <PaymentBox title="Bank BCA" value="4690372555" owner="A.n BESC Indonesia" />

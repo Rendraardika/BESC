@@ -31,12 +31,13 @@ type SubmissionRepository interface {
 func (r *submissionRepository) ListDetails(page, limit int) ([]entities.SubmissionDetail, int, error) {
 	offset := (page - 1) * limit
 	var total int
-	if err := r.db.QueryRow(`SELECT COUNT(*) FROM submissions`).Scan(&total); err != nil {
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM submissions WHERE status = ?`, entities.SubmissionSubmitted).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	rows, err := r.db.Query(`
 		SELECT s.id, s.user_id, s.competition_id, s.started_at, s.submitted_at, s.score, s.status, s.violation_count,
 			u.name, u.email, c.title,
+			TIMESTAMPDIFF(SECOND, s.started_at, s.submitted_at),
 			COALESCE(answer_stats.correct_count, 0),
 			COALESCE(answer_stats.wrong_count, 0),
 			COALESCE(answer_stats.answered_questions, 0),
@@ -59,7 +60,9 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 			JOIN questions q ON q.id = a.question_id
 			GROUP BY a.submission_id
 		) answer_stats ON answer_stats.submission_id = s.id
-		ORDER BY s.started_at DESC LIMIT ? OFFSET ?`, limit, offset)
+		WHERE s.status = ?
+		ORDER BY c.id ASC, s.score DESC, TIMESTAMPDIFF(SECOND, s.started_at, s.submitted_at) ASC, s.submitted_at ASC, s.id ASC
+		LIMIT ? OFFSET ?`, entities.SubmissionSubmitted, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -67,7 +70,7 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 	items := []entities.SubmissionDetail{}
 	for rows.Next() {
 		var item entities.SubmissionDetail
-		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.CorrectCount, &item.WrongCount, &item.AnsweredQuestions, &item.UnansweredQuestions, &item.TotalQuestions); err != nil {
+		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.DurationSeconds, &item.CorrectCount, &item.WrongCount, &item.AnsweredQuestions, &item.UnansweredQuestions, &item.TotalQuestions); err != nil {
 			return nil, 0, err
 		}
 		items = append(items, item)

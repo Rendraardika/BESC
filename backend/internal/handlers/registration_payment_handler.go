@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"online-competition-platform/config"
 	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/services"
+	"online-competition-platform/internal/utils"
 	"online-competition-platform/pkg/response"
 )
 
@@ -77,6 +79,19 @@ func (h *PaymentHandler) UploadProof(c *fiber.Ctx) error {
 func (h *PaymentHandler) Proof(c *fiber.Ctx) error {
 	path, err := h.service.ProofPath(c.Params("payment_id"))
 	if err != nil {
+		return handleError(c, err)
+	}
+	diskPath, err := resolveUploadPath(h.cfg.UploadDir, path)
+	if err != nil {
+		return handleError(c, err)
+	}
+	if _, err := os.Stat(diskPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return handleError(c, utils.ErrNotFound)
+		}
+		return handleError(c, err)
+	}
+	if err := h.service.MarkProofViewed(c.Params("payment_id"), userID(c)); err != nil {
 		return handleError(c, err)
 	}
 	return servePrivateFile(c, h.cfg, path)

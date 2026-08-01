@@ -22,7 +22,7 @@ export const competitionToEvent = (competition) => {
 
   return {
     id: competition.id,
-    icon: 'B',
+    icon: '',
     tags: [competition.category, competition.level, ...badges].filter(Boolean),
     title: competition.title,
     desc: competition.description,

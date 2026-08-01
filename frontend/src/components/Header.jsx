@@ -43,7 +43,6 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
                 <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-2 transition group-hover:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
               </button>
               <div className="invisible absolute left-0 top-full z-20 min-w-48 -translate-y-2 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-                <a href="#blog" className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">Blog & Artikel</a>
                 <a href="#faq" className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">FAQ</a>
               </div>
             </li>

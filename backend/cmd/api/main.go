@@ -32,6 +32,9 @@ func main() {
 		log.Fatalf("database connection failed: %v", err)
 	}
 	defer db.Close()
+	if err := database.EnsureLatestSchema(db, cfg.DBName); err != nil {
+		log.Fatalf("database schema check failed: %v", err)
+	}
 
 	for _, dir := range []string{
 		filepath.Join(cfg.UploadDir, "public"),
@@ -56,7 +59,7 @@ func main() {
 	competitionService := services.NewCompetitionService(competitionRepo)
 	registrationService := services.NewRegistrationService(registrationRepo, competitionRepo, userRepo)
 	paymentService := services.NewPaymentService(registrationRepo, paymentRepo, cfg)
-	examService := services.NewExamService(registrationRepo, questionRepo, submissionRepo)
+	examService := services.NewExamService(registrationRepo, competitionRepo, questionRepo, submissionRepo)
 	questionService := services.NewQuestionService(questionRepo)
 	proctoringService := services.NewProctoringService(submissionRepo, proctoringRepo)
 	adminDashboardService := services.NewAdminDashboardService(adminDashboardRepo)

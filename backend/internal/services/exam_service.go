@@ -21,23 +21,40 @@ type ExamService interface {
 
 type examService struct {
 	registrations repositories.RegistrationRepository
+	competitions  repositories.CompetitionRepository
 	questions     repositories.QuestionRepository
 	submissions   repositories.SubmissionRepository
 }
 
-func NewExamService(registrations repositories.RegistrationRepository, questions repositories.QuestionRepository, submissions repositories.SubmissionRepository) ExamService {
-	return &examService{registrations: registrations, questions: questions, submissions: submissions}
+func NewExamService(registrations repositories.RegistrationRepository, competitions repositories.CompetitionRepository, questions repositories.QuestionRepository, submissions repositories.SubmissionRepository) ExamService {
+	return &examService{registrations: registrations, competitions: competitions, questions: questions, submissions: submissions}
 }
 
 func (s *examService) Questions(userID, competitionID string) ([]entities.Question, error) {
 	if err := s.ensureVerified(userID, competitionID); err != nil {
 		return nil, err
 	}
-	return s.questions.ListByCompetition(competitionID, false)
+	if err := s.ensureExamWindow(competitionID); err != nil {
+		return nil, err
+	}
+	questions, err := s.questions.ListByCompetition(competitionID, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(questions) == 0 {
+		return nil, utils.ErrNoQuestions
+	}
+	return questions, nil
 }
 
 func (s *examService) Start(userID, competitionID string) (*entities.Submission, error) {
 	if err := s.ensureVerified(userID, competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureExamWindow(competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureQuestionsAvailable(competitionID); err != nil {
 		return nil, err
 	}
 	if existing, err := s.submissions.FindActive(userID, competitionID); err == nil {
@@ -50,7 +67,7 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 		ID:            uuid.NewString(),
 		UserID:        userID,
 		CompetitionID: competitionID,
-		StartedAt:     time.Now(),
+		StartedAt:     time.Now().UTC(),
 		Score:         0,
 		Status:        entities.SubmissionStarted,
 	}
@@ -72,6 +89,9 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 
 func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error) {
 	if err := s.ensureVerified(userID, competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureExamWindow(competitionID); err != nil {
 		return nil, err
 	}
 	submission, err := s.submissions.FindActive(userID, competitionID)
@@ -139,6 +159,32 @@ func (s *examService) ensureVerified(userID, competitionID string) error {
 	}
 	if registration.Status != entities.RegistrationVerified {
 		return utils.ErrPaymentPending
+	}
+	return nil
+}
+
+func (s *examService) ensureQuestionsAvailable(competitionID string) error {
+	questions, err := s.questions.ListByCompetition(competitionID, false)
+	if err != nil {
+		return err
+	}
+	if len(questions) == 0 {
+		return utils.ErrNoQuestions
+	}
+	return nil
+}
+
+func (s *examService) ensureExamWindow(competitionID string) error {
+	competition, err := s.competitions.FindByID(competitionID)
+	if err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+	if now.Before(competition.StartTime.UTC()) {
+		return utils.ErrExamNotStarted
+	}
+	if !now.Before(competition.EndTime.UTC()) {
+		return utils.ErrExamClosed
 	}
 	return nil
 }

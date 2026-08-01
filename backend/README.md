@@ -56,6 +56,7 @@ mysql -uroot -p competition_platform < database/migrations/008_set_tab_switch_li
 mysql -uroot -p competition_platform < database/migrations/009_add_question_image.sql
 mysql -uroot -p competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
 mysql -uroot -p competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
+mysql -uroot -p competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
 mysql -uroot -p competition_platform < database/seeds/001_seed_data.sql
 go run ./cmd/api
 ```
@@ -89,6 +90,7 @@ mysql -uroot -proot competition_platform < database/migrations/008_set_tab_switc
 mysql -uroot -proot competition_platform < database/migrations/009_add_question_image.sql
 mysql -uroot -proot competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
 mysql -uroot -proot competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
+mysql -uroot -proot competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
 mysql -uroot -proot competition_platform < database/seeds/001_seed_data.sql
 go run ./cmd/api
 ```
@@ -210,4 +212,4 @@ copy_attempt, right_click, screenshot_attempt, devtools_attempt
 - Payment verification runs inside a transaction and updates registration status atomically.
 - Exam submission locks the submission row, inserts answers, calculates score in the service, and marks the submission as submitted atomically.
 - Proctoring cannot fully prevent OS-level screenshots in a normal browser. The backend stores violation logs and camera snapshots so admins can review suspicious sessions.
-- For production, run migrations through `011`, replace `JWT_SECRET`, restrict CORS, keep `UPLOAD_DIR` on persistent storage with backups, and add a migration runner such as Goose or Atlas.
+- For production, run migrations through `012`, replace `JWT_SECRET`, restrict CORS, keep `UPLOAD_DIR` on persistent storage with backups, and add a migration runner such as Goose or Atlas.

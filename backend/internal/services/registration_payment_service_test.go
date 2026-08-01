@@ -14,7 +14,7 @@ func TestRegistrationRequiresCompleteProfile(t *testing.T) {
 	registrations := &profileRegistrationRepository{}
 	service := NewRegistrationService(
 		registrations,
-		&profileCompetitionRepository{competition: &entities.Competition{ID: "competition-1"}},
+		&profileCompetitionRepository{competition: &entities.Competition{ID: "competition-1", Status: entities.CompetitionPublished}},
 		&profileUserRepository{user: &entities.User{ID: "user-1", Name: "Peserta", Email: "peserta@example.com"}},
 	)
 
@@ -46,7 +46,7 @@ func TestRegistrationUsesAuthenticatedUserProfile(t *testing.T) {
 	registrations := &profileRegistrationRepository{}
 	service := NewRegistrationService(
 		registrations,
-		&profileCompetitionRepository{competition: &entities.Competition{ID: "competition-1"}},
+		&profileCompetitionRepository{competition: &entities.Competition{ID: "competition-1", Status: entities.CompetitionPublished}},
 		&profileUserRepository{user: user},
 	)
 
@@ -60,6 +60,65 @@ func TestRegistrationUsesAuthenticatedUserProfile(t *testing.T) {
 	if registrations.created == nil {
 		t.Fatal("expected registration to be persisted")
 	}
+}
+
+func TestRegistrationRejectsClosedDeadline(t *testing.T) {
+	deadline := time.Now().Add(-time.Minute)
+	user := completeProfileUser("auth-user")
+	registrations := &profileRegistrationRepository{}
+	service := NewRegistrationService(
+		registrations,
+		&profileCompetitionRepository{competition: &entities.Competition{
+			ID:                   "competition-1",
+			Status:               entities.CompetitionPublished,
+			RegistrationDeadline: &deadline,
+		}},
+		&profileUserRepository{user: user},
+	)
+
+	_, err := service.Register("auth-user", "competition-1")
+	if !errors.Is(err, utils.ErrRegistrationClosed) {
+		t.Fatalf("expected ErrRegistrationClosed, got %v", err)
+	}
+	if registrations.created != nil {
+		t.Fatal("registration should not be created after deadline")
+	}
+}
+
+func TestRegistrationRejectsUnpublishedCompetition(t *testing.T) {
+	user := completeProfileUser("auth-user")
+	registrations := &profileRegistrationRepository{}
+	service := NewRegistrationService(
+		registrations,
+		&profileCompetitionRepository{competition: &entities.Competition{ID: "competition-1", Status: entities.CompetitionDraft}},
+		&profileUserRepository{user: user},
+	)
+
+	_, err := service.Register("auth-user", "competition-1")
+	if !errors.Is(err, utils.ErrRegistrationClosed) {
+		t.Fatalf("expected ErrRegistrationClosed, got %v", err)
+	}
+	if registrations.created != nil {
+		t.Fatal("registration should not be created for unpublished competition")
+	}
+}
+
+func completeProfileUser(id string) *entities.User {
+	birthDate := time.Date(2006, 1, 2, 0, 0, 0, 0, time.UTC)
+	user := &entities.User{
+		ID:          id,
+		Name:        "Peserta BESC",
+		Email:       "peserta@example.com",
+		Phone:       "08123456789",
+		Institution: "SMA BESC",
+		Photo:       "data:image/png;base64,abc",
+		BirthDate:   &birthDate,
+		Gender:      "Perempuan",
+		Province:    "Jawa Tengah",
+		City:        "Semarang",
+	}
+	user.RefreshProfileComplete()
+	return user
 }
 
 type profileRegistrationRepository struct {

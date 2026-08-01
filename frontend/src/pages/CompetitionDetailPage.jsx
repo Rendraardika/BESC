@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
@@ -35,30 +36,46 @@ const faqs = [
   ['Siapa yang bisa mengikuti kompetisi ini?', 'Peserta dapat mengikuti sesuai jenjang yang tercantum pada kategori lomba, seperti SMP atau SMA.'],
 ];
 
+const getRequirementLines = (competition) => {
+  const source = competition?.participant_requirements || competition?.requirements || competition?.terms || '';
+  return String(source)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+};
+
 export default function CompetitionDetailPage({ competitionIndex = 0, competitions = [], onCompetitionDetail, onEventRegistration, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, onVerifiedCompetition, registrations = [], user }) {
+  const [bannerFailed, setBannerFailed] = useState(false);
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
   const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
   const competition = event.competition || competitions[competitionIndex];
   const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
   const isVerified = registration?.status === 'verified';
   const isRejected = registration?.status === 'rejected' || registration?.payment_status === 'rejected';
-  const heroImage = event.banner || eventImages[competitionIndex % eventImages.length];
+  const registrationDeadlineMs = competition?.registration_deadline ? new Date(competition.registration_deadline).getTime() : null;
+  const registrationClosed = registrationDeadlineMs ? Date.now() > registrationDeadlineMs : false;
+  const showBanner = Boolean(event.banner) && !bannerFailed;
   const relatedEvents = displayEvents.filter((item) => item.title !== event.title);
+  const requirementLines = getRequirementLines(competition);
   const registrationStatus = isVerified
     ? 'Pembayaran Terverifikasi'
     : isRejected
       ? 'Pembayaran Ditolak'
       : registration
         ? 'Menunggu Verifikasi'
-        : 'Pendaftaran Dibuka';
-  const actionLabel = isVerified ? 'Lihat Ketentuan Ujian' : isRejected ? 'Upload Ulang Bukti' : registration ? 'Menunggu Verifikasi' : 'Daftar Sekarang';
+        : registrationClosed
+          ? 'Pendaftaran Ditutup'
+          : 'Pendaftaran Dibuka';
+  const actionLabel = isVerified ? 'Lihat Ketentuan Ujian' : isRejected ? 'Upload Ulang Bukti' : registration ? 'Menunggu Verifikasi' : registrationClosed ? 'Pendaftaran Ditutup' : 'Daftar Sekarang';
   const actionHint = isVerified
     ? 'Pembayaran kamu sudah dikonfirmasi admin. Kamu bisa membuka ketentuan ujian.'
     : isRejected
       ? 'Bukti pembayaran belum diterima. Silakan upload ulang bukti yang benar.'
       : registration
         ? 'Bukti pembayaran sudah diterima dan sedang diperiksa admin.'
-        : 'Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.';
+        : registrationClosed
+          ? 'Maaf, batas waktu pendaftaran telah berlalu.'
+          : 'Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.';
 
   const handlePrimaryAction = () => {
     if (isVerified && registration) {
@@ -77,73 +94,64 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
         <div className="pointer-events-none absolute left-[-160px] top-12 h-96 w-96 rounded-full bg-emerald-200/35 blur-3xl"></div>
         <div className="pointer-events-none absolute right-[-120px] top-80 h-80 w-80 rounded-full bg-blue-200/30 blur-3xl"></div>
 
-        <div className="relative mx-auto grid max-w-[1500px] gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="relative mx-auto max-w-5xl space-y-8">
           <div className="space-y-8">
-            <section className="relative overflow-hidden rounded-[2.25rem] border border-emerald-100/40 bg-[linear-gradient(135deg,#052e2b_0%,#0f766e_48%,#0b3b66_100%)] shadow-[0_30px_90px_rgba(6,78,59,0.28)]">
-              <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-emerald-300/25 blur-3xl"></div>
-              <div className="pointer-events-none absolute right-10 top-10 h-40 w-40 rounded-full bg-blue-300/20 blur-3xl"></div>
-              <div className="pointer-events-none absolute bottom-8 left-[45%] h-24 w-24 rounded-[2rem] border border-white/10"></div>
-
-              <div className="relative grid gap-8 p-7 md:p-10 lg:grid-cols-[1fr_0.92fr] lg:p-12">
-                <div className="relative z-10 flex flex-col justify-center">
-                  <div className="mb-5 flex flex-wrap gap-2">
-                    {event.tags.map((tag) => <span key={tag} className="rounded-full border border-white/15 bg-white/12 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-emerald-50 backdrop-blur">{tag}</span>)}
-                    {event.badges.map((badge) => <span key={badge} className="rounded-full border border-white/15 bg-white/12 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide text-blue-50 backdrop-blur">{badge}</span>)}
-                  </div>
-                  <div className="mb-5 inline-flex w-fit items-center gap-2 rounded-full bg-emerald-300/15 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-emerald-50 ring-1 ring-white/15">
-                    <span className="h-2 w-2 rounded-full bg-emerald-300"></span>
-                    Event Competition Platform
-                  </div>
-                  <h1 className="max-w-3xl font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl">
-                    {event.title}
-                  </h1>
-                  <p className="mt-6 max-w-2xl text-base leading-8 text-emerald-50/85 md:text-lg">{event.desc}</p>
-
-                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                    {[
-                      ['Deadline', event.deadline],
-                      ['Kategori', event.category],
-                      ['Peserta', event.participants],
-                    ].map(([label, value]) => (
-                      <div key={label} className="rounded-2xl border border-white/10 bg-white/12 p-4 shadow-lg shadow-slate-950/10 backdrop-blur">
-                        <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-100/70">{label}</div>
-                        <div className="mt-1 text-sm font-extrabold text-white">{value}</div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-9 flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected} className="rounded-full bg-white px-7 py-3 text-sm font-extrabold text-[#044b86] shadow-xl shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-50 disabled:cursor-not-allowed disabled:bg-white/70 disabled:text-slate-500 disabled:shadow-none">
-                      {actionLabel}
-                    </button>
-                    <button type="button" onClick={() => document.getElementById('detail-timeline')?.scrollIntoView({ behavior: 'smooth' })} className="rounded-full border border-white/20 bg-white/10 px-7 py-3 text-sm font-extrabold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/15">
-                      Lihat Timeline
-                    </button>
+            <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_18px_55px_rgba(15,23,42,0.08)]">
+              {showBanner ? (
+                <img src={event.banner} alt={event.title} onError={() => setBannerFailed(true)} className="aspect-[16/5] w-full object-cover" />
+              ) : (
+                <div className="grid aspect-[16/5] w-full place-items-center bg-[#073b4c] px-6 text-center">
+                  <div>
+                    <div className="text-xs font-extrabold uppercase tracking-[0.22em] text-teal-200">BESC Competition</div>
+                    <div className="mt-3 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-white md:text-3xl">{event.title}</div>
                   </div>
                 </div>
+              )}
 
-                <div className="relative min-h-[360px] lg:min-h-[520px]">
-                  <div className="absolute inset-x-6 top-8 h-72 rounded-[2rem] bg-white/10 blur-2xl"></div>
-                  <div className="relative ml-auto flex h-full max-w-xl items-center">
-                    <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/20 bg-white/15 p-3 shadow-[0_30px_80px_rgba(2,6,23,0.28)] backdrop-blur">
-                      <div className="relative overflow-hidden rounded-[1.5rem] bg-slate-900">
-                        <img src={heroImage} alt={event.title} className="h-[360px] w-full object-cover object-center transition duration-500 hover:scale-105 lg:h-[460px]" />
-                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,78,59,0.02)_0%,rgba(6,78,59,0.12)_50%,rgba(2,6,23,0.58)_100%)]"></div>
-                        <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/15 bg-white/15 p-4 text-white shadow-xl backdrop-blur-md">
-                          <div className="text-xs font-extrabold uppercase tracking-[0.16em] text-emerald-100">BESC 2026</div>
-                          <div className="mt-1 font-['Plus_Jakarta_Sans'] text-xl font-extrabold">Kompetisi Biologi Nasional</div>
-                        </div>
-                      </div>
-                    </div>
+              <div className="p-5 md:p-7">
+                <div className="flex flex-wrap gap-2">
+                  {event.tags.map((tag) => <span key={tag} className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-extrabold uppercase text-[#044b86]">{tag}</span>)}
+                  {event.badges.map((badge) => <span key={badge} className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-extrabold uppercase text-teal-700">{badge}</span>)}
+                </div>
 
-                    <div className="absolute -left-2 top-10 rounded-2xl border border-white/20 bg-white/18 p-4 text-white shadow-2xl backdrop-blur-md md:-left-8">
-                      <div className="text-4xl">{event.icon}</div>
-                      <div className="mt-2 text-[11px] font-extrabold uppercase tracking-wide text-white/75">Online</div>
-                    </div>
-                    <div className="absolute -right-2 bottom-14 rounded-2xl border border-white/20 bg-white/18 px-5 py-4 text-white shadow-2xl backdrop-blur-md md:-right-6">
-                      <div className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold">{event.price}</div>
-                      <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-100">{event.discount}</div>
-                    </div>
+                <div className="mt-5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#0d9488]">Detail Kompetisi</div>
+                <h1 className="mt-2 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold leading-tight text-[#17324d] md:text-3xl">
+                  {event.title}
+                </h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">{event.desc}</p>
+
+                <div className="mt-5 grid gap-2 text-sm font-semibold text-slate-700 sm:grid-cols-2">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Biaya pendaftaran: <span className="font-extrabold text-[#17324d]">{event.price}</span></div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Batas pendaftaran: <span className="font-extrabold text-[#17324d]">{event.deadline}</span></div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Status: <span className="font-extrabold text-[#17324d]">{registrationStatus}</span></div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Kuota: <span className="font-extrabold text-[#17324d]">{event.participants}</span></div>
+                </div>
+
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+                  <section className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h2 className="font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#17324d]">Persyaratan Peserta</h2>
+                    {requirementLines.length > 0 ? (
+                      <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
+                        {requirementLines.map((requirement) => (
+                          <li key={requirement} className="flex gap-3">
+                            <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0d9488]"></span>
+                            <span>{requirement}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-4 text-sm leading-6 text-slate-600">Belum ada persyaratan khusus yang ditambahkan oleh panitia.</p>
+                    )}
+                  </section>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <div className="text-sm font-semibold leading-6 text-slate-600">{actionHint}</div>
+                    <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected || registrationClosed} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
+                      {actionLabel}
+                    </button>
+                    <button type="button" onClick={() => document.getElementById('detail-timeline')?.scrollIntoView({ behavior: 'smooth' })} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-[#17324d]">
+                      Lihat Timeline
+                    </button>
                   </div>
                 </div>
               </div>
@@ -228,30 +236,6 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
               </div>
             </InfoSection>
           </div>
-
-          <aside className="lg:sticky lg:top-28 lg:self-start">
-            <div className="max-h-[calc(100vh-8rem)] overflow-y-auto rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.1)]">
-              <div className="mb-4 flex flex-wrap gap-2">
-                {event.badges.map((badge) => <span key={badge} className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-extrabold uppercase text-[#044b86]">{badge}</span>)}
-              </div>
-              <h2 className="font-['Plus_Jakarta_Sans'] text-xl font-extrabold leading-7 text-slate-950">{event.title}</h2>
-              <div className="mt-6 flex items-center gap-3">
-                <span className="text-sm text-slate-400 line-through">{event.original}</span>
-                <span className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#0f766e]">{event.price}</span>
-                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{event.discount}</span>
-              </div>
-              <div className="mt-6 space-y-3 border-y border-slate-100 py-5">
-                <SidebarRow label="Deadline" value={event.deadline} />
-                <SidebarRow label="Status" value={registrationStatus} />
-                <SidebarRow label="Kuota" value={event.participants} />
-                <SidebarRow label="Kategori" value={event.category} />
-              </div>
-              <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected} className="mt-6 w-full rounded-2xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:bg-none disabled:bg-slate-300 disabled:shadow-none disabled:hover:translate-y-0 disabled:hover:brightness-100">
-                {actionLabel}
-              </button>
-              <p className="mt-4 text-center text-xs leading-5 text-slate-500">{actionHint}</p>
-            </div>
-          </aside>
         </div>
       </main>
       <Footer />
@@ -265,14 +249,5 @@ function InfoSection({ children, id, title }) {
       <h2 className="mb-5 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-slate-950">{title}</h2>
       <div className="space-y-4 text-base leading-8 text-slate-600">{children}</div>
     </section>
-  );
-}
-
-function SidebarRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm font-semibold text-slate-500">{label}</span>
-      <span className="text-right text-sm font-extrabold text-slate-900">{value}</span>
-    </div>
   );
 }

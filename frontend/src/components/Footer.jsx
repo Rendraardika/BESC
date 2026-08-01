@@ -12,7 +12,7 @@ export default function Footer() {
           </div>
           {[
             ['Kompetisi', ['Olimpiade Biologi', 'Tryout Gratis', 'Latihan Soal', 'Jadwal Event']],
-            ['Informasi', ['Tentang BESC', 'Blog & Artikel', 'FAQ', 'Kerja Sama']],
+            ['Informasi', ['Tentang BESC', 'FAQ', 'Kerja Sama']],
             ['Customer Service', ['📱 0812-3456-7890', '✉️ info@besc.id', '💬 Live Chat', '📋 Syarat & Ketentuan']],
           ].map(([title, links]) => (
             <div key={title}>

@@ -25,9 +25,9 @@ export default function WhyBesc() {
         </div>
         <div className="hidden rounded-[1.5rem] bg-[linear-gradient(180deg,#1c79c6,#044b86)] p-12 lg:block">
           {[
-            ['19 Jt', 'Peserta telah bergabung dari seluruh Indonesia'],
+            ['1570', 'Peserta telah bergabung dari seluruh Indonesia'],
             ['34', 'Provinsi terwakili dalam kompetisi BESC'],
-            ['Rp 217 T', 'Total hadiah yang telah dibagikan kepada pemenang'],
+            ['Rp 19 juta', 'Total hadiah yang telah dibagikan kepada pemenang'],
           ].map(([num, label]) => (
             <div key={num} className="mb-6 rounded-2xl border border-white/15 bg-white/10 p-6 text-white last:mb-0">
               <div className="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold text-blue-200">{num}</div>
