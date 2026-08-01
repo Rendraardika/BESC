@@ -11,9 +11,11 @@ RUN npm install --silent
 # add small polyfill for CustomEvent so build tools that reference it won't crash
 RUN printf "if (typeof globalThis.CustomEvent === 'undefined') { globalThis.CustomEvent = function(type, params) { params = params || { bubbles: false, cancelable: false, detail: undefined }; var e = { type: type, bubbles: params.bubbles, cancelable: params.cancelable, detail: params.detail }; return e; } }\n" > /app/polyfill.js
 ENV NODE_OPTIONS="--require /app/polyfill.js"
+ENV VITE_API_URL=/api/v1
 RUN npm run build
 
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
