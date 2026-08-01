@@ -1,0 +1,8 @@
+node_modules
+frontend/node_modules
+backend/bin
+backend/uploads
+.env
+.DS_Store
+dist
+/.git
