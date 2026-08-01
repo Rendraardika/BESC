@@ -5,7 +5,8 @@ RUN apk add --no-cache python3 make g++
 # copy frontend sources
 COPY frontend/package*.json ./
 COPY frontend/ .
-RUN npm ci --silent
+# use npm install instead of npm ci to avoid requiring package-lock.json
+RUN npm install --silent
 RUN npm run build
 
 FROM nginx:stable-alpine
