@@ -6,6 +6,35 @@ const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Pembayaran', 'Bank Soal
 
 const initials = (name = '') => name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'B';
 
+const normalizePhotoSrc = (src) => {
+  if (!src) return '';
+  const value = String(src).trim();
+  if (!value || value === 'null' || value === 'undefined') return '';
+  return value;
+};
+
+function Avatar({ src, name, className }) {
+  const [failed, setFailed] = useState(false);
+  const imageSrc = normalizePhotoSrc(src);
+  if (imageSrc && !failed) {
+    return (
+      <span className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700 ${className || ''}`}>
+        <img
+          src={imageSrc}
+          alt={name || 'Avatar'}
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+  return (
+    <span className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700 ${className || ''}`}>
+      {initials(name)}
+    </span>
+  );
+}
+
 const getProofURL = (activity) => `${API_URL}/admin/payments/${activity.payment_id}/proof`;
 
 const formatDateTimeLocal = (value) => {
@@ -419,7 +448,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           )}</>}
 
           {activePage === 'Peserta' && <DataTable title="Manajemen Peserta" subtitle="Daftar akun peserta yang terhubung ke BESC." headers={['Peserta', 'WhatsApp', 'Sekolah', 'Tanggal Bergabung', 'Aksi']} rows={participants.map((item) => [
-            <div key={item.id} className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700">{item.photo ? <img src={item.photo} alt={item.name} className="h-full w-full object-cover" /> : initials(item.name)}</span><div><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.email}</div></div></div>,
+            <div key={item.id} className="flex items-center gap-3"><Avatar src={item.photo} name={item.name} className="shrink-0" /><div><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.email}</div></div></div>,
             item.phone || '-',
             item.institution || '-',
             new Date(item.created_at).toLocaleDateString('id-ID'),
@@ -437,7 +466,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah setelah admin membuka bukti pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
             const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
             return [
-              <div key={item.id} className="flex items-center gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700">{item.user_photo ? <img src={item.user_photo} alt={item.user_name} className="h-full w-full object-cover" /> : initials(item.user_name)}</span><div><div className="font-bold">{item.user_name}</div><div className="text-xs text-slate-400">{item.user_email}</div></div></div>,
+              <div key={item.id} className="flex items-center gap-3"><Avatar src={item.user_photo} name={item.user_name} className="shrink-0" /><div><div className="font-bold">{item.user_name}</div><div className="text-xs text-slate-400">{item.user_email}</div></div></div>,
               item.competition_title,
               new Date(item.created_at).toLocaleDateString('id-ID'),
               <div key={item.id} className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => reviewProof(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat Bukti</button><button type="button" onClick={() => handleDownloadProof(item)} className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-extrabold text-teal-700">Download</button>{proofViewed ? <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-[10px] font-extrabold uppercase text-emerald-700">Bukti sudah dilihat</span> : <span className="rounded-md bg-amber-50 px-2.5 py-1 text-[10px] font-extrabold uppercase text-amber-700">Buka bukti dulu</span>}</div>,

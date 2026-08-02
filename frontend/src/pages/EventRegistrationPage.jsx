@@ -3,22 +3,26 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
 import { competitionToEvent } from '../lib/competitions.js';
-import eventStudentBoy from '../assets/images/tryout-student-boy.png';
-import eventStudentsGroup from '../assets/images/tryout-students-group.png';
-import eventStudentsPair from '../assets/images/tryout-students-pair.png';
-import qrisBesc from '../assets/images/qris-besc.jpg';
+import qrisBesc from '../assets/images/qris-besc.jpeg';
 import { API_URL, apiRequest } from '../lib/api.js';
 
-const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
-
 export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegistrationSuccess, onTryout, user }) {
-  const savedProfile = JSON.parse(localStorage.getItem(`besc_profile_${user?.id || user?.email || 'guest'}`) ?? '{}');
+  const profileStorageKey = `besc_profile_${user?.id || user?.email || 'guest'}`;
+  const savedProfile = JSON.parse(localStorage.getItem(profileStorageKey) ?? '{}');
   const [proof, setProof] = useState(null);
+  const [ftProof, setFtProof] = useState(null);
+  const [registrationData, setRegistrationData] = useState({
+    fullName: user?.name || savedProfile.fullName || '',
+    whatsapp: user?.phone || savedProfile.whatsapp || '',
+    school: user?.institution || savedProfile.school || '',
+    classLevel: savedProfile.classLevel || '',
+    teacherName: savedProfile.teacherName || '',
+    teacherPhone: savedProfile.teacherPhone || '',
+  });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
   const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
-  const eventImage = event.banner || eventImages[competitionIndex % eventImages.length];
   const paymentPrice = event.price.toLowerCase().includes('gratis') ? event.original : event.price;
   const requirementText = event.competition?.participant_requirements || '';
   const requirements = requirementText.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
@@ -31,6 +35,20 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       setError('Bukti pembayaran wajib dipilih.');
       return;
     }
+    if (!ftProof) {
+      setError('Bukti upload Twibbon / share poster wajib dipilih.');
+      return;
+    }
+
+    localStorage.setItem(profileStorageKey, JSON.stringify({
+      ...savedProfile,
+      fullName: registrationData.fullName,
+      whatsapp: registrationData.whatsapp,
+      school: registrationData.school,
+      classLevel: registrationData.classLevel,
+      teacherName: registrationData.teacherName,
+      teacherPhone: registrationData.teacherPhone,
+    }));
 
     setIsSubmitting(true);
     try {
@@ -44,6 +62,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
 
       const formData = new FormData();
       formData.append('proof', proof);
+      formData.append('ft_proof', ftProof);
       let response;
       try {
         response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, {
@@ -83,14 +102,19 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
             </p>
           </div>
 
-          <div className="mx-auto mt-8 flex max-w-[980px] flex-col items-center gap-6 rounded-lg bg-slate-50 px-5 py-5 md:flex-row md:justify-center md:px-7">
-            <img src={eventImage} alt={event.title} className="h-36 w-full max-w-[320px] rounded-md object-cover object-center md:w-[320px]" />
-            <h2 className="max-w-[560px] text-center font-['Plus_Jakarta_Sans'] text-xl font-extrabold leading-8 text-slate-950 md:text-2xl">
-              {event.title}
-            </h2>
+          <div className="mx-auto mt-8 flex max-w-[980px] flex-col items-center gap-6 rounded-lg bg-slate-50 px-5 py-5 md:px-7">
+            <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 text-center">
+              <h2 className="font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-slate-950">Petunjuk Pendaftaran</h2>
+              <p className="mt-4 text-sm leading-7 text-slate-700">Lengkapi persyaratan pendaftaran berikut agar registrasi kamu dapat diproses:</p>
+              <ol className="mt-6 space-y-3 text-left text-sm leading-7 text-slate-700">
+                <li>1. Follow media sosial BESC: Instagram <span className="font-semibold">besc_unair</span>, TikTok <span className="font-semibold">bescunair</span>.</li>
+                <li>2. Upload Twibbon.</li>
+                <li>3. Share poster ke 3 grup (WhatsApp / Line / Telegram).</li>
+              </ol>
+            </div>
           </div>
 
-          <p className="mt-8 text-center text-base text-slate-900">Lakukan pembayaran ke salah satu metode pembayaran dibawah ini :</p>
+          <p className="mt-8 text-center text-base text-slate-900">Lakukan pembayaran ke salah satu metode pembayaran di bawah ini:</p>
 
           <section className="mx-auto mt-6 max-w-[980px] rounded-lg border border-slate-200 bg-slate-50 px-5 py-5">
             <h3 className="text-base font-extrabold text-slate-950">Persyaratan Peserta</h3>
@@ -118,24 +142,32 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
               <input className="h-10 w-full border border-slate-100 bg-white text-sm text-slate-900 file:mr-2 file:h-9 file:border file:border-slate-400 file:bg-slate-100 file:px-3 file:text-sm file:text-slate-950" type="file" accept="image/jpeg,image/png,image/webp" onChange={(uploadEvent) => setProof(uploadEvent.target.files?.[0] || null)} required />
               <p className="mt-2 text-sm text-slate-900">
                 <span className="font-bold text-red-500">Wajib</span>
-                {' '} - Pastikan ukuran foto dibawah <span className="font-extrabold">5mb</span>
+                {' '} - Unggah bukti transfer/pembayaran.
+              </p>
+            </Field>
+
+            <Field label="Upload Bukti Twibbon / Poster Share">
+              <input className="h-10 w-full border border-slate-100 bg-white text-sm text-slate-900 file:mr-2 file:h-9 file:border file:border-slate-400 file:bg-slate-100 file:px-3 file:text-sm file:text-slate-950" type="file" accept="image/jpeg,image/png,image/webp" onChange={(uploadEvent) => setFtProof(uploadEvent.target.files?.[0] || null)} required />
+              <p className="mt-2 text-sm text-slate-900">
+                <span className="font-bold text-red-500">Wajib</span>
+                {' '} - Upload screenshot Twibbon atau bukti share poster ke 3 grup.
               </p>
             </Field>
 
             <Field label="Nama Peserta">
-              <input className={inputClass} defaultValue={user?.name || savedProfile.fullName || ''} type="text" />
+              <input className={inputClass} value={registrationData.fullName} onChange={(event) => setRegistrationData((current) => ({ ...current, fullName: event.target.value }))} type="text" required />
             </Field>
 
             <Field label="Nomor WhatsApp Peserta">
-              <input className={inputClass} defaultValue={user?.phone || savedProfile.whatsapp || ''} type="tel" placeholder="08xxxxxxxxxx" />
+              <input className={inputClass} value={registrationData.whatsapp} onChange={(event) => setRegistrationData((current) => ({ ...current, whatsapp: event.target.value }))} type="tel" placeholder="08xxxxxxxxxx" required />
             </Field>
 
             <Field label="Asal Sekolah">
-              <input className={inputClass} defaultValue={user?.institution || savedProfile.school || ''} type="text" placeholder="Nama sekolah" />
+              <input className={inputClass} value={registrationData.school} onChange={(event) => setRegistrationData((current) => ({ ...current, school: event.target.value }))} type="text" placeholder="Nama sekolah" required />
             </Field>
 
             <Field label="Kelas">
-              <select className={inputClass} defaultValue="">
+              <select className={inputClass} value={registrationData.classLevel} onChange={(event) => setRegistrationData((current) => ({ ...current, classLevel: event.target.value }))} required>
                 <option value="" disabled>Pilih kelas</option>
                 <option>VII</option>
                 <option>VIII</option>
@@ -147,12 +179,12 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
             </Field>
 
             <Field label="Nama Guru Pendamping">
-              <input className={inputClass} type="text" />
+              <input className={inputClass} value={registrationData.teacherName} onChange={(event) => setRegistrationData((current) => ({ ...current, teacherName: event.target.value }))} type="text" />
               <p className="mt-3 text-sm text-slate-900">Opsional - silakan cantumkan untuk dokumentasi dan apresiasi.</p>
             </Field>
 
             <Field label="Nomor Telephone Guru Pendamping">
-              <input className={inputClass} type="tel" />
+              <input className={inputClass} value={registrationData.teacherPhone} onChange={(event) => setRegistrationData((current) => ({ ...current, teacherPhone: event.target.value }))} type="tel" />
               <p className="mt-3 text-sm text-slate-900">Opsional - silakan cantumkan untuk dokumentasi dan apresiasi.</p>
             </Field>
 

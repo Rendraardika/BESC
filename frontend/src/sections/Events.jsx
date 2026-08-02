@@ -1,11 +1,9 @@
 import SectionHeader from '../components/SectionHeader.jsx';
 import { events } from '../data/events.js';
 import { competitionToEvent } from '../lib/competitions.js';
-import eventStudentBoy from '../assets/images/tryout-student-boy.png';
-import eventStudentsGroup from '../assets/images/tryout-students-group.png';
-import eventStudentsPair from '../assets/images/tryout-students-pair.png';
+import heroImage from '../assets/images/TRY OUT.png';
 
-const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
+const eventImages = [heroImage, heroImage, heroImage];
 
 export default function Events({ competitions, onCompetitionDetail, onVerifiedCompetition, registrations }) {
   const displayEvents = competitions?.length

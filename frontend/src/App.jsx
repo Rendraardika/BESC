@@ -4,7 +4,6 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import OlimpiadePage from './pages/OlimpiadePage.jsx';
-import TryoutPage from './pages/TryoutPage.jsx';
 import CompetitionDetailPage from './pages/CompetitionDetailPage.jsx';
 import EventRegistrationPage from './pages/EventRegistrationPage.jsx';
 import EventRegistrationSuccessPage from './pages/EventRegistrationSuccessPage.jsx';
@@ -19,11 +18,11 @@ const getPageFromHash = () => {
   if (window.location.hash === '#login') return 'login';
   if (window.location.hash === '#profile') return 'profile';
   if (window.location.hash === '#olimpiade') return 'olimpiade';
-  if (window.location.hash === '#tryout-page') return 'tryout';
   if (window.location.hash === '#detail-kompetisi') return 'competition-detail';
   if (window.location.hash === '#pendaftaran-event') return 'event-registration';
   if (window.location.hash === '#pendaftaran-berhasil') return 'event-registration-success';
   if (window.location.hash === '#paket-tryout') return 'tryout-package';
+  if (window.location.hash === '#tryout-page') return 'home';
   if (window.location.hash === '#admin-login') return 'login';
   if (window.location.hash === '#admin-dashboard') return 'admin-dashboard';
   if (window.location.hash === '#ketentuan-ujian') return 'exam-rules';
@@ -31,7 +30,7 @@ const getPageFromHash = () => {
   return 'home';
 };
 
-const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#tryout-page', '#detail-kompetisi', '#pendaftaran-event', '#pendaftaran-berhasil', '#paket-tryout', '#admin-login', '#admin-dashboard', '#ketentuan-ujian', '#kerjakan-soal'];
+const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#detail-kompetisi', '#pendaftaran-event', '#pendaftaran-berhasil', '#paket-tryout', '#tryout-page', '#admin-login', '#admin-dashboard', '#ketentuan-ujian', '#kerjakan-soal'];
 
 const isProfileComplete = (currentUser) => Boolean(currentUser?.profile_complete);
 
@@ -185,12 +184,6 @@ export default function App() {
     setPage('olimpiade');
   };
 
-  const openTryout = () => {
-    window.location.hash = 'tryout-page';
-    window.scrollTo(0, 0);
-    setPage('tryout');
-  };
-
   const openCompetitionDetail = (index = 0) => {
     localStorage.setItem('besc_competition_index', String(index));
     setCompetitionIndex(index);
@@ -217,6 +210,10 @@ export default function App() {
     window.location.hash = 'paket-tryout';
     window.scrollTo(0, 0);
     setPage('tryout-package');
+  };
+
+  const openTryout = () => {
+    openTryoutPackage();
   };
 
   const handleAuthSuccess = (auth) => {
@@ -391,21 +388,6 @@ export default function App() {
     );
   }
 
-  if (page === 'tryout') {
-    return (
-      <TryoutPage
-        onLogin={openLogin}
-        onLogout={handleLogout}
-        onOlimpiade={openOlimpiade}
-        onProfile={openProfile}
-        onRegister={openRegister}
-        onTryoutPackage={openTryoutPackage}
-        onTryout={openTryout}
-        user={user}
-      />
-    );
-  }
-
   if (page === 'competition-detail') {
     return (
         <CompetitionDetailPage
@@ -443,7 +425,6 @@ export default function App() {
           onProfile={openProfile}
           onRegister={openRegister}
           onSaveProfile={handleSaveProfile}
-          onTryout={openTryout}
           user={user}
         />
       );

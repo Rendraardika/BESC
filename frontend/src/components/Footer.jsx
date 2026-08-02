@@ -11,7 +11,7 @@ export default function Footer() {
             </div>
           </div>
           {[
-            ['Kompetisi', ['Olimpiade Biologi', 'Tryout Gratis', 'Latihan Soal', 'Jadwal Event']],
+            ['Kompetisi', ['Olimpiade Biologi', 'Latihan Soal', 'Jadwal Event']],
             ['Informasi', ['Tentang BESC', 'FAQ', 'Kerja Sama']],
             ['Customer Service', ['📱 0812-3456-7890', '✉️ info@besc.id', '💬 Live Chat', '📋 Syarat & Ketentuan']],
           ].map(([title, links]) => (
@@ -24,7 +24,7 @@ export default function Footer() {
           ))}
         </div>
         <div className="mt-8 flex flex-col justify-between gap-3 text-xs text-slate-600 md:flex-row">
-          <span>© 2025 BESC · Biology Environmental Smart Competition. All rights reserved.</span>
+          <span>© 2026 BESC · Biology Environmental Smart Competition. All rights reserved.</span>
           <span>Made with 🌿 for Indonesia</span>
         </div>
       </div>

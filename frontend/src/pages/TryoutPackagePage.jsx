@@ -1,8 +1,6 @@
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
-import tryoutStudentsGroup from '../assets/images/tryout-students-group.png';
-import tryoutStudentsPair from '../assets/images/tryout-students-pair.png';
-import tryoutStudentBoy from '../assets/images/tryout-student-boy.png';
+import tryoutFallbackGraphic from '../assets/images/TRY OUT.png';
 
 const packageBenefits = [
   '3 paket Tryout Biologi Online dengan level soal bertahap',
@@ -34,12 +32,12 @@ const classPrep = [
 
 const recommendations = [
   {
-    image: tryoutStudentsPair,
+    image: tryoutFallbackGraphic,
     title: 'Paket Latihan Biologi Dasar BESC',
     desc: 'Latihan konsep dasar untuk pemanasan sebelum masuk simulasi fulltest.',
   },
   {
-    image: tryoutStudentBoy,
+    image: tryoutFallbackGraphic,
     title: 'Paket Intensif Olimpiade BESC',
     desc: 'Latihan soal menantang untuk peserta yang ingin mengejar target juara.',
   },
@@ -57,7 +55,7 @@ export default function TryoutPackagePage({ onLogin, onLogout, onOlimpiade, onPr
             <div className="grid gap-12 lg:grid-cols-[0.78fr_1.18fr] lg:items-start">
               <div>
                 <img
-                  src={tryoutStudentsGroup}
+                  src={tryoutFallbackGraphic}
                   alt="Bundling Tryout BESC"
                   className="h-[330px] w-full rounded-sm object-cover object-center"
                 />

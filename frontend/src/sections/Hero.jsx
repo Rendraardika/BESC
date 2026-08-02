@@ -1,6 +1,6 @@
 import heroImage from '../assets/images/tampilan utama besc.png';
 
-export default function Hero({ onCompetitions }) {
+export default function Hero({ onCompetitions, onTryoutPackage }) {
   return (
     <section
       id="home"
@@ -36,7 +36,11 @@ export default function Hero({ onCompetitions }) {
             </button>
 
             <a
-              href="#tryout-page"
+              href="#paket-tryout"
+              onClick={(event) => {
+                event.preventDefault();
+                onTryoutPackage?.();
+              }}
               className="rounded-full border border-white/30 bg-white/10 px-7 py-3 font-bold text-white transition hover:bg-white/20"
             >
               Coba Tryout Gratis

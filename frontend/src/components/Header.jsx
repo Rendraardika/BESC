@@ -2,7 +2,7 @@ import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import Button from './Button.jsx';
 
-export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onRegister, user }) {
+export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
@@ -14,7 +14,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
 
   const openTryout = () => {
     setMobileOpen(false);
-    onTryout();
+    onTryout?.();
   };
 
   return (
@@ -33,8 +33,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
               </button>
               <div className="invisible absolute left-0 top-full z-20 min-w-48 -translate-y-2 rounded-2xl border border-slate-200 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
                 <button type="button" onClick={openOlimpiade} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">Olimpiade Biologi</button>
-                <button type="button" onClick={openTryout} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">Tryout</button>
-                <a href="#materi" className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">Latihan Soal</a>
+                <button type="button" onClick={openTryout} className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 hover:bg-blue-50 hover:text-[#044b86]">Tryout Gratis</button>
               </div>
             </li>
             <li className="group relative">
@@ -96,7 +95,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
             </div>
             <div className="flex flex-col gap-1">
               <button type="button" onClick={openOlimpiade} className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Olimpiade Biologi</button>
-              <button type="button" onClick={openTryout} className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Tryout</button>
+              <button type="button" onClick={openTryout} className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Tryout Gratis</button>
               <a href="#materi" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Materi</a>
               <a href="#jadwal" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Jadwal</a>
               <a href="#tentang" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Tentang</a>

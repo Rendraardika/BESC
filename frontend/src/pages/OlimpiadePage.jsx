@@ -2,11 +2,9 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
 import { competitionToEvent } from '../lib/competitions.js';
-import eventStudentBoy from '../assets/images/tryout-student-boy.png';
-import eventStudentsGroup from '../assets/images/tryout-students-group.png';
-import eventStudentsPair from '../assets/images/tryout-students-pair.png';
+import eventBannerFallback from '../assets/images/TRY OUT.png';
 
-const eventImages = [eventStudentsGroup, eventStudentsPair, eventStudentBoy];
+const eventImages = [eventBannerFallback, eventBannerFallback, eventBannerFallback];
 
 export default function OlimpiadePage({ competitions = [], competitionsLoading = false, onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;

@@ -7,13 +7,17 @@ export default function CTA({ onRegister }) {
           <div className="relative z-10">
             <div className="mb-5 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-100">🚀 Bergabung Sekarang</div>
             <h2 className="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight text-white">Siap Menjadi<br /><span className="text-blue-200">Ilmuwan Muda</span> Terbaik?</h2>
-Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 Februari 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.
+            <p className="mt-4 max-w-xl text-sm leading-7 text-blue-100">Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 Februari 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.</p>
           </div>
           <div className="relative z-10 mt-8 flex flex-col gap-3 md:mt-0 md:justify-center">
-            <a href="#home" className="rounded-full border border-white/30 bg-white/10 px-7 py-3 text-center font-bold text-white">Unduh Panduan PDF</a>
+            <a href="/panduan-besc.pdf" download className="rounded-full border border-white/30 bg-white/10 px-7 py-3 text-center font-bold text-white transition hover:bg-white/20" target="_blank" rel="noopener noreferrer">
+              Unduh Panduan PDF
+            </a>
+            <p className="text-sm text-blue-100">Klik untuk mengunduh panduan BESC 2026 dalam format PDF.</p>
           </div>
         </div>
       </div>
     </section>
   );
 }
+

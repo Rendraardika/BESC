@@ -19,6 +19,7 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
       gender: user?.gender || savedProfile.gender || '',
       province: user?.province || savedProfile.province || '',
       city: user?.city || savedProfile.city || '',
+      cardPhoto: user?.student_card || savedProfile.cardPhoto || '',
     };
   };
   const [profile, setProfile] = useState(profileFromServer);
@@ -61,6 +62,7 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           gender: profile.gender,
           province: profile.province,
           city: profile.city,
+          student_card: profile.cardPhoto,
         }),
       });
       localStorage.setItem(profileStorageKey, JSON.stringify(profile));
@@ -171,6 +173,35 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
                 <option value="">Pilih Kota</option>
                 {cityOptions.map((city) => <option key={city.id} value={city.nama}>{city.nama}</option>)}
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-bold text-slate-700">Upload Kartu Pelajar</label>
+              <input className={inputClass} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                  setError('Kartu pelajar harus berupa JPG, PNG, atau WEBP.');
+                  return;
+                }
+                if (file.size > 2 * 1024 * 1024) {
+                  setError('Ukuran kartu pelajar maksimal 2 MB.');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  updateProfile('cardPhoto', reader.result);
+                  setError('');
+                };
+                reader.readAsDataURL(file);
+              }} />
+              {profile.cardPhoto && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Preview Kartu Pelajar</p>
+                  <img src={profile.cardPhoto} alt="Kartu Pelajar" className="h-36 w-full max-w-sm rounded-xl object-contain" />
+                </div>
+              )}
+              <p className="mt-2 text-xs leading-5 text-slate-500">Unggah kartu pelajar untuk mempermudah verifikasi pendaftaran.</p>
             </div>
 
             <button type="submit" disabled={Boolean(success) || isSaving} className="rounded-lg bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-xs font-extrabold uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60">

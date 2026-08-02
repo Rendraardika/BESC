@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
-import registerBg from '../assets/images/backround+karakter.png';
 import karakterImg from '../assets/images/karakter.png';
 import indonesiaWilayah from '../indonesia_wilayah.json';
 import { apiRequest } from '../lib/api.js';
@@ -137,18 +136,18 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
 
       <section className="px-6 py-12 md:px-8">
         <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] bg-white shadow-2xl lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="relative hidden overflow-hidden p-10 text-white lg:block" style={{ backgroundImage: `url(${registerBg})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}>
-            <div className="absolute inset-0 bg-[#1c79c6]/80"></div>
-            <img src={karakterImg} alt="Karakter BESC" className="absolute left-1/2 top-1/2 h-[40rem] w-auto -translate-x-1/2 -translate-y-1/2 object-contain opacity-100" />
+          <div className="relative hidden overflow-hidden p-10 text-white lg:block lg:overflow-hidden lg:rounded-tr-[2rem] lg:rounded-br-[2rem] lg:flex lg:flex-col lg:justify-between">
+            <img src={karakterImg} alt="Karakter BESC" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom" />
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/25 via-transparent to-slate-950/20" />
             <div className="relative z-10 flex h-full flex-col justify-between">
               <div>
                 <div className="mb-5 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-100">Pendaftaran BESC</div>
-                <h1 className="font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight">Mulai perjalanan kompetisimu hari ini.</h1>
-                <p className="mt-4 text-sm leading-7 text-blue-100">Lengkapi data diri dengan benar agar proses verifikasi peserta berjalan lancar.</p>
+                <h1 className="max-w-xs font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight text-white">Mulai perjalanan kompetisimu hari ini.</h1>
+                <p className="mt-4 max-w-sm text-sm leading-7 text-blue-100/90">Lengkapi data diri dengan benar agar proses verifikasi peserta berjalan lancar dan kamu siap mengikuti kompetisi.</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
-                <div className="text-3xl font-extrabold">BESC 2026</div>
-                <div className="mt-2 text-sm text-blue-100">Biology Environmental Smart Competition</div>
+                <div className="text-3xl font-extrabold text-white">BESC 2026</div>
+                <div className="mt-2 text-sm text-blue-100/90">Biology Environmental Smart Competition</div>
               </div>
             </div>
           </div>

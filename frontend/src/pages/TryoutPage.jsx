@@ -1,9 +1,7 @@
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { tryouts } from '../data/tryouts.js';
-import tryoutStudentBoy from '../assets/images/tryout-student-boy.png';
-import tryoutStudentsGroup from '../assets/images/tryout-students-group.png';
-import tryoutStudentsPair from '../assets/images/tryout-students-pair.png';
+import tryoutHeroGraphic from '../assets/images/TRY OUT.png';
 
 const tryoutMeta = [
   { deadline: '15 September 2026', participants: '1.200+ peserta', category: 'Biologi Sel', level: 'SMA' },
@@ -14,7 +12,7 @@ const tryoutMeta = [
   { deadline: '8 Oktober 2026', participants: '760+ peserta', category: 'Botani', level: 'SMP' },
 ];
 
-const tryoutImages = [tryoutStudentsGroup, tryoutStudentsPair, tryoutStudentBoy];
+const tryoutImages = [tryoutHeroGraphic, tryoutHeroGraphic, tryoutHeroGraphic, tryoutHeroGraphic];
 
 export default function TryoutPage({ onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, user }) {
   return (
@@ -37,6 +35,9 @@ export default function TryoutPage({ onLogin, onLogout, onOlimpiade, onProfile, 
             <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
               Latih kemampuanmu dengan paket tryout online BESC untuk persiapan kompetisi biologi tingkat SMP dan SMA.
             </p>
+            <div className="mt-10 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-lg">
+              <img src={tryoutHeroGraphic} alt="Tryout BESC" className="h-72 w-full object-cover object-center" />
+            </div>
           </div>
 
           <div className="grid gap-7 md:grid-cols-2 xl:grid-cols-3">

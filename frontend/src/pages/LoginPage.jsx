@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { apiRequest } from '../lib/api.js';
 
-export default function LoginPage({ onRegister, onLoginSuccess }) {
+export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -79,8 +79,13 @@ export default function LoginPage({ onRegister, onLoginSuccess }) {
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-6 py-3 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
           <img src={bescLogo} alt="BESC Logo" className="h-20 w-auto object-contain md:h-24" />
+          {onBack && (
+            <button type="button" onClick={onBack} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+              ← Kembali
+            </button>
+          )}
         </div>
       </header>
 
