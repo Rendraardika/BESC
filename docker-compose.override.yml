@@ -1,8 +1,4 @@
-# Local development overrides
-# On production (Hostinger), run: docker compose -f docker-compose.yml up -d
-# to avoid loading this file.
-services:
-  backend:
-    environment:
-      - CORS_ALLOW_ORIGINS=http://localhost:5173,http://localhost:80
-      - APP_ENV=development
+# This file is only for local development.
+# Production deployments should use: docker compose -f docker-compose.prod.yml up -d
+# This file will NOT override production settings.
+services: {}
