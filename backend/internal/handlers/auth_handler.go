@@ -88,8 +88,11 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) setSessionCookie(c *fiber.Ctx, token string) {
-	// Use Secure only when the original request came via HTTPS (e.g. Traefik reverse proxy)
 	secure := h.cfg.AppEnv == "production" && isSecureRequest(c)
+	sameSite := "Lax"
+	if secure {
+		sameSite = "None"
+	}
 	c.Cookie(&fiber.Cookie{
 		Name:     utils.AuthCookieName,
 		Value:    token,
@@ -98,12 +101,16 @@ func (h *AuthHandler) setSessionCookie(c *fiber.Ctx, token string) {
 		MaxAge:   int(h.cfg.JWTExpires.Seconds()),
 		Secure:   secure,
 		HTTPOnly: true,
-		SameSite: "Lax",
+		SameSite: sameSite,
 	})
 }
 
 func (h *AuthHandler) clearSessionCookie(c *fiber.Ctx) {
 	secure := h.cfg.AppEnv == "production" && isSecureRequest(c)
+	sameSite := "Lax"
+	if secure {
+		sameSite = "None"
+	}
 	c.Cookie(&fiber.Cookie{
 		Name:     utils.AuthCookieName,
 		Value:    "",
@@ -112,7 +119,7 @@ func (h *AuthHandler) clearSessionCookie(c *fiber.Ctx) {
 		MaxAge:   -1,
 		Secure:   secure,
 		HTTPOnly: true,
-		SameSite: "Lax",
+		SameSite: sameSite,
 	})
 }
 
