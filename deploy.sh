@@ -14,7 +14,7 @@ git pull origin main
 
 # Stop old containers and remove volumes
 echo "[2/7] Stopping old containers and resetting database..."
-docker compose -f docker-compose.prod.yml down -v 2>/dev/null || true
+docker compose down -v 2>/dev/null || true
 
 # Create .env with correct VPS IP
 echo "[3/7] Creating .env file..."
@@ -32,7 +32,7 @@ echo "   CORS configured for: http://${VPS_IP}"
 
 # Build and start all services
 echo "[4/7] Building and starting all containers..."
-docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+docker compose --env-file .env up -d --build
 
 # Wait for MySQL to be healthy
 echo "[5/7] Waiting for MySQL to be healthy..."
@@ -44,12 +44,12 @@ sleep 10
 
 # Check status
 echo "[7/7] Checking status..."
-docker compose -f docker-compose.prod.yml ps
+docker compose ps
 
 # Show backend logs
 echo ""
 echo "=== Backend Logs (last 10 lines) ==="
-docker compose -f docker-compose.prod.yml logs backend --tail=10
+docker compose logs backend --tail=10
 
 echo ""
 echo "========================================="
@@ -62,5 +62,5 @@ echo "Next steps:"
 echo "  1. Open http://${VPS_IP} in your browser"
 echo "  2. Register a new account"
 echo "  3. To make admin, run:"
-echo "     docker compose -f docker-compose.prod.yml exec db mysql -u root -pBescSecureRoot2026! competition_platform -e \"UPDATE users SET role='admin' WHERE email='YOUR_EMAIL';\""
+echo "     docker compose exec db mysql -u root -pBescSecureRoot2026! competition_platform -e \"UPDATE users SET role='admin' WHERE email='YOUR_EMAIL';\""
 echo ""

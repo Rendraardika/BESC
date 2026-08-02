@@ -1,4 +1,3 @@
-# This file is only for local development.
-# Production deployments should use: docker compose -f docker-compose.prod.yml up -d
-# This file will NOT override production settings.
+# Intentionally empty - production uses docker-compose.yml directly
+# This prevents Hostinger Docker Manager from overriding production settings
 services: {}

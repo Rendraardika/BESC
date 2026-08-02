@@ -21,13 +21,36 @@ func OriginGuard(allowedOrigins string) fiber.Handler {
 		if allowed[origin] {
 			return c.Next()
 		}
-		// Allow requests when origin is empty or when host matches the server host
+		// Allow requests when host matches the server host (handles reverse proxy scenarios)
 		host := strings.TrimSpace(c.Get("Host"))
 		if host != "" && strings.Contains(origin, host) {
 			return c.Next()
 		}
+		// Allow when origin scheme+host matches X-Forwarded-Host (for Traefik/Hostinger)
+		forwardedHost := strings.TrimSpace(c.Get("X-Forwarded-Host"))
+		if forwardedHost != "" && strings.Contains(origin, forwardedHost) {
+			return c.Next()
+		}
+		// Allow when origin matches any IP or hostname in allowed origins list
+		originHost := extractHost(origin)
+		if originHost != "" {
+			for allowedOrigin := range allowed {
+				allowedHost := extractHost(allowedOrigin)
+				if allowedHost != "" && originHost == allowedHost {
+					return c.Next()
+				}
+			}
+		}
 		return response.Error(c, fiber.StatusForbidden, "origin is not allowed", nil)
 	}
+}
+
+func extractHost(origin string) string {
+	origin = strings.TrimPrefix(origin, "http://")
+	origin = strings.TrimPrefix(origin, "https://")
+	origin = strings.Split(origin, ":")[0]
+	origin = strings.TrimSuffix(origin, "/")
+	return origin
 }
 
 func allowedOriginSet(value string) map[string]bool {

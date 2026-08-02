@@ -33,7 +33,8 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=competition_platform
       - JWT_SECRET=${JWT_SECRET:-changeme}
-      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-https://localhost,http://localhost}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost}
+      - UPLOAD_DIR=uploads
     volumes:
       - uploads_data:/app/uploads
 
