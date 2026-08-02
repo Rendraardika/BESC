@@ -10,10 +10,13 @@ RUN go build -o besc-api ./cmd/api
 
 FROM alpine:3.18
 RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache netcat-openbsd
 WORKDIR /app
 COPY --from=builder /build/backend/besc-api /app/besc-api
+COPY backend/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 RUN mkdir -p /app/uploads
 
 ENV APP_PORT=8080
 EXPOSE 8080
-CMD ["/app/besc-api"]
+CMD ["/app/entrypoint.sh"]
