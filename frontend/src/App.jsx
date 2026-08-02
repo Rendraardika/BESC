@@ -245,11 +245,7 @@ export default function App() {
     backHome();
   };
 
-  const handleRegisterSuccess = (auth, options = {}) => {
-    if (options.source === 'google') {
-      handleAuthSuccess(auth);
-      return;
-    }
+  const handleRegisterSuccess = (auth) => {
     clearAuthSession();
     setUser(null);
     localStorage.removeItem('besc_after_profile');

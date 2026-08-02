@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
 import indonesiaWilayah from '../indonesia_wilayah.json';
@@ -23,9 +23,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false);
-  const googleButtonRef = useRef(null);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const passwordRules = {
     length: form.password.length >= 8,
     uppercase: /[A-Z]/.test(form.password),
@@ -39,52 +36,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     if (!provinsiId) return [];
     return indonesiaWilayah.kota_kabupaten.filter((k) => String(k.provinsi_id) === String(provinsiId));
   }, [provinsiId]);
-
-  useEffect(() => {
-    if (!googleClientId) return;
-
-    const initializeGoogle = () => {
-      if (!window.google?.accounts?.id || !googleButtonRef.current) return;
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: async ({ credential }) => {
-          if (!credential) return;
-          setError('');
-          setIsSubmitting(true);
-          try {
-            const auth = await apiRequest('/auth/google', {
-              method: 'POST',
-              body: JSON.stringify({ credential }),
-            });
-            onRegisterSuccess(auth, { source: 'google' });
-          } catch (err) {
-            setError(err.message);
-          } finally {
-            setIsSubmitting(false);
-          }
-        },
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        width: googleButtonRef.current.offsetWidth,
-        text: 'continue_with',
-      });
-      setGoogleReady(true);
-    };
-
-    if (window.google?.accounts?.id) {
-      initializeGoogle();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeGoogle;
-    document.head.appendChild(script);
-  }, [googleClientId, onRegisterSuccess]);
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -247,21 +198,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
             </form>
 
             <div className="mt-7">
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-slate-200"></div>
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Atau lanjutkan dengan</span>
-                <div className="h-px flex-1 bg-slate-200"></div>
-              </div>
-
-              {googleClientId ? (
-                <div className="mt-5 flex min-h-11 w-full justify-center overflow-hidden rounded-xl" ref={googleButtonRef}></div>
-              ) : (
-                <button type="button" disabled className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-bold text-slate-400">
-                  Google belum dikonfigurasi
-                </button>
-              )}
-              {googleClientId && !googleReady && <p className="mt-2 text-center text-xs text-slate-400">Menyiapkan Google...</p>}
-
               <p className="mt-6 text-center text-sm text-slate-500">
                 Sudah punya akun?{' '}
                 <button type="button" onClick={onLogin} className="font-bold text-[#1c79c6]">Masuk</button>

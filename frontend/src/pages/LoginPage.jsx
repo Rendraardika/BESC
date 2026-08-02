@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { apiRequest } from '../lib/api.js';
 
@@ -9,55 +9,6 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false);
-  const googleButtonRef = useRef(null);
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-  useEffect(() => {
-    if (!googleClientId) return;
-
-    const initializeGoogle = () => {
-      if (!window.google?.accounts?.id || !googleButtonRef.current) return;
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: async ({ credential }) => {
-          if (!credential) return;
-          setError('');
-          setIsSubmitting(true);
-          try {
-            const auth = await apiRequest('/auth/google', {
-              method: 'POST',
-              body: JSON.stringify({ credential }),
-            });
-            onLoginSuccess(auth);
-          } catch (err) {
-            setError(err.message);
-          } finally {
-            setIsSubmitting(false);
-          }
-        },
-      });
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        width: googleButtonRef.current.offsetWidth,
-        text: 'signin_with',
-      });
-      setGoogleReady(true);
-    };
-
-    if (window.google?.accounts?.id) {
-      initializeGoogle();
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    script.onload = initializeGoogle;
-    document.head.appendChild(script);
-  }, [googleClientId, onLoginSuccess]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -128,21 +79,6 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
               {isSubmitting ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
-
-          <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-200"></div>
-            <span className="text-xs font-semibold text-slate-400">atau</span>
-            <div className="h-px flex-1 bg-slate-200"></div>
-          </div>
-
-          {googleClientId ? (
-            <div className="flex min-h-11 w-full justify-center overflow-hidden rounded-xl" ref={googleButtonRef}></div>
-          ) : (
-            <button type="button" disabled className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-bold text-slate-400">
-              Google belum dikonfigurasi
-            </button>
-          )}
-          {googleClientId && !googleReady && <p className="mt-2 text-center text-xs text-slate-400">Menyiapkan Google...</p>}
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Belum punya akun?{' '}

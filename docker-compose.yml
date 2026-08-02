@@ -29,6 +29,11 @@ services:
       - JWT_SECRET=${JWT_SECRET:-changeme}
       - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-http://localhost}
       - UPLOAD_DIR=uploads
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-BESC <noreply@beschimbio.online>}
     volumes:
       - uploads_data:/app/uploads
 
