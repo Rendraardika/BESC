@@ -88,27 +88,44 @@ func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) setSessionCookie(c *fiber.Ctx, token string) {
+	// Use Secure only when the original request came via HTTPS (e.g. Traefik reverse proxy)
+	secure := h.cfg.AppEnv == "production" && isSecureRequest(c)
 	c.Cookie(&fiber.Cookie{
 		Name:     utils.AuthCookieName,
 		Value:    token,
 		Path:     "/",
 		Expires:  time.Now().Add(h.cfg.JWTExpires),
 		MaxAge:   int(h.cfg.JWTExpires.Seconds()),
-		Secure:   h.cfg.AppEnv == "production",
+		Secure:   secure,
 		HTTPOnly: true,
 		SameSite: "Lax",
 	})
 }
 
 func (h *AuthHandler) clearSessionCookie(c *fiber.Ctx) {
+	secure := h.cfg.AppEnv == "production" && isSecureRequest(c)
 	c.Cookie(&fiber.Cookie{
 		Name:     utils.AuthCookieName,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
-		Secure:   h.cfg.AppEnv == "production",
+		Secure:   secure,
 		HTTPOnly: true,
 		SameSite: "Lax",
 	})
+}
+
+func isSecureRequest(c *fiber.Ctx) bool {
+	// Check X-Forwarded-Proto header (set by Traefik/reverse proxy)
+	proto := string(c.Request().Header.Peek("X-Forwarded-Proto"))
+	if proto == "https" {
+		return true
+	}
+	// Check X-Forwarded-SSL header
+	ssl := string(c.Request().Header.Peek("X-Forwarded-SSL"))
+	if ssl == "on" {
+		return true
+	}
+	return c.Protocol() == "https"
 }
