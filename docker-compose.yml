@@ -10,19 +10,13 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./backend/database/migrations:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     restart: always
     environment:
       - APP_ENV=production

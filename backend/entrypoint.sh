@@ -2,10 +2,17 @@
 set -e
 
 echo "Waiting for MySQL to be ready..."
+MAX_RETRIES=30
+RETRY=0
 until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; do
-  echo "MySQL is not ready yet. Waiting..."
-  sleep 2
+  RETRY=$((RETRY + 1))
+  if [ $RETRY -ge $MAX_RETRIES ]; then
+    echo "ERROR: MySQL not ready after $MAX_RETRIES attempts. Starting anyway..."
+    break
+  fi
+  echo "MySQL not ready yet. Attempt $RETRY/$MAX_RETRIES..."
+  sleep 1
 done
 
-echo "MySQL is ready. Starting backend..."
+echo "Starting backend..."
 exec /app/besc-api
