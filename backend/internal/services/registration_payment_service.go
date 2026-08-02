@@ -58,9 +58,6 @@ func (s *registrationService) Register(userID, competitionID string) (*entities.
 	if competition.Status != entities.CompetitionPublished {
 		return nil, utils.ErrRegistrationClosed
 	}
-	if competition.RegistrationDeadline != nil && time.Now().UTC().After((*competition.RegistrationDeadline).UTC()) {
-		return nil, utils.ErrRegistrationClosed
-	}
 	user, err := s.users.FindByID(userID)
 	if err != nil {
 		return nil, err
