@@ -34,8 +34,18 @@ services:
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASS=${SMTP_PASS:-}
       - MAIL_FROM=${MAIL_FROM:-BESC <noreply@beschimbio.online>}
-    volumes:
-      - uploads_data:/app/uploads
+    expose:
+      - "8080"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.besc-api.rule=Host(`beschimbio.online`) && PathPrefix(`/api/v1`)
+      - traefik.http.routers.besc-api.entrypoints=websecure
+      - traefik.http.routers.besc-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.besc-api.priority=100
+      - traefik.http.services.besc-api.loadbalancer.server.port=8080
+    networks:
+      - traefik-proxy
 
   frontend:
     build:
@@ -47,9 +57,22 @@ services:
     depends_on:
       - backend
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-proxy
+      - traefik.http.routers.besc.rule=Host(`beschimbio.online`) || Host(`www.beschimbio.online`)
+      - traefik.http.routers.besc.entrypoints=websecure
+      - traefik.http.routers.besc.tls.certresolver=letsencrypt
+      - traefik.http.services.besc.loadbalancer.server.port=80
+    networks:
+      - traefik-proxy
 
 volumes:
   db_data:
   uploads_data:
+
+networks:
+  traefik-proxy:
+    external: true
