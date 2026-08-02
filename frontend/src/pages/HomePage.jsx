@@ -11,14 +11,14 @@ import CTA from '../sections/CTA.jsx';
 import Blog from '../sections/Blog.jsx';
 import FAQ from '../sections/FAQ.jsx';
 
-export default function HomePage({ competitions, onCompetitionDetail, onCompetitions, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, onVerifiedCompetition, registrations, user }) {
+export default function HomePage({ competitions, competitionsLoading, onCompetitionDetail, onCompetitions, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, onVerifiedCompetition, registrations, user }) {
   return (
     <>
       <Header isHome onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onRegister={onRegister} onTryout={onTryout} user={user} />
       <main>
         <Hero onCompetitions={onCompetitions} onTryoutPackage={onTryoutPackage} />
         <StatsStrip />
-        <Events competitions={competitions} onCompetitionDetail={onCompetitionDetail} onVerifiedCompetition={onVerifiedCompetition} registrations={registrations} />
+        <Events competitions={competitions} competitionsLoading={competitionsLoading} onCompetitionDetail={onCompetitionDetail} onVerifiedCompetition={onVerifiedCompetition} registrations={registrations} />
         <Materi />
         <Timeline />
         <WhyBesc />

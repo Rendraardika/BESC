@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+ import { Suspense, lazy, useEffect, useState } from 'react';
 import { apiRequest, clearAuthSession, saveAuthSession } from './lib/api.js';
 
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
@@ -488,5 +488,5 @@ export default function App() {
     );
   }
 
-  return <HomePage competitions={apiCompetitions} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onTryout={openTryout} onTryoutPackage={openTryoutPackage} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
+  return <HomePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onTryout={openTryout} onTryoutPackage={openTryoutPackage} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
 }
