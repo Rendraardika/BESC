@@ -1,17 +1,27 @@
-import { useEffect, useState } from 'react';
-import HomePage from './pages/HomePage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import OlimpiadePage from './pages/OlimpiadePage.jsx';
-import CompetitionDetailPage from './pages/CompetitionDetailPage.jsx';
-import EventRegistrationPage from './pages/EventRegistrationPage.jsx';
-import EventRegistrationSuccessPage from './pages/EventRegistrationSuccessPage.jsx';
-import TryoutPackagePage from './pages/TryoutPackagePage.jsx';
-import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
-import ExamRulesPage from './pages/ExamRulesPage.jsx';
-import ExamPage from './pages/ExamPage.jsx';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { apiRequest, clearAuthSession, saveAuthSession } from './lib/api.js';
+
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const OlimpiadePage = lazy(() => import('./pages/OlimpiadePage.jsx'));
+const CompetitionDetailPage = lazy(() => import('./pages/CompetitionDetailPage.jsx'));
+const EventRegistrationPage = lazy(() => import('./pages/EventRegistrationPage.jsx'));
+const EventRegistrationSuccessPage = lazy(() => import('./pages/EventRegistrationSuccessPage.jsx'));
+const TryoutPackagePage = lazy(() => import('./pages/TryoutPackagePage.jsx'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
+const ExamRulesPage = lazy(() => import('./pages/ExamRulesPage.jsx'));
+const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
+
+const Loading = () => (
+  <div className="grid min-h-screen place-items-center bg-slate-50">
+    <div className="text-center">
+      <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-[#1c79c6] border-t-transparent"></div>
+      <p className="text-sm font-bold text-slate-400">Memuat...</p>
+    </div>
+  </div>
+);
 
 const getPageFromHash = () => {
   if (window.location.hash === '#daftar') return 'register';
@@ -323,26 +333,26 @@ export default function App() {
   };
 
   if (page === 'register') {
-    return <RegisterPage onLogin={openLogin} onRegisterSuccess={handleRegisterSuccess} />;
+    return <Suspense fallback={<Loading />}><RegisterPage onLogin={openLogin} onRegisterSuccess={handleRegisterSuccess} /></Suspense>;
   }
 
   if (page === 'login') {
-    return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
+    return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;
   }
 
   if (page === 'admin-login') {
-    return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
+    return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;
   }
 
   if (page === 'admin-dashboard') {
     if (!authChecked) {
-      return null;
+      return <Loading />;
     }
     if (!admin) {
-      return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />;
+      return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;
     }
 
-    return <AdminDashboardPage admin={admin} onLogout={handleAdminLogout} />;
+    return <Suspense fallback={<Loading />}><AdminDashboardPage admin={admin} onLogout={handleAdminLogout} /></Suspense>;
   }
 
   if (page === 'profile') {
