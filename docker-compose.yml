@@ -9,30 +9,44 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
+      - ./backend/database/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpass}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
     depends_on:
-      - db
-    ports:
-      - "8080:8080"
+      db:
+        condition: service_healthy
+    restart: always
     environment:
+      - APP_ENV=production
+      - APP_PORT=8080
       - DB_HOST=db
+      - DB_PORT=3306
       - DB_USER=bescuser
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=competition_platform
       - JWT_SECRET=${JWT_SECRET:-changeme}
+      - CORS_ALLOW_ORIGINS=${CORS_ALLOW_ORIGINS:-https://localhost,http://localhost}
     volumes:
-      - ./backend/uploads:/app/uploads
+      - uploads_data:/app/uploads
 
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    restart: always
     ports:
       - "80:80"
 
 volumes:
   db_data:
+  uploads_data:
