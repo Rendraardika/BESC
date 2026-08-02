@@ -153,7 +153,11 @@ func isWeakJWTSecret(value string) bool {
 }
 
 func hasWildcardOrigin(value string) bool {
-	for _, origin := range strings.Split(value, ",") {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return false
+	}
+	for _, origin := range strings.Split(trimmed, ",") {
 		if strings.TrimSpace(origin) == "*" {
 			return true
 		}
