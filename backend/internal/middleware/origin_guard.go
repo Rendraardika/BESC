@@ -21,6 +21,11 @@ func OriginGuard(allowedOrigins string) fiber.Handler {
 		if allowed[origin] {
 			return c.Next()
 		}
+		// Allow requests when origin is empty or when host matches the server host
+		host := strings.TrimSpace(c.Get("Host"))
+		if host != "" && strings.Contains(origin, host) {
+			return c.Next()
+		}
 		return response.Error(c, fiber.StatusForbidden, "origin is not allowed", nil)
 	}
 }
