@@ -41,9 +41,6 @@ services:
     restart: always
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./certs:/etc/nginx/certs:ro
 
 volumes:
   db_data:
