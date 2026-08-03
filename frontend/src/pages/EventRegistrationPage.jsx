@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
@@ -29,8 +29,8 @@ function StepIndicator({ currentStep }) {
 function PersonSection({ prefix, form, setForm, showNISN, showUploads, required = true }) {
   const update = (field, val) => setForm((c) => ({ ...c, [`${prefix}_${field}`]: val }));
   const get = (field) => form[`${prefix}_${field}`] || '';
-  const ic = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
-  const fc = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
+  const ic = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-base outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const fc = 'h-12 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
   return (
     <div className="grid gap-3 md:grid-cols-2">
       <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Lengkap {required && '*'}</label><input className={ic} value={get('name')} onChange={(e) => update('name', e.target.value)} required={required} /></div>

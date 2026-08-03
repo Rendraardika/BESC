@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
 import indonesiaWilayah from '../indonesia_wilayah.json';
@@ -190,7 +190,7 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
-                <select className={inputClass} value={provinsiId} onChange={(event) => { setProvinsiId(event.target.value); setForm((c) => ({ ...c, province: event.target.options[event.target.selectedIndex]?.text || '', city: '' })); }}>
+                <select className={inputClass} value={form.province || ''} onChange={(event) => { setProvinsiId(event.target.value); setForm((c) => ({ ...c, province: event.target.options[event.target.selectedIndex]?.text || '', city: '' })); }}>
                   <option value="" disabled>Pilih Provinsi</option>
                   {indonesiaWilayah.provinsi.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
                 </select>
