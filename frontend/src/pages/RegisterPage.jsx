@@ -69,6 +69,16 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
           institution: form.institution,
         }),
       });
+      const profileKey = `besc_profile_${auth.user?.id || auth.user?.email || form.email}`;
+      localStorage.setItem(profileKey, JSON.stringify({
+        fullName: form.leaderName,
+        whatsapp: form.phone,
+        school: form.institution,
+        birthDate: form.birthDate,
+        gender: form.gender,
+        province: form.province,
+        city: form.city,
+      }));
       onRegisterSuccess(auth, { source: 'manual' });
     } catch (err) {
       setError(err.message);
@@ -172,7 +182,7 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
 
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Jenis Kelamin</label>
-                <select className={inputClass} defaultValue="">
+                <select className={inputClass} value={form.gender || ''} onChange={updateField('gender')}>
                   <option value="" disabled>Pilih Jenis Kelamin</option>
                   <option>Laki-laki</option>
                   <option>Perempuan</option>
@@ -180,14 +190,14 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
-                <select className={inputClass} value={provinsiId} onChange={(event) => setProvinsiId(event.target.value)}>
+                <select className={inputClass} value={provinsiId} onChange={(event) => { setProvinsiId(event.target.value); setForm((c) => ({ ...c, province: event.target.options[event.target.selectedIndex]?.text || '', city: '' })); }}>
                   <option value="" disabled>Pilih Provinsi</option>
                   {indonesiaWilayah.provinsi.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Kota Domisili</label>
-                <select className={inputClass} defaultValue="">
+                <select className={inputClass} value={form.city || ''} onChange={(event) => setForm((c) => ({ ...c, city: event.target.options[event.target.selectedIndex]?.text || '' }))}>
                   <option value="" disabled>Pilih Kota</option>
                   {kotaOptions.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
                 </select>

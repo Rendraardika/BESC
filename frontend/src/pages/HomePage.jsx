@@ -8,7 +8,7 @@ import Timeline from '../sections/Timeline.jsx';
 import WhyBesc from '../sections/WhyBesc.jsx';
 import Testimonials from '../sections/Testimonials.jsx';
 import CTA from '../sections/CTA.jsx';
-import Blog from '../sections/Blog.jsx';
+import Guidebook from '../sections/Guidebook.jsx';
 import FAQ from '../sections/FAQ.jsx';
 
 export default function HomePage({ competitions, competitionsLoading, onCompetitionDetail, onCompetitions, onRegister, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onTryoutPackage, onVerifiedCompetition, registrations, user }) {
@@ -24,7 +24,7 @@ export default function HomePage({ competitions, competitionsLoading, onCompetit
         <WhyBesc />
         <Testimonials />
         <CTA onRegister={onRegister} />
-        <Blog />
+        <Guidebook />
         <FAQ />
       </main>
       <Footer />

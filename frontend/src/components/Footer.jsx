@@ -13,7 +13,7 @@ export default function Footer() {
           {[
             ['Kompetisi', ['Olimpiade Biologi', 'Latihan Soal', 'Jadwal Event']],
             ['Informasi', ['Tentang BESC', 'FAQ', 'Kerja Sama']],
-            ['Customer Service', ['📱 0812-3456-7890', '✉️ info@besc.id', '💬 Live Chat', '📋 Syarat & Ketentuan']],
+['Customer Service', ['📱 +62 813-3532-3519', '✉️ info@besc.id', '💬 Live Chat', '📋 Syarat & Ketentuan']],
           ].map(([title, links]) => (
             <div key={title}>
               <h3 className="mb-4 font-['Plus_Jakarta_Sans'] text-sm font-extrabold text-slate-200">{title}</h3>

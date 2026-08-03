@@ -1,5 +1,5 @@
 import SectionHeader from '../components/SectionHeader.jsx';
-import timelineImage from '../assets/images/timeline.png';
+import timelineImage from '../assets/images/timeline-real.png';
 
 export default function Timeline() {
   return (
