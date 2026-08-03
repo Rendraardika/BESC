@@ -2,14 +2,20 @@ import { useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
-import qrisBesc from '../assets/images/qris-besc.jpeg';
 import { API_URL, apiRequest } from '../lib/api.js';
 
+const subtemaOptions = [
+  'Bioenergy Genetics',
+  'Molecular Bioremediation',
+  'Microbial Bioenergy',
+  'Metabolic Engineering',
+  'Sustainable Biotechnology',
+];
+
 const steps = [
-  { id: 1, label: 'Daftar Kompetisi', icon: '📝' },
+  { id: 1, label: 'Informasi Tim', icon: '👥' },
   { id: 2, label: 'Pembayaran', icon: '💳' },
   { id: 3, label: 'Verifikasi', icon: '🔍' },
-  { id: 4, label: 'Aktivasi Akun', icon: '✅' },
 ];
 
 function StepIndicator({ currentStep }) {
@@ -25,265 +31,213 @@ function StepIndicator({ currentStep }) {
             }`}>
               {currentStep > step.id ? '✓' : step.icon}
             </div>
-            <span className={`mt-2 text-[10px] font-bold sm:text-xs ${
-              currentStep >= step.id ? 'text-[#1c79c6]' : 'text-slate-400'
-            }`}>{step.label}</span>
+            <span className={`mt-2 text-[10px] font-bold sm:text-xs ${currentStep >= step.id ? 'text-[#1c79c6]' : 'text-slate-400'}`}>{step.label}</span>
           </div>
-          {index < steps.length - 1 && (
-            <div className={`mx-1 h-0.5 w-6 sm:w-12 ${
-              currentStep > step.id ? 'bg-green-500' : 'bg-slate-200'
-            }`}></div>
-          )}
+          {index < steps.length - 1 && <div className={`mx-1 h-0.5 w-6 sm:w-12 ${currentStep > step.id ? 'bg-green-500' : 'bg-slate-200'}`}></div>}
         </div>
       ))}
     </div>
   );
 }
 
-export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegistrationSuccess, onTryout, user }) {
+function PersonSection({ title, prefix, form, setForm, showNISN, showUploads }) {
+  const update = (field, val) => setForm((c) => ({ ...c, [`${prefix}_${field}`]: val }));
+  const get = (field) => form[`${prefix}_${field}`] || '';
+  const inputClass = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const fileClass = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <h4 className="mb-3 text-sm font-bold text-slate-800">{title}</h4>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Lengkap *</label><input className={inputClass} value={get('name')} onChange={(e) => update('name', e.target.value)} required /></div>
+        {showNISN && <div><label className="mb-1 block text-xs font-semibold text-slate-600">NISN *</label><input className={inputClass} value={get('nisn')} onChange={(e) => update('nisn', e.target.value)} required /></div>}
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Kelas *</label><select className={inputClass} value={get('kelas')} onChange={(e) => update('kelas', e.target.value)} required><option value="" disabled>Pilih Kelas</option><option>X</option><option>XI</option><option>XII</option></select></div>
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">No WhatsApp Aktif *</label><input className={inputClass} value={get('wa')} onChange={(e) => update('wa', e.target.value)} placeholder="08xxxxxxxxxx" required /></div>
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Email Aktif *</label><input className={inputClass} type="email" value={get('email')} onChange={(e) => update('email', e.target.value)} required /></div>
+        {showUploads && <>
+          <div><label className="mb-1 block text-xs font-semibold text-slate-600">Scan Kartu Pelajar (.png/.jpg/.jpeg) *</label><input className={fileClass} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('kartuPelajar', e.target.files?.[0])} required /></div>
+          <div><label className="mb-1 block text-xs font-semibold text-slate-600">Foto Formal (.png/.jpg/.jpeg) *</label><input className={fileClass} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('fotoFormal', e.target.files?.[0])} required /></div>
+          <div><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Twibbon (.png/.jpg/.jpeg) *</label><input className={fileClass} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('twibbon', e.target.files?.[0])} required /></div>
+          <div><label className="mb-1 block text-xs font-semibold text-slate-600">Follow IG & TikTok BESC (.pdf) *</label><input className={fileClass} type="file" accept=".pdf" onChange={(e) => update('followProof', e.target.files?.[0])} required /></div>
+        </>}
+      </div>
+    </div>
+  );
+}
+
+export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegister, onRegistrationSuccess, user }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [proof, setProof] = useState(null);
-  const [ftProof, setFtProof] = useState(null);
-  const [registrationData, setRegistrationData] = useState({
-    fullName: user?.name || '',
-    whatsapp: user?.phone || '',
-    school: user?.institution || '',
-    classLevel: '',
-    teacherName: '',
-    teacherPhone: '',
+  const [form, setForm] = useState({
+    namaTim: '', ketua_name: '', ketua_nisn: '', ketua_kelas: '', ketua_wa: '', ketua_email: '',
+    anggota1_name: '', anggota1_nisn: '', anggota1_kelas: '', anggota1_wa: '', anggota1_email: '',
+    anggota2_name: '', anggota2_nisn: '', anggota2_kelas: '', anggota2_wa: '', anggota2_email: '',
+    namaSekolah: '', provinsi: '', kabKota: '', alamatSekolah: '',
+    guru_nama: '', guru_hp: '', guru_email: '',
+    judulAbstrak: '', subtema: '',
   });
+  const [files, setFiles] = useState({});
+  const [proof, setProof] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [registrationResult, setRegistrationResult] = useState(null);
 
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : [];
   const event = displayEvents[competitionIndex] ?? displayEvents[0];
-  const paymentPrice = event?.price?.toLowerCase().includes('gratis') ? event.original : event?.price;
-  const requirementText = event?.competition?.participant_requirements || '';
-  const requirements = requirementText.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-  const inputClass = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const isLKTI = event?.title?.toLowerCase().includes('lkti') || event?.title?.toLowerCase().includes('karya tulis');
+  const paymentPrice = event?.price?.toLowerCase().includes('gratis') ? 'Gratis' : event?.price || 'Rp 90.000';
+  const inputClass = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const fileClass = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
 
   const handleStep1Submit = (e) => {
-    e.preventDefault();
-    setError('');
-    if (!registrationData.fullName || !registrationData.whatsapp || !registrationData.school || !registrationData.classLevel) {
-      setError('Semua field wajib diisi.');
-      return;
+    e.preventDefault(); setError('');
+    if (!form.namaTim || !form.ketua_name || !form.ketua_nisn || !form.ketua_kelas || !form.ketua_wa || !form.ketua_email || !form.namaSekolah || !form.provinsi || !form.kabKota || !form.alamatSekolah) {
+      setError('Semua field wajib tim dan sekolah harus diisi.'); return;
     }
     setCurrentStep(2);
   };
 
   const handleStep2Submit = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!proof) {
-      setError('Bukti pembayaran wajib dipilih.');
-      return;
-    }
-    if (!ftProof) {
-      setError('Bukti upload Twibbon / share poster wajib dipilih.');
-      return;
-    }
-
+    e.preventDefault(); setError('');
+    if (!proof) { setError('Bukti pembayaran wajib diunggah.'); return; }
     setIsSubmitting(true);
     try {
       const competition = competitions.length ? competitions : await apiRequest('/competitions?limit=100');
-      const selectedCompetition = event?.competition || competition.find((item) => item.title === event?.title) || competition[competitionIndex];
-      if (!selectedCompetition) throw new Error('Kompetisi belum tersedia di database.');
-
-      const registration = await apiRequest(`/competitions/${selectedCompetition.id}/register`, {
-        method: 'POST',
-      });
-
+      const selectedCompetition = event?.competition || competition.find((c) => c.title === event?.title) || competition[competitionIndex];
+      if (!selectedCompetition) throw new Error('Kompetisi belum tersedia.');
+      const registration = await apiRequest(`/competitions/${selectedCompetition.id}/register`, { method: 'POST' });
       const formData = new FormData();
       formData.append('proof', proof);
-      formData.append('ft_proof', ftProof);
-      let response;
-      try {
-        response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, {
-          method: 'POST',
-          credentials: 'include',
-          body: formData,
-        });
-      } catch (uploadError) {
-        throw new Error(`Tidak bisa mengunggah bukti pembayaran ke server API (${API_URL}).`);
-      }
+      const response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, { method: 'POST', credentials: 'include', body: formData });
       const body = await response.json().catch(() => ({}));
-      if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal mengunggah bukti pembayaran.');
-
-      setRegistrationResult({ registration, competition: selectedCompetition });
+      if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal upload bukti pembayaran.');
       setCurrentStep(3);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err) { setError(err.message); } finally { setIsSubmitting(false); }
   };
 
-  const handleFinish = () => {
-    onRegistrationSuccess(event?.title || 'Kompetisi BESC');
-  };
+  const handleFinish = () => onRegistrationSuccess(event?.title || 'Kompetisi BESC');
 
   return (
     <>
-      <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onTryout={onTryout} user={user} />
+      <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} user={user} />
       <main className="bg-slate-50 px-5 py-12 md:px-8">
         <section className="mx-auto max-w-[900px]">
-          <h1 className="mb-8 text-center font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-slate-950 md:text-3xl">
-            Alur Pendaftaran
-          </h1>
-
+          <h1 className="mb-8 text-center font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-slate-950 md:text-3xl">Alur Pendaftaran</h1>
           <StepIndicator currentStep={currentStep} />
-
           <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-lg md:p-8">
             {error && <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">{error}</div>}
 
-            {/* Step 1: Daftar Kompetisi */}
+            {/* STEP 1: Informasi Tim */}
             {currentStep === 1 && (
               <div>
                 <div className="mb-6 flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-50 text-lg">📝</span>
-                  <div>
-                    <h2 className="text-xl font-extrabold text-slate-950">Daftar Kompetisi</h2>
-                    <p className="text-sm text-slate-500">Lengkapi data diri untuk pendaftaran</p>
-                  </div>
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-blue-50 text-lg">👥</span>
+                  <div><h2 className="text-xl font-extrabold text-slate-950">Informasi Tim</h2><p className="text-sm text-slate-500">Lengkapi data tim dan unggah dokumen yang diperlukan</p></div>
                 </div>
-
-                {requirements.length > 0 && (
-                  <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-                    <h3 className="mb-2 text-sm font-bold text-blue-800">Persyaratan Peserta:</h3>
-                    <ul className="space-y-1 text-sm text-blue-700">
-                      {requirements.map((r) => <li key={r}>• {r}</li>)}
-                    </ul>
-                  </div>
-                )}
-
                 <form onSubmit={handleStep1Submit} className="space-y-4">
-                  <Field label="Nama Lengkap Peserta *">
-                    <input className={inputClass} value={registrationData.fullName} onChange={(e) => setRegistrationData((c) => ({ ...c, fullName: e.target.value }))} required />
-                  </Field>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nomor WhatsApp *">
-                      <input className={inputClass} value={registrationData.whatsapp} onChange={(e) => setRegistrationData((c) => ({ ...c, whatsapp: e.target.value }))} placeholder="08xxxxxxxxxx" required />
-                    </Field>
-                    <Field label="Kelas *">
-                      <select className={inputClass} value={registrationData.classLevel} onChange={(e) => setRegistrationData((c) => ({ ...c, classLevel: e.target.value }))} required>
-                        <option value="" disabled>Pilih kelas</option>
-                        <option>VII</option><option>VIII</option><option>IX</option>
-                        <option>X</option><option>XI</option><option>XII</option>
-                      </select>
-                    </Field>
+                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Nama Tim *</label><input className={inputClass} value={form.namaTim} onChange={(e) => setForm((c) => ({ ...c, namaTim: e.target.value }))} required /></div>
+
+                  <PersonSection title="Ketua Tim" prefix="ketua" form={form} setForm={setForm} showNISN showUploads />
+
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4">
+                    <h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 (opsional)</h4>
+                    <PersonSection title="" prefix="anggota1" form={form} setForm={setForm} showNISN showUploads />
                   </div>
-                  <Field label="Asal Sekolah *">
-                    <input className={inputClass} value={registrationData.school} onChange={(e) => setRegistrationData((c) => ({ ...c, school: e.target.value }))} placeholder="Nama sekolah" required />
-                  </Field>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Nama Guru Pendamping (opsional)">
-                      <input className={inputClass} value={registrationData.teacherName} onChange={(e) => setRegistrationData((c) => ({ ...c, teacherName: e.target.value }))} />
-                    </Field>
-                    <Field label="No. Telp Guru Pendamping (opsional)">
-                      <input className={inputClass} value={registrationData.teacherPhone} onChange={(e) => setRegistrationData((c) => ({ ...c, teacherPhone: e.target.value }))} />
-                    </Field>
+
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4">
+                    <h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 2 (opsional)</h4>
+                    <PersonSection title="" prefix="anggota2" form={form} setForm={setForm} showNISN showUploads />
                   </div>
-                  <button type="submit" className="rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0]">
-                    Lanjut ke Pembayaran →
-                  </button>
+
+                  {/* Informasi Sekolah */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Sekolah</h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Sekolah *</label><input className={inputClass} value={form.namaSekolah} onChange={(e) => setForm((c) => ({ ...c, namaSekolah: e.target.value }))} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Provinsi *</label><input className={inputClass} value={form.provinsi} onChange={(e) => setForm((c) => ({ ...c, provinsi: e.target.value }))} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Kabupaten/Kota *</label><input className={inputClass} value={form.kabKota} onChange={(e) => setForm((c) => ({ ...c, kabKota: e.target.value }))} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Alamat Sekolah *</label><input className={inputClass} value={form.alamatSekolah} onChange={(e) => setForm((c) => ({ ...c, alamatSekolah: e.target.value }))} required /></div>
+                    </div>
+                  </div>
+
+                  {/* Biodata Kelompok */}
+                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fileClass} type="file" accept=".pdf" onChange={(e) => setFiles((c) => ({ ...c, biodataKelompok: e.target.files?.[0] }))} required /></div>
+
+                  {/* Informasi Guru Pembimbing */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Guru Pembimbing (opsional)</h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Lengkap (beserta gelar)</label><input className={inputClass} value={form.guru_nama} onChange={(e) => setForm((c) => ({ ...c, guru_nama: e.target.value }))} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nomor HP</label><input className={inputClass} value={form.guru_hp} onChange={(e) => setForm((c) => ({ ...c, guru_hp: e.target.value }))} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Email Aktif</label><input className={inputClass} type="email" value={form.guru_email} onChange={(e) => setForm((c) => ({ ...c, guru_email: e.target.value }))} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Lembar Biodata Guru (.pdf)</label><input className={fileClass} type="file" accept=".pdf" onChange={(e) => setFiles((c) => ({ ...c, biodataGuru: e.target.files?.[0] }))} /></div>
+                    </div>
+                  </div>
+
+                  {/* Informasi Karya - only for LKTI */}
+                  {isLKTI && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Karya (LKTI)</h4>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Judul Abstrak *</label><input className={inputClass} value={form.judulAbstrak} onChange={(e) => setForm((c) => ({ ...c, judulAbstrak: e.target.value }))} required /></div>
+                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Pilih Subtema *</label><select className={inputClass} value={form.subtema} onChange={(e) => setForm((c) => ({ ...c, subtema: e.target.value }))} required><option value="" disabled>Pilih Subtema</option>{subtemaOptions.map((s) => <option key={s}>{s}</option>)}</select></div>
+                      </div>
+                      <div className="mt-3"><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Abstrak & Lembar Orisinalitas Karya (.pdf) *</label><input className={fileClass} type="file" accept=".pdf" onChange={(e) => setFiles((c) => ({ ...c, abstrak: e.target.files?.[0] }))} required /></div>
+                    </div>
+                  )}
+
+                  <button type="submit" className="rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0]">Lanjut ke Pembayaran →</button>
                 </form>
               </div>
             )}
 
-            {/* Step 2: Pembayaran */}
+            {/* STEP 2: Pembayaran */}
             {currentStep === 2 && (
               <div>
                 <div className="mb-6 flex items-center gap-3">
                   <span className="grid h-10 w-10 place-items-center rounded-full bg-purple-50 text-lg">💳</span>
-                  <div>
-                    <h2 className="text-xl font-extrabold text-slate-950">Pembayaran</h2>
-                    <p className="text-sm text-slate-500">Lakukan pembayaran dan unggah bukti</p>
-                  </div>
+                  <div><h2 className="text-xl font-extrabold text-slate-950">Pembayaran</h2><p className="text-sm text-slate-500">Lakukan pembayaran dan unggah bukti transfer</p></div>
                 </div>
-
                 <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                  Silakan transfer sebesar <span className="font-extrabold text-[#7c1cc6]">{paymentPrice}</span> ke salah satu rekening di bawah, lalu unggah bukti transfer.
+                  Silakan transfer sebesar <span className="font-extrabold text-[#7c1cc6]">{paymentPrice}</span> ke rekening di bawah, lalu unggah bukti transfer.
                 </div>
-
-                <div className="mb-6 grid gap-4 sm:grid-cols-2">
+                <div className="mb-6 grid gap-4 md:grid-cols-2">
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-center">
-                    <p className="text-sm font-bold text-slate-700">Bank BCA</p>
-                    <p className="mt-3 font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#7c1cc6]">4690372555</p>
-                    <p className="mt-2 text-xs text-slate-500">A.n BESC Indonesia</p>
+                    <p className="text-sm font-bold text-slate-700">Bank Mandiri</p>
+                    <p className="mt-3 font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#7c1cc6]">1420023460172</p>
+                    <p className="mt-2 text-xs text-slate-500">A.n KHOMSA SALWA NABILA</p>
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-center">
                     <p className="text-sm font-bold text-slate-700">QRIS</p>
-                    <img src={qrisBesc} alt="QRIS BESC" className="mx-auto mt-3 w-full max-w-[200px] rounded border-4 border-[#7c1cc6] bg-white object-contain" />
-                    <p className="mt-2 text-xs text-slate-500">A.n BESC Indonesia</p>
+                    <img src="/qris-besc.jpeg" alt="QRIS BESC" className="mx-auto mt-3 w-full max-w-[200px] rounded border-4 border-[#7c1cc6] bg-white object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
+                    <p className="mt-2 text-xs text-slate-500">A.n KHOMSA SALWA NABILA</p>
                   </div>
                 </div>
-
                 <form onSubmit={handleStep2Submit} className="space-y-4">
                   <Field label="Bukti Pembayaran *">
-                    <input className="h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setProof(e.target.files?.[0] || null)} required />
+                    <input className={fileClass} type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setProof(e.target.files?.[0] || null)} required />
                     <p className="mt-1 text-xs text-slate-500">Format: JPG, PNG, WebP. Maks 5MB.</p>
                   </Field>
-                  <Field label="Bukti Twibbon / Share Poster *">
-                    <input className="h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm" type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setFtProof(e.target.files?.[0] || null)} required />
-                    <p className="mt-1 text-xs text-slate-500">Screenshot Twibbon atau bukti share poster ke 3 grup.</p>
-                  </Field>
                   <div className="flex gap-3">
-                    <button type="button" onClick={() => setCurrentStep(1)} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
-                      ← Kembali
-                    </button>
-                    <button type="submit" disabled={isSubmitting} className="rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0] disabled:cursor-not-allowed disabled:opacity-60">
-                      {isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}
-                    </button>
+                    <button type="button" onClick={() => setCurrentStep(1)} className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50">← Kembali</button>
+                    <button type="submit" disabled={isSubmitting} className="rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0] disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}</button>
                   </div>
                 </form>
               </div>
             )}
 
-            {/* Step 3: Verifikasi */}
+            {/* STEP 3: Verifikasi + WhatsApp */}
             {currentStep === 3 && (
               <div className="text-center">
-                <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-amber-100 text-4xl">🔍</div>
-                <h2 className="text-2xl font-extrabold text-slate-950">Menunggu Verifikasi</h2>
-                <p className="mt-3 text-sm leading-7 text-slate-600 max-w-md mx-auto">
-                  Pendaftaran dan bukti pembayaran kamu sedang diverifikasi oleh admin BESC.
-                  Proses ini biasanya memakan waktu <span className="font-bold text-[#1c79c6]">1×24 jam</span>.
-                </p>
-                <div className="mx-auto mt-6 max-w-sm rounded-lg border border-blue-200 bg-blue-50 p-4 text-left text-sm text-blue-800">
-                  <p className="font-bold">Yang perlu kamu lakukan:</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>• Cek email atau WhatsApp untuk notifikasi</li>
-                    <li>• Jika belum diterima, hubungi admin</li>
-                    <li>• Jika ditolak, kamu bisa upload ulang bukti</li>
-                  </ul>
-                </div>
-                <button onClick={() => setCurrentStep(4)} className="mt-6 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
-                  Lanjut →
-                </button>
-              </div>
-            )}
-
-            {/* Step 4: Aktivasi */}
-            {currentStep === 4 && (
-              <div className="text-center">
                 <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-green-100 text-4xl">✅</div>
-                <h2 className="text-2xl font-extrabold text-slate-950">Pendaftaran Selesai!</h2>
+                <h2 className="text-2xl font-extrabold text-slate-950">Pendaftaran Terkirim!</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600 max-w-md mx-auto">
-                  Kamu sudah terdaftar di kompetisi <span className="font-bold text-[#1c79c6]">{event?.title || 'BESC'}</span>.
-                  Tunggu verifikasi dari admin, lalu kamu bisa mengikuti kompetisi.
+                  Pendaftaran kamu sudah dikirim. Lakukan konfirmasi pembayaran ke admin BESC melalui WhatsApp.
                 </p>
-                <div className="mx-auto mt-6 max-w-sm rounded-lg border border-green-200 bg-green-50 p-4 text-left text-sm text-green-800">
-                  <p className="font-bold">Selanjutnya:</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>• Cek status pendaftaran di profil kamu</li>
-                    <li>• Setelah diverifikasi, kamu bisa mulai ujian</li>
-                    <li>• Ikuti technical meeting sesuai jadwal</li>
-                  </ul>
-                </div>
-                <button onClick={handleFinish} className="mt-6 rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0]">
-                  Kembali ke Beranda
-                </button>
+                <a href="https://wa.me/6281335323519?text=Halo%20BESC%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pendaftaran" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Konfirmasi via WhatsApp
+                </a>
+                <p className="mt-4 text-xs text-slate-400">Nomor: +62 813-3532-3519</p>
+                <button onClick={handleFinish} className="mt-4 text-sm font-bold text-[#1c79c6] hover:underline">Kembali ke Beranda</button>
               </div>
             )}
           </div>
@@ -295,10 +249,5 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
 }
 
 function Field({ children, label }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
-      {children}
-    </label>
-  );
+  return <label className="block"><span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>{children}</label>;
 }
