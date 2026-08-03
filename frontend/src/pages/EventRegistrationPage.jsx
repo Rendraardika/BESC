@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
@@ -50,9 +50,14 @@ function PersonSection({ prefix, form, setForm, showNISN, showUploads, required 
   );
 }
 
+function WaIcon() {
+  return <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>;
+}
+
 export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegister, onRegistrationSuccess, user }) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [form, setForm] = useState({ namaTim: '', ketua_name: '', ketua_nisn: '', ketua_kelas: '', ketua_wa: '', ketua_email: '', anggota1_name: '', anggota1_nisn: '', anggota1_kelas: '', anggota1_wa: '', anggota1_email: '', anggota2_name: '', anggota2_nisn: '', anggota2_kelas: '', anggota2_wa: '', anggota2_email: '', namaSekolah: '', provinsi: '', kabKota: '', alamatSekolah: '', guru_nama: '', guru_hp: '', guru_email: '', judulAbstrak: '', subtema: '' });
+  const savedForm = useMemo(() => { try { return JSON.parse(localStorage.getItem('besc_reg_form') || '{}'); } catch { return {}; } }, []);
+  const [form, setForm] = useState({ namaTim: savedForm.namaTim || '', ketua_name: savedForm.ketua_name || '', ketua_nisn: savedForm.ketua_nisn || '', ketua_kelas: savedForm.ketua_kelas || '', ketua_wa: savedForm.ketua_wa || '', ketua_email: savedForm.ketua_email || '', anggota1_name: savedForm.anggota1_name || '', anggota1_nisn: savedForm.anggota1_nisn || '', anggota1_kelas: savedForm.anggota1_kelas || '', anggota1_wa: savedForm.anggota1_wa || '', anggota1_email: savedForm.anggota1_email || '', anggota2_name: savedForm.anggota2_name || '', anggota2_nisn: savedForm.anggota2_nisn || '', anggota2_kelas: savedForm.anggota2_kelas || '', anggota2_wa: savedForm.anggota2_wa || '', anggota2_email: savedForm.anggota2_email || '', namaSekolah: savedForm.namaSekolah || '', provinsi: savedForm.provinsi || '', kabKota: savedForm.kabKota || '', alamatSekolah: savedForm.alamatSekolah || '', guru_nama: savedForm.guru_nama || '', guru_hp: savedForm.guru_hp || '', guru_email: savedForm.guru_email || '', judulAbstrak: savedForm.judulAbstrak || '', subtema: savedForm.subtema || '' });
   const [proof, setProof] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,21 +69,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
   const ic = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
   const fc = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
 
-  const handleStep1Submit = (e) => {
-    e.preventDefault(); setError('');
-    if (!form.namaTim || !form.ketua_name || !form.ketua_nisn || !form.ketua_kelas || !form.ketua_wa || !form.ketua_email || !form.namaSekolah || !form.provinsi || !form.kabKota || !form.alamatSekolah) { setError('Semua field wajib pada Ketua Tim dan Sekolah harus diisi.'); return; }
-    setCurrentStep(2);
-  };
-
-  const [proofFileName, setProofFileName] = useState('');
-
-  // Load saved form from localStorage
-  const savedForm = (() => {
-    try { return JSON.parse(localStorage.getItem('besc_reg_form') || '{}'); } catch { return {}; }
-  })();
-
-  // Save form to localStorage on change
-  const updateForm = (field, value) => {
+  const setF = (field, value) => {
     setForm((c) => {
       const next = { ...c, [field]: value };
       const toSave = { ...next };
@@ -86,6 +77,12 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       localStorage.setItem('besc_reg_form', JSON.stringify(toSave));
       return next;
     });
+  };
+
+  const handleStep1Submit = (e) => {
+    e.preventDefault(); setError('');
+    if (!form.namaTim || !form.ketua_name || !form.ketua_nisn || !form.ketua_kelas || !form.ketua_wa || !form.ketua_email || !form.namaSekolah || !form.provinsi || !form.kabKota || !form.alamatSekolah) { setError('Semua field wajib pada Ketua Tim dan Sekolah harus diisi.'); return; }
+    setCurrentStep(2);
   };
 
   const handleStep2Submit = async (e) => {
@@ -101,9 +98,30 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       const response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, { method: 'POST', credentials: 'include', body: formData });
       const body = await response.json().catch(() => ({}));
       if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal upload bukti pembayaran.');
+      localStorage.removeItem('besc_reg_form');
       setCurrentStep(3);
     } catch (err) { setError(err.message); } finally { setIsSubmitting(false); }
   };
+
+  const waMessage = useMemo(() => {
+    const compName = event?.title || 'Kompetisi BESC';
+    const ketua = form.ketua_name || '-';
+    const sekolah = form.namaSekolah || '-';
+    const tanggal = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    return encodeURIComponent(`Halo, Admin BESC 2026 👋🏼
+
+Saya ingin melakukan konfirmasi pembayaran pendaftaran ${compName}
+
+Berikut data saya:
+- Nama Ketua Tim: ${ketua}
+- Asal Sekolah: ${sekolah}
+- Nominal Pembayaran: ${paymentPrice}
+- Tanggal Transfer: ${tanggal}
+
+Bukti pembayaran telah saya lampirkan.
+
+Terima kasih.`);
+  }, [event, form, paymentPrice]);
 
   return (
     <>
@@ -122,37 +140,37 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
                   <div><h2 className="text-xl font-extrabold text-slate-950">Informasi Tim</h2><p className="text-sm text-slate-500">Lengkapi data tim dan unggah dokumen yang diperlukan</p></div>
                 </div>
                 <form onSubmit={handleStep1Submit} className="space-y-4">
-                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Nama Tim *</label><input className={ic} value={form.namaTim} onChange={(e) => setForm((c) => ({ ...c, namaTim: e.target.value }))} required /></div>
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h4 className="mb-3 text-sm font-bold text-slate-800">Ketua Tim *</h4><PersonSection prefix="ketua" form={form} setForm={setForm} showNISN showUploads /></div>
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 (opsional)</h4><PersonSection prefix="anggota1" form={form} setForm={setForm} showNISN showUploads required={false} /></div>
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 2 (opsional)</h4><PersonSection prefix="anggota2" form={form} setForm={setForm} showNISN showUploads required={false} /></div>
-                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setForm((c) => ({ ...c, _biodataKelompok: e.target.files?.[0] }))} required /></div>
+                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Nama Tim *</label><input className={ic} value={form.namaTim} onChange={(e) => setF('namaTim', e.target.value)} required /></div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h4 className="mb-3 text-sm font-bold text-slate-800">Ketua Tim *</h4><PersonSection prefix="ketua" form={form} setForm={setF} showNISN showUploads /></div>
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 (opsional)</h4><PersonSection prefix="anggota1" form={form} setForm={setF} showNISN showUploads required={false} /></div>
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 2 (opsional)</h4><PersonSection prefix="anggota2" form={form} setForm={setF} showNISN showUploads required={false} /></div>
+                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setF('_biodataKelompok', e.target.files?.[0])} required /></div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Sekolah</h4>
                     <div className="grid gap-3 md:grid-cols-2">
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Sekolah *</label><input className={ic} value={form.namaSekolah} onChange={(e) => setForm((c) => ({ ...c, namaSekolah: e.target.value }))} required /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Provinsi *</label><input className={ic} value={form.provinsi} onChange={(e) => setForm((c) => ({ ...c, provinsi: e.target.value }))} required /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Kabupaten/Kota *</label><input className={ic} value={form.kabKota} onChange={(e) => setForm((c) => ({ ...c, kabKota: e.target.value }))} required /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Alamat Sekolah *</label><input className={ic} value={form.alamatSekolah} onChange={(e) => setForm((c) => ({ ...c, alamatSekolah: e.target.value }))} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Sekolah *</label><input className={ic} value={form.namaSekolah} onChange={(e) => setF('namaSekolah', e.target.value)} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Provinsi *</label><input className={ic} value={form.provinsi} onChange={(e) => setF('provinsi', e.target.value)} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Kabupaten/Kota *</label><input className={ic} value={form.kabKota} onChange={(e) => setF('kabKota', e.target.value)} required /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Alamat Sekolah *</label><input className={ic} value={form.alamatSekolah} onChange={(e) => setF('alamatSekolah', e.target.value)} required /></div>
                     </div>
                   </div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Guru Pembimbing (opsional)</h4>
                     <div className="grid gap-3 md:grid-cols-2">
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Lengkap (beserta gelar)</label><input className={ic} value={form.guru_nama} onChange={(e) => setForm((c) => ({ ...c, guru_nama: e.target.value }))} /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nomor HP</label><input className={ic} value={form.guru_hp} onChange={(e) => setForm((c) => ({ ...c, guru_hp: e.target.value }))} /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Email Aktif</label><input className={ic} type="email" value={form.guru_email} onChange={(e) => setForm((c) => ({ ...c, guru_email: e.target.value }))} /></div>
-                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Lembar Biodata Guru (.pdf)</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setForm((c) => ({ ...c, _biodataGuru: e.target.files?.[0] }))} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nama Lengkap (beserta gelar)</label><input className={ic} value={form.guru_nama} onChange={(e) => setF('guru_nama', e.target.value)} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Nomor HP</label><input className={ic} value={form.guru_hp} onChange={(e) => setF('guru_hp', e.target.value)} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Email Aktif</label><input className={ic} type="email" value={form.guru_email} onChange={(e) => setF('guru_email', e.target.value)} /></div>
+                      <div><label className="mb-1 block text-xs font-semibold text-slate-600">Lembar Biodata Guru (.pdf)</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setF('_biodataGuru', e.target.files?.[0])} /></div>
                     </div>
                   </div>
                   {isLKTI && (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Karya (LKTI)</h4>
                       <div className="grid gap-3 md:grid-cols-2">
-                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Judul Abstrak *</label><input className={ic} value={form.judulAbstrak} onChange={(e) => setForm((c) => ({ ...c, judulAbstrak: e.target.value }))} required /></div>
-                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Pilih Subtema *</label><select className={ic} value={form.subtema} onChange={(e) => setForm((c) => ({ ...c, subtema: e.target.value }))} required><option value="" disabled>Pilih Subtema</option>{subtemaOptions.map((s) => <option key={s}>{s}</option>)}</select></div>
+                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Judul Abstrak *</label><input className={ic} value={form.judulAbstrak} onChange={(e) => setF('judulAbstrak', e.target.value)} required /></div>
+                        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Pilih Subtema *</label><select className={ic} value={form.subtema} onChange={(e) => setF('subtema', e.target.value)} required><option value="" disabled>Pilih Subtema</option>{subtemaOptions.map((s) => <option key={s}>{s}</option>)}</select></div>
                       </div>
-                      <div className="mt-3"><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Abstrak & Lembar Orisinalitas (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setForm((c) => ({ ...c, _abstrak: e.target.files?.[0] }))} required /></div>
+                      <div className="mt-3"><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Abstrak & Lembar Orisinalitas (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setF('_abstrak', e.target.files?.[0])} required /></div>
                     </div>
                   )}
                   <button type="submit" className="rounded-xl bg-[#1c79c6] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#1560a0]">Lanjut ke Pembayaran →</button>
@@ -194,9 +212,8 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
                 <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-green-100 text-4xl">✅</div>
                 <h2 className="text-2xl font-extrabold text-slate-950">Pendaftaran Terkirim!</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600 max-w-md mx-auto">Pendaftaran kamu sudah dikirim. Lakukan konfirmasi pembayaran ke admin BESC melalui WhatsApp.</p>
-                <a href="https://wa.me/6281335323519?text=Halo%20BESC%2C%20saya%20ingin%20konfirmasi%20pembayaran%20pendaftaran" target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  Konfirmasi via WhatsApp
+                <a href={`https://wa.me/6281335323519?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
+                  <WaIcon /> Konfirmasi via WhatsApp
                 </a>
                 <p className="mt-4 text-xs text-slate-400">Nomor: +62 813-3532-3519</p>
                 <button onClick={() => handleFinish()} className="mt-4 text-sm font-bold text-[#1c79c6] hover:underline">Kembali ke Beranda</button>
