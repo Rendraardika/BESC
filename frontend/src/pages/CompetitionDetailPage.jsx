@@ -147,9 +147,6 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
                     <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected || registrationClosed} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
                       {actionLabel}
                     </button>
-                    <button type="button" onClick={() => document.getElementById('detail-timeline')?.scrollIntoView({ behavior: 'smooth' })} className="mt-3 w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-extrabold text-[#17324d]">
-                      Lihat Timeline
-                    </button>
                   </div>
                 </div>
               </div>
@@ -166,36 +163,12 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
               </p>
             </InfoSection>
 
-            <InfoSection id="detail-timeline" title="Timeline">
-              <div className="grid gap-4 md:grid-cols-2">
-                {timeline.map(([phase, date, desc], index) => (
-                  <div key={phase} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-1 hover:shadow-xl">
-                    <div className="mb-4 grid h-10 w-10 place-items-center rounded-full bg-emerald-100 font-['Plus_Jakarta_Sans'] text-sm font-extrabold text-emerald-700">{index + 1}</div>
-                    <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-slate-950">{phase}</h3>
-                    <div className="mt-1 text-sm font-bold text-[#0f766e]">{date}</div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </InfoSection>
-
             <InfoSection title="Benefit Peserta">
               <div className="grid gap-4 md:grid-cols-2">
                 {benefits.map((benefit) => (
                   <div key={benefit} className="flex items-start gap-3 rounded-2xl bg-emerald-50 p-4 text-sm font-semibold text-slate-700">
                     <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs text-white">✓</span>
                     {benefit}
-                  </div>
-                ))}
-              </div>
-            </InfoSection>
-
-            <InfoSection title="Sistem Pengerjaan">
-              <div className="grid gap-4 md:grid-cols-2">
-                {systems.map(([title, desc]) => (
-                  <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
-                    <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-slate-950">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{desc}</p>
                   </div>
                 ))}
               </div>
@@ -212,27 +185,6 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
               </div>
             </InfoSection>
 
-            <InfoSection title="Kompetisi Lainnya">
-              <div className="grid gap-5 md:grid-cols-2">
-                {relatedEvents.map((item) => {
-                  const index = displayEvents.findIndex((eventItem) => eventItem.title === item.title);
-                  const image = item.banner || eventImages[index % eventImages.length];
-                  return (
-                    <button key={item.title} type="button" onClick={() => onCompetitionDetail(index)} className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-left transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl">
-                      <div className="relative h-40 overflow-hidden bg-emerald-900">
-                        <img src={image} alt={item.title} className="h-full w-full object-cover object-center transition duration-500 hover:scale-105" />
-                        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,78,59,0.04),rgba(2,6,23,0.42))]"></div>
-                        <div className="absolute left-4 top-4 inline-flex rounded-full bg-white/90 px-3 py-1 text-[10px] font-extrabold uppercase text-emerald-700 shadow-sm">{item.category}</div>
-                      </div>
-                      <div className="p-5">
-                        <h3 className="font-['Plus_Jakarta_Sans'] font-extrabold text-slate-950">{item.title}</h3>
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{item.desc}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </InfoSection>
           </div>
         </div>
       </main>

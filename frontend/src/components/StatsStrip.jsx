@@ -6,7 +6,7 @@ export default function StatsStrip() {
           ['1570', 'Peserta Aktif'],
           ['34', 'Provinsi Terwakili'],
           ['10+', 'Bidang Materi'],
-          ['Rp', 'Total Hadiah'],
+          ['Rp 19 juta', 'Total Hadiah'],
         ].map(([num, label]) => (
           <div key={label} className="border-slate-200 py-2 md:border-r md:last:border-r-0">
             <div className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-[#1c79c6]">{num}</div>
