@@ -98,6 +98,21 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       const response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, { method: 'POST', credentials: 'include', body: formData });
       const body = await response.json().catch(() => ({}));
       if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal upload bukti pembayaran.');
+      // Upload all other documents
+      const docsFormData = new FormData();
+      const docTypes = [];
+      const collectFile = (key, type, file) => { if (file) { docsFormData.append('documents', file, file.name); docTypes.push(type); } };
+      // Collect all files from ketua, anggota1, anggota2 sections
+      ['ketua', 'anggota1', 'anggota2'].forEach((prefix) => {
+        ['kartuPelajar', 'fotoFormal', 'twibbon', 'followProof'].forEach((field) => {
+          const file = form[`${prefix}_${field}`];
+          if (file) collectFile(`${prefix}_${field}`, `${prefix}_${field}`, file);
+        });
+      });
+      if (docTypes.length > 0) {
+        docTypes.forEach((t) => docsFormData.append('doc_types', t));
+        await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
+      }
       localStorage.removeItem('besc_reg_form');
       setCurrentStep(3);
     } catch (err) { setError(err.message); } finally { setIsSubmitting(false); }
