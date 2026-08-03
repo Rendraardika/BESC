@@ -19,6 +19,7 @@ type Handlers struct {
 	Question       *handlers.QuestionHandler
 	Proctoring     *handlers.ProctoringHandler
 	AdminDashboard *handlers.AdminDashboardHandler
+	Document       *handlers.DocumentHandler
 }
 
 func Register(app *fiber.App, h Handlers, cfg config.Config) {
@@ -41,6 +42,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	protected.Post("/competitions/:competition_id/register", h.Registration.RegisterCompetition)
 	protected.Get("/me/competitions", h.Registration.MyCompetitions)
 	protected.Post("/registrations/:registration_id/payment-proof", h.Payment.UploadProof)
+	protected.Post("/registrations/:registration_id/documents", h.Document.UploadDocuments)
+	protected.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	protected.Get("/registrations/:registration_id/payment", h.Payment.Status)
 	protected.Get("/competitions/:competition_id/exam/questions", h.Exam.Questions)
 	protected.Post("/competitions/:competition_id/exam/start", h.Exam.Start)
@@ -67,4 +70,6 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/submissions/:submission_id/proctoring/events", h.Proctoring.Events)
 	admin.Get("/submissions/:submission_id/proctoring/snapshots", h.Proctoring.Snapshots)
 	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
+	admin.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
+	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
 }

@@ -40,6 +40,7 @@ func main() {
 		filepath.Join(cfg.UploadDir, "public"),
 		filepath.Join(cfg.UploadDir, "private", "payments"),
 		filepath.Join(cfg.UploadDir, "private", "proctoring"),
+		filepath.Join(cfg.UploadDir, "private", "registrations"),
 	} {
 		if err := os.MkdirAll(dir, 0750); err != nil {
 			log.Fatalf("failed to create upload directory: %v", err)
@@ -94,6 +95,7 @@ func main() {
 		Question:       handlers.NewQuestionHandler(questionService),
 		Proctoring:     handlers.NewProctoringHandler(proctoringService, cfg),
 		AdminDashboard: handlers.NewAdminDashboardHandler(adminDashboardService),
+		Document:       handlers.NewDocumentHandler(db, cfg),
 	}, cfg)
 
 	log.Fatal(app.Listen(":" + cfg.AppPort))
