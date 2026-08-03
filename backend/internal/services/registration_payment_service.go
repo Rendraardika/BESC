@@ -1,4 +1,4 @@
-package services
+  package services
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 	"net/smtp"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 
