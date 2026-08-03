@@ -10,10 +10,9 @@ export default function CTA({ onRegister }) {
             <p className="mt-4 max-w-xl text-sm leading-7 text-blue-100">Pendaftaran BESC 2026 telah dibuka. Daftarkan dirimu sebelum 28 Februari 2026 dan mulailah perjalanan menuju puncak kompetisi biologi nasional.</p>
           </div>
           <div className="relative z-10 mt-8 flex flex-col gap-3 md:mt-0 md:justify-center">
-            <a href="/panduan-besc.pdf" download className="rounded-full border border-white/30 bg-white/10 px-7 py-3 text-center font-bold text-white transition hover:bg-white/20" target="_blank" rel="noopener noreferrer">
-              Unduh Panduan PDF
+            <a href="#daftar" onClick={(e) => { e.preventDefault(); onRegister?.(); }} className="rounded-full bg-white px-7 py-3 text-center font-bold text-[#1c79c6] transition hover:bg-blue-50">
+              Daftar Sekarang
             </a>
-            <p className="text-sm text-blue-100">Klik untuk mengunduh panduan BESC 2026 dalam format PDF.</p>
           </div>
         </div>
       </div>
