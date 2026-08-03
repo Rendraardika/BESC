@@ -42,7 +42,9 @@ function PersonSection({ prefix, form, setForm, showNISN, showUploads, required 
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Scan Kartu Pelajar {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('kartuPelajar', e.target.files?.[0])} required={required} /></div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Foto Formal {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('fotoFormal', e.target.files?.[0])} required={required} /></div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Twibbon {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('twibbon', e.target.files?.[0])} required={required} /></div>
-        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Follow IG & TikTok BESC {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('followProof', e.target.files?.[0])} required={required} /></div>
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Follow IG & TikTok BESC (.pdf) {required && '*'}</label><input className={fc} type="file" accept=".pdf" onChange={(e) => update('followProof', e.target.files?.[0])} required={required} /></div>
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Username IG {required && '*'}</label><input className={ic} value={get('ig')} onChange={(e) => update('ig', e.target.value)} placeholder="@username" required={required} /></div>
+        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Username TikTok {required && '*'}</label><input className={ic} value={get('tiktok')} onChange={(e) => update('tiktok', e.target.value)} placeholder="@username" required={required} /></div>
       </>}
     </div>
   );
@@ -106,6 +108,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h4 className="mb-3 text-sm font-bold text-slate-800">Ketua Tim *</h4><PersonSection prefix="ketua" form={form} setForm={setForm} showNISN showUploads /></div>
                   <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 (opsional)</h4><PersonSection prefix="anggota1" form={form} setForm={setForm} showNISN showUploads required={false} /></div>
                   <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 2 (opsional)</h4><PersonSection prefix="anggota2" form={form} setForm={setForm} showNISN showUploads required={false} /></div>
+                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setForm((c) => ({ ...c, _biodataKelompok: e.target.files?.[0] }))} required /></div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Sekolah</h4>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -115,7 +118,6 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
                       <div><label className="mb-1 block text-xs font-semibold text-slate-600">Alamat Sekolah *</label><input className={ic} value={form.alamatSekolah} onChange={(e) => setForm((c) => ({ ...c, alamatSekolah: e.target.value }))} required /></div>
                     </div>
                   </div>
-                  <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setForm((c) => ({ ...c, _biodataKelompok: e.target.files?.[0] }))} required /></div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Guru Pembimbing (opsional)</h4>
                     <div className="grid gap-3 md:grid-cols-2">
