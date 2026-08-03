@@ -70,6 +70,24 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
     setCurrentStep(2);
   };
 
+  const [proofFileName, setProofFileName] = useState('');
+
+  // Load saved form from localStorage
+  const savedForm = (() => {
+    try { return JSON.parse(localStorage.getItem('besc_reg_form') || '{}'); } catch { return {}; }
+  })();
+
+  // Save form to localStorage on change
+  const updateForm = (field, value) => {
+    setForm((c) => {
+      const next = { ...c, [field]: value };
+      const toSave = { ...next };
+      Object.keys(toSave).forEach((k) => { if (k.startsWith('_')) delete toSave[k]; });
+      localStorage.setItem('besc_reg_form', JSON.stringify(toSave));
+      return next;
+    });
+  };
+
   const handleStep2Submit = async (e) => {
     e.preventDefault(); setError('');
     if (!proof) { setError('Bukti pembayaran wajib diunggah.'); return; }
@@ -158,7 +176,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-5 text-center">
                     <p className="text-sm font-bold text-slate-700">QRIS</p>
                     <img src={qrisBesc} alt="QRIS BESC" className="mx-auto mt-3 w-full max-w-[200px] rounded border-4 border-[#7c1cc6] bg-white object-contain" />
-                    <p className="mt-2 text-xs text-slate-500">A.n KHOMSA SALWA NABILA</p>
+                    <p className="mt-2 text-xs text-slate-500">A.n Nabila Shop</p>
                   </div>
                 </div>
                 <form onSubmit={handleStep2Submit} className="space-y-4">

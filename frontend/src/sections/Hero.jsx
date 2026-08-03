@@ -23,7 +23,7 @@ export default function Hero({ onCompetitions, onTryoutPackage }) {
           </h1>
 
           <p className="mb-8 max-w-xl text-base leading-8 text-blue-100">
-            BESC (Biology Environmental Smart Competition) hadir sebagai wadah bagi pelajar Indonesia untuk mengembangkan potensi, meningkatkan wawasan, dan meraih prestasi di bidang biologi melalui kompetisi, tryout, serta pembelajaran berkualitas.
+            BESC (Biology Environmental Smart Competition) hadir sebagai wadah bagi pelajar Indonesia untuk mengembangkan potensi, meningkatkan wawasan, dan meraih prestasi di bidang biologi melalui kompetisi serta pembelajaran berkualitas.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -34,17 +34,6 @@ export default function Hero({ onCompetitions, onTryoutPackage }) {
             >
               Ikuti Kompetisi -&gt;
             </button>
-
-            <a
-              href="#paket-tryout"
-              onClick={(event) => {
-                event.preventDefault();
-                onTryoutPackage?.();
-              }}
-              className="rounded-full border border-white/30 bg-white/10 px-7 py-3 font-bold text-white transition hover:bg-white/20"
-            >
-              Coba Tryout Gratis
-            </a>
           </div>
         </div>
       </div>
