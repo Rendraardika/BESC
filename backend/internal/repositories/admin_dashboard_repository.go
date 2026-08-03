@@ -26,7 +26,7 @@ type adminDashboardRepository struct {
 }
 
 func (r *adminDashboardRepository) Participants() ([]entities.User, error) {
-	rows, err := r.db.Query(`SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC`)
+	rows, err := r.db.Query(`SELECT id, name, email, password, role, phone, institution, COALESCE(photo, ''), birth_date, gender, province, city, COALESCE(team_name, ''), COALESCE(member1_name, ''), COALESCE(member2_name, ''), created_at FROM users WHERE role = 'user' ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (r *adminDashboardRepository) Participants() ([]entities.User, error) {
 	items := []entities.User{}
 	for rows.Next() {
 		var item entities.User
-		if err := rows.Scan(&item.ID, &item.Name, &item.Email, &item.Password, &item.Role, &item.Phone, &item.Institution, &item.Photo, &item.BirthDate, &item.Gender, &item.Province, &item.City, &item.CreatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Name, &item.Email, &item.Password, &item.Role, &item.Phone, &item.Institution, &item.Photo, &item.BirthDate, &item.Gender, &item.Province, &item.City, &item.TeamName, &item.Member1Name, &item.Member2Name, &item.CreatedAt); err != nil {
 			return nil, err
 		}
 		items = append(items, item)

@@ -15,6 +15,9 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     email: '',
     phone: '',
     birthDate: '',
+    gender: '',
+    province: '',
+    city: '',
     institution: '',
     password: '',
     confirmPassword: '',
@@ -67,6 +70,10 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
           password: form.password,
           phone: form.phone,
           institution: form.institution,
+          birth_date: form.birthDate,
+          gender: form.gender,
+          province: form.province,
+          city: form.city,
         }),
       });
       const profileKey = `besc_profile_${auth.user?.id || auth.user?.email || form.email}`;

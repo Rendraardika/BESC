@@ -51,8 +51,8 @@ func NewUserRepository(db *sql.DB) UserRepository {
 }
 
 func (r *userRepository) Create(user *entities.User) error {
-	query := `INSERT INTO users (id, name, email, password, role, phone, institution, team_name, member1_name, member2_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := r.db.Exec(query, user.ID, user.Name, user.Email, user.Password, user.Role, user.Phone, user.Institution, user.TeamName, user.Member1Name, user.Member2Name)
+	query := `INSERT INTO users (id, name, email, password, role, phone, institution, team_name, member1_name, member2_name, birth_date, gender, province, city) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, user.ID, user.Name, user.Email, user.Password, user.Role, user.Phone, user.Institution, user.TeamName, user.Member1Name, user.Member2Name, user.BirthDate, user.Gender, user.Province, user.City)
 	if err != nil {
 		return err
 	}

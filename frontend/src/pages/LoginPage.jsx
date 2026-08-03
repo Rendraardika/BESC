@@ -31,7 +31,7 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-6 py-3 md:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <img src={bescLogo} alt="BESC Logo" className="h-20 w-auto object-contain md:h-24" />
+          <img src={bescLogo} alt="BESC Logo" className="h-20 w-auto object-contain md:h-24" loading="eager" fetchPriority="high" />
           {onBack && (
             <button type="button" onClick={onBack} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
               ← Kembali
@@ -44,7 +44,7 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
         <div className="w-full max-w-[460px] rounded-[2rem] bg-white p-7 shadow-2xl md:p-9">
           <div className="mb-7 text-center">
             <div className="mx-auto mb-5 flex h-28 w-56 items-center justify-center px-2">
-              <img src={bescLogo} alt="BESC Logo" className="max-h-24 w-full object-contain" />
+              <img src={bescLogo} alt="BESC Logo" className="max-h-24 w-full object-contain" loading="eager" fetchPriority="high" />
             </div>
             <h1 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-slate-950">Masuk Akun BESC</h1>
             <p className="mt-2 text-sm text-slate-500">Gunakan akun peserta atau admin untuk melanjutkan.</p>

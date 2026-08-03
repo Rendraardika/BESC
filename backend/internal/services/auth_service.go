@@ -74,6 +74,15 @@ func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, er
 		return nil, err
 	}
 
+	var birthDate *time.Time
+	if strings.TrimSpace(input.BirthDate) != "" {
+		parsedBirthDate, err := time.Parse("2006-01-02", input.BirthDate)
+		if err != nil {
+			return nil, utils.ErrInvalidInput
+		}
+		birthDate = &parsedBirthDate
+	}
+
 	user := &entities.User{
 		ID:          uuid.NewString(),
 		Name:        input.Name,
@@ -85,6 +94,10 @@ func (s *authService) Register(input dto.RegisterRequest) (*dto.AuthResponse, er
 		TeamName:    input.TeamName,
 		Member1Name: input.Member1Name,
 		Member2Name: input.Member2Name,
+		BirthDate:   birthDate,
+		Gender:      input.Gender,
+		Province:    input.Province,
+		City:        input.City,
 	}
 	if err := s.users.Create(user); err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {

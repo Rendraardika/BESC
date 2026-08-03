@@ -133,6 +133,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [activePage, setActivePage] = useState('Dashboard');
   const [participants, setParticipants] = useState([]);
   const [competitions, setCompetitions] = useState([]);
+  const [participantFilter, setParticipantFilter] = useState('');
   const [updatingPayment, setUpdatingPayment] = useState('');
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [showCompetitionForm, setShowCompetitionForm] = useState(false);
@@ -191,6 +192,19 @@ export default function AdminDashboardPage({ admin, onLogout }) {
     { label: 'Pembayaran tertunda', value: dashboard.pending_payments, note: 'Menunggu pemeriksaan admin', color: 'bg-[#f0b429]', soft: 'bg-amber-50 text-amber-700' },
     { label: 'Total pendaftaran', value: dashboard.total_registrations, note: 'Seluruh pendaftaran kompetisi', color: 'bg-[#4257b2]', soft: 'bg-indigo-50 text-indigo-700' },
   ] : [];
+
+  const filteredParticipants = useMemo(() => {
+    if (!participantFilter) return participants;
+    const q = participantFilter.toLowerCase();
+    return participants.filter((item) =>
+      (item.name || '').toLowerCase().includes(q) ||
+      (item.email || '').toLowerCase().includes(q) ||
+      (item.province || '').toLowerCase().includes(q) ||
+      (item.city || '').toLowerCase().includes(q) ||
+      (item.institution || '').toLowerCase().includes(q) ||
+      (item.team_name || '').toLowerCase().includes(q)
+    );
+  }, [participants, participantFilter]);
 
   const rankedSubmissions = useMemo(() => {
     const ranksByCompetition = new Map();
@@ -447,10 +461,11 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             </>
           )}</>}
 
-          {activePage === 'Peserta' && <DataTable title="Manajemen Peserta" subtitle="Daftar akun peserta yang terhubung ke BESC." headers={['Peserta', 'WhatsApp', 'Sekolah', 'Tanggal Bergabung', 'Aksi']} rows={participants.map((item) => [
+          {activePage === 'Peserta' && <DataTable title="Manajemen Peserta" subtitle="Daftar akun peserta yang terhubung ke BESC." action={<input value={participantFilter} onChange={(e) => setParticipantFilter(e.target.value)} placeholder="Cari nama, email, sekolah, domisili..." className="h-10 w-full max-w-sm rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500" />} headers={['Peserta', 'WhatsApp', 'Sekolah', 'Domisili', 'Tanggal Bergabung', 'Aksi']} rows={filteredParticipants.map((item) => [
             <div key={item.id} className="flex items-center gap-3"><Avatar src={item.photo} name={item.name} className="shrink-0" /><div><div className="font-bold">{item.name}</div><div className="text-xs text-slate-400">{item.email}</div></div></div>,
             item.phone || '-',
             item.institution || '-',
+            [item.city, item.province].filter(Boolean).join(', ') || '-',
             new Date(item.created_at).toLocaleDateString('id-ID'),
             <div key={item.id} className="flex gap-2"><button type="button" onClick={() => setSelectedParticipant(item)} className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-extrabold text-teal-700">Lihat</button><button type="button" onClick={() => deleteParticipant(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
           ])} />}

@@ -27,9 +27,9 @@ function StepIndicator({ currentStep }) {
 }
 
 function PersonSection({ prefix, form, setForm, showNISN, showUploads, required = true }) {
-  const update = (field, val) => setForm((c) => ({ ...c, [`${prefix}_${field}`]: val }));
+  const update = useCallback((field, val) => { setForm(`${prefix}_${field}`, val); }, [prefix, setForm]);
   const get = (field) => form[`${prefix}_${field}`] || '';
-  const ic = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-base outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const ic = 'h-12 w-full rounded-lg border border-slate-300 bg-white px-4 text-base outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
   const fc = 'h-12 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
   return (
     <div className="grid gap-3 md:grid-cols-2">
@@ -66,7 +66,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
   const event = displayEvents[competitionIndex] ?? displayEvents[0];
   const isLKTI = event?.title?.toLowerCase().includes('lkti') || event?.title?.toLowerCase().includes('karya tulis');
   const paymentPrice = event?.price?.toLowerCase().includes('gratis') ? 'Gratis' : event?.price || 'Rp 90.000';
-  const ic = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const ic = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm';
   const fc = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
 
   const setF = (field, value) => {
@@ -117,6 +117,8 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       setCurrentStep(3);
     } catch (err) { setError(err.message); } finally { setIsSubmitting(false); }
   };
+
+  const handleFinish = () => { window.location.hash = 'home'; window.scrollTo(0, 0); };
 
   const waMessage = useMemo(() => {
     const compName = event?.title || 'Kompetisi BESC';

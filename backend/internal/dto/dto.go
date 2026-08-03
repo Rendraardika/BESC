@@ -11,6 +11,10 @@ type RegisterRequest struct {
 	Password    string `json:"password" validate:"required,min=8,password_strength"`
 	Phone       string `json:"phone" validate:"omitempty,max=30"`
 	Institution string `json:"institution" validate:"omitempty,max=150"`
+	BirthDate   string `json:"birth_date" validate:"omitempty"`
+	Gender      string `json:"gender" validate:"omitempty,max=30"`
+	Province    string `json:"province" validate:"omitempty,max=100"`
+	City        string `json:"city" validate:"omitempty,max=100"`
 }
 
 type LoginRequest struct {

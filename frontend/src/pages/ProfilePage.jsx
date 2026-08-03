@@ -20,6 +20,9 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
       province: user?.province || savedProfile.province || '',
       city: user?.city || savedProfile.city || '',
       cardPhoto: user?.student_card || savedProfile.cardPhoto || '',
+      teamName: user?.team_name || savedProfile.teamName || '',
+      member1Name: user?.member1_name || savedProfile.member1Name || '',
+      member2Name: user?.member2_name || savedProfile.member2Name || '',
     };
   };
   const [profile, setProfile] = useState(profileFromServer);
@@ -63,6 +66,9 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           province: profile.province,
           city: profile.city,
           student_card: profile.cardPhoto,
+          team_name: profile.teamName,
+          member1_name: profile.member1Name,
+          member2_name: profile.member2Name,
         }),
       });
       localStorage.setItem(profileStorageKey, JSON.stringify(profile));
@@ -173,6 +179,24 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
                 <option value="">Pilih Kota</option>
                 {cityOptions.map((city) => <option key={city.id} value={city.nama}>{city.nama}</option>)}
               </select>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Tim</h4>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Tim</label>
+                  <input className={inputClass} value={profile.teamName} onChange={(event) => updateProfile('teamName', event.target.value)} type="text" placeholder="Masukkan nama tim" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
+                  <input className={inputClass} value={profile.member1Name} onChange={(event) => updateProfile('member1Name', event.target.value)} type="text" placeholder="Nama anggota 1 (opsional)" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 2</label>
+                  <input className={inputClass} value={profile.member2Name} onChange={(event) => updateProfile('member2Name', event.target.value)} type="text" placeholder="Nama anggota 2 (opsional)" />
+                </div>
+              </div>
             </div>
 
             <div>
