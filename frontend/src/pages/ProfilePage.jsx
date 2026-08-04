@@ -60,9 +60,6 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
 
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
-  useEffect(() => {
-    setProfile(profileFromServer());
-  }, [user]);
 
   const updateProfile = (field, value) => {
     setProfile((currentProfile) => ({ ...currentProfile, [field]: value }));
