@@ -37,6 +37,16 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
     return indonesiaWilayah.kota_kabupaten.filter((item) => String(item.provinsi_id) === pid);
   }, [selectedProvince]);
 
+  // Validate city matches province on load
+  useEffect(() => {
+    if (profile.province && profile.city && cityOptions.length > 0) {
+      const cityMatch = cityOptions.find((c) => c.nama === profile.city);
+      if (!cityMatch && profile.city) {
+        setProfile((current) => ({ ...current, city: '' }));
+      }
+    }
+  }, [selectedProvince]);
+
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
   useEffect(() => {
