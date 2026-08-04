@@ -1,19 +1,21 @@
 import SectionHeader from '../components/SectionHeader.jsx';
+import olimGuidebook from '../assets/images/[OLIM] Guidebook BESC 2026_20260803_230433_0000_compressed (1).pdf';
+import lktiGuidebook from '../assets/images/[LKTI] Guidebook BESC 2026 (2).pdf';
 
 const guidebooks = [
   {
     title: '[OLIM] Guidebook BESC 2026',
     desc: 'Panduan lengkap Olimpiade Biologi BESC 2026 meliputi materi, ketentuan ujian, dan jadwal pelaksanaan.',
-    icon: '📋',
-    file: '/[OLIM] Guidebook BESC 2026.pdf',
-    filename: '[OLIM] Guidebook BESC 2026.pdf',
+    icon: '\ud83d\udccb',
+    file: olimGuidebook,
+    filename: 'Guidebook-OLIM-BESC-2026.pdf',
   },
   {
     title: '[LKTI] Guidebook BESC 2026',
     desc: 'Panduan lengkap Lomba Karya Tulis Ilmiah BESC 2026 meliputi ketentuan, format penulisan, dan jadwal.',
-    icon: '📄',
-    file: '/[LKTI] Guidebook BESC 2026.pdf',
-    filename: '[LKTI] Guidebook BESC 2026.pdf',
+    icon: '\ud83d\udcc4',
+    file: lktiGuidebook,
+    filename: 'Guidebook-LKTI-BESC-2026.pdf',
   },
 ];
 

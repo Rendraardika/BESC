@@ -268,10 +268,10 @@ Terima kasih.`);
                 <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-green-100 text-4xl">✅</div>
                 <h2 className="text-2xl font-extrabold text-slate-950">Pendaftaran Terkirim!</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600 max-w-md mx-auto">Pendaftaran kamu sudah dikirim. Lakukan konfirmasi pembayaran ke admin BESC melalui WhatsApp.</p>
-                <a href={`https://wa.me/6281335323519?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
+                <a href={`https://wa.me/62895631370908?text=${waMessage}`} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-500 px-6 py-3 text-sm font-bold text-white transition hover:bg-green-600">
                   <WaIcon /> Konfirmasi via WhatsApp
                 </a>
-                <p className="mt-4 text-xs text-slate-400">Nomor: +62 813-3532-3519</p>
+                <p className="mt-4 text-xs text-slate-400">Nomor: +62 895-6313-70908</p>
                 <button onClick={() => handleFinish()} className="mt-4 text-sm font-bold text-[#1c79c6] hover:underline">Kembali ke Beranda</button>
               </div>
             )}
