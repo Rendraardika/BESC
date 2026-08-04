@@ -162,23 +162,16 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 	}
 
 	// Method 3: Always also get ALL documents as additional context
-	rows3, err3 := h.db.Query(`
-		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
-		FROM registration_documents rd
-		ORDER BY rd.created_at DESC
-		LIMIT 50
-	`)
-		if err3 == nil {
-			defer rows3.Close()
-			for rows3.Next() {
-				var d Doc
-				if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
-					continue
-				}
-				docs = append(docs, d)
+	rows3, err3 := h.db.Query(`SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at FROM registration_documents rd ORDER BY rd.created_at DESC LIMIT 50`)
+	if err3 == nil {
+		defer rows3.Close()
+		for rows3.Next() {
+			var d Doc
+			if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+				continue
 			}
+			docs = append(docs, d)
 		}
 	}
-
 	return response.JSON(c, fiber.StatusOK, "documents", docs)
 }
