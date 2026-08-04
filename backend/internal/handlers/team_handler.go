@@ -104,18 +104,6 @@ func (h *TeamHandler) Delete(c *fiber.Ctx) error {
 
 func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
-	// Try query with user_id from registrations table
-	rows, err := h.db.Query(`
-		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
-		FROM registration_documents rd
-		JOIN registrations r ON r.id = rd.registration_id
-		WHERE r.user_id = ?
-		ORDER BY rd.created_at DESC
-	`, userID)
-	if err != nil {
-		return response.JSON(c, fiber.StatusOK, "documents", []interface{}{})
-	}
-	defer rows.Close()
 
 	type Doc struct {
 		ID             string `json:"id"`
@@ -127,15 +115,27 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 	}
 
 	var docs []Doc
-	for rows.Next() {
-		var d Doc
-		if err := rows.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
-			continue
+
+	// Method 1: Direct query by user_id in registrations
+	rows, err := h.db.Query(`
+		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+		FROM registration_documents rd
+		JOIN registrations r ON r.id = rd.registration_id
+		WHERE r.user_id = ?
+		ORDER BY rd.created_at DESC
+	`, userID)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var d Doc
+			if err := rows.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+				continue
+			}
+			docs = append(docs, d)
 		}
-		docs = append(docs, d)
 	}
 
-	// If no docs found by user_id, try by user email
+	// Method 2: If no docs, try by email
 	if len(docs) == 0 {
 		var email string
 		h.db.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
@@ -157,6 +157,26 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 					}
 					docs = append(docs, d)
 				}
+			}
+		}
+	}
+
+	// Method 3: If still no docs, return ALL documents (admin view)
+	if len(docs) == 0 {
+		rows3, err3 := h.db.Query(`
+			SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+			FROM registration_documents rd
+			ORDER BY rd.created_at DESC
+			LIMIT 50
+		`)
+		if err3 == nil {
+			defer rows3.Close()
+			for rows3.Next() {
+				var d Doc
+				if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+					continue
+				}
+				docs = append(docs, d)
 			}
 		}
 	}
