@@ -84,9 +84,43 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
     });
   };
 
-  const handleStep1Submit = (e) => {
+  const handleStep1Submit = async (e) => {
     e.preventDefault(); setError('');
     if (!form.namaTim || !form.ketua_name || !form.ketua_nisn || !form.ketua_kelas || !form.ketua_wa || !form.ketua_email || !form.namaSekolah || !form.provinsi || !form.kabKota || !form.alamatSekolah) { setError('Semua field wajib pada Ketua Tim dan Sekolah harus diisi.'); return; }
+    // Sync team data to backend
+    try {
+      await apiRequest('/me/teams', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: form.namaTim,
+          leader_name: form.ketua_name,
+          leader_email: form.ketua_email,
+          leader_phone: form.ketua_wa,
+          leader_nisn: form.ketua_nisn,
+          leader_kelas: form.ketua_kelas,
+          member1_name: form.anggota1_name,
+          member1_email: form.anggota1_email,
+          member1_nisn: form.anggota1_nisn,
+          member1_kelas: form.anggota1_kelas,
+          member2_name: form.anggota2_name,
+          member2_email: form.anggota2_email,
+          member2_nisn: form.anggota2_nisn,
+          member2_kelas: form.anggota2_kelas,
+          institution: form.namaSekolah,
+          province: form.provinsi,
+          city: form.kabKota,
+          address: form.alamatSekolah,
+          guardian_name: form.guru_nama,
+          guardian_hp: form.guru_hp,
+          guardian_email: form.guru_email,
+          category: isLKTI ? 'LKTI' : 'Olimpiade',
+          abstract_title: form.judulAbstrak,
+          subtema: form.subtema,
+        }),
+      });
+    } catch (err) {
+      console.warn('Gagal sinkronisasi data tim:', err.message);
+    }
     setCurrentStep(2);
   };
 

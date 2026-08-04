@@ -25,19 +25,25 @@ func NewTeamRepository(db *sql.DB) TeamRepository {
 }
 
 func (r *teamRepository) Create(team *entities.Team) error {
-	query := `INSERT INTO teams (id, name, leader_name, leader_email, leader_phone, member1_name, member1_email, member2_name, member2_email, institution, category, status, notes)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	_, err := r.db.Exec(query, team.ID, team.Name, team.LeaderName, team.LeaderEmail, team.LeaderPhone,
-		team.Member1Name, team.Member1Email, team.Member2Name, team.Member2Email,
-		team.Institution, team.Category, team.Status, team.Notes)
+	query := `INSERT INTO teams (id, user_id, name, leader_name, leader_email, leader_phone, leader_nisn, leader_kelas, member1_name, member1_email, member1_nisn, member1_kelas, member2_name, member2_email, member2_nisn, member2_kelas, institution, province, city, address, guardian_name, guardian_hp, guardian_email, category, status, notes)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.Exec(query, team.ID, team.UserID, team.Name, team.LeaderName, team.LeaderEmail, team.LeaderPhone, team.LeaderNISN, team.LeaderKelas,
+		team.Member1Name, team.Member1Email, team.Member1NISN, team.Member1Kelas,
+		team.Member2Name, team.Member2Email, team.Member2NISN, team.Member2Kelas,
+		team.Institution, team.Province, team.City, team.Address,
+		team.GuardianName, team.GuardianHP, team.GuardianEmail,
+		team.Category, team.Status, team.Notes)
 	return err
 }
 
 func (r *teamRepository) Update(team *entities.Team) error {
-	query := `UPDATE teams SET name = ?, leader_name = ?, leader_email = ?, leader_phone = ?, member1_name = ?, member1_email = ?, member2_name = ?, member2_email = ?, institution = ?, category = ?, status = ?, notes = ? WHERE id = ?`
-	result, err := r.db.Exec(query, team.Name, team.LeaderName, team.LeaderEmail, team.LeaderPhone,
-		team.Member1Name, team.Member1Email, team.Member2Name, team.Member2Email,
-		team.Institution, team.Category, team.Status, team.Notes, team.ID)
+	query := `UPDATE teams SET user_id=?, name = ?, leader_name = ?, leader_email = ?, leader_phone = ?, leader_nisn = ?, leader_kelas = ?, member1_name = ?, member1_email = ?, member1_nisn = ?, member1_kelas = ?, member2_name = ?, member2_email = ?, member2_nisn = ?, member2_kelas = ?, institution = ?, province = ?, city = ?, address = ?, guardian_name = ?, guardian_hp = ?, guardian_email = ?, category = ?, status = ?, notes = ? WHERE id = ?`
+	result, err := r.db.Exec(query, team.UserID, team.Name, team.LeaderName, team.LeaderEmail, team.LeaderPhone, team.LeaderNISN, team.LeaderKelas,
+		team.Member1Name, team.Member1Email, team.Member1NISN, team.Member1Kelas,
+		team.Member2Name, team.Member2Email, team.Member2NISN, team.Member2Kelas,
+		team.Institution, team.Province, team.City, team.Address,
+		team.GuardianName, team.GuardianHP, team.GuardianEmail,
+		team.Category, team.Status, team.Notes, team.ID)
 	if err != nil {
 		return err
 	}
@@ -54,7 +60,7 @@ func (r *teamRepository) Delete(id string) error {
 
 func (r *teamRepository) FindByID(id string) (*entities.Team, error) {
 	team := &entities.Team{}
-	err := r.db.QueryRow(`SELECT id, name, leader_name, leader_email, leader_phone, member1_name, member1_email, member2_name, member2_email, institution, category, status, COALESCE(notes, ''), created_at, updated_at FROM teams WHERE id = ?`, id).
+	err := r.db.QueryRow(`SELECT id, COALESCE(user_id, ''), name, leader_name, leader_email, leader_phone, COALESCE(leader_nisn, ''), COALESCE(leader_kelas, ''), member1_name, member1_email, COALESCE(member1_nisn, ''), COALESCE(member1_kelas, ''), member2_name, member2_email, COALESCE(member2_nisn, ''), COALESCE(member2_kelas, ''), institution, COALESCE(province, ''), COALESCE(city, ''), COALESCE(address, ''), COALESCE(guardian_name, ''), COALESCE(guardian_hp, ''), COALESCE(guardian_email, ''), category, status, COALESCE(notes, ''), created_at, updated_at FROM teams WHERE id = ?`, id).
 		Scan(&team.ID, &team.Name, &team.LeaderName, &team.LeaderEmail, &team.LeaderPhone,
 			&team.Member1Name, &team.Member1Email, &team.Member2Name, &team.Member2Email,
 			&team.Institution, &team.Category, &team.Status, &team.Notes, &team.CreatedAt, &team.UpdatedAt)
@@ -68,7 +74,7 @@ func (r *teamRepository) FindByID(id string) (*entities.Team, error) {
 }
 
 func (r *teamRepository) List() ([]entities.Team, error) {
-	rows, err := r.db.Query(`SELECT id, name, leader_name, leader_email, leader_phone, member1_name, member1_email, member2_name, member2_email, institution, category, status, COALESCE(notes, ''), created_at, updated_at FROM teams ORDER BY created_at DESC`)
+	rows, err := r.db.Query(`SELECT id, COALESCE(user_id, ''), name, leader_name, leader_email, leader_phone, COALESCE(leader_nisn, ''), COALESCE(leader_kelas, ''), member1_name, member1_email, COALESCE(member1_nisn, ''), COALESCE(member1_kelas, ''), member2_name, member2_email, COALESCE(member2_nisn, ''), COALESCE(member2_kelas, ''), institution, COALESCE(province, ''), COALESCE(city, ''), COALESCE(address, ''), COALESCE(guardian_name, ''), COALESCE(guardian_hp, ''), COALESCE(guardian_email, ''), category, status, COALESCE(notes, ''), created_at, updated_at FROM teams ORDER BY created_at DESC`)
 	if err != nil {
 		return nil, err
 	}

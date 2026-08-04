@@ -21,6 +21,7 @@ type Handlers struct {
 	AdminDashboard *handlers.AdminDashboardHandler
 	Document       *handlers.DocumentHandler
 	Team           *handlers.TeamHandler
+	UserTeam       *handlers.UserTeamHandler
 }
 
 func Register(app *fiber.App, h Handlers, cfg config.Config) {
@@ -73,6 +74,7 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
 	admin.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
+	protected.Post("/me/teams", h.UserTeam.SubmitTeam)
 	admin.Get("/teams", h.Team.List)
 	admin.Post("/teams", h.Team.Create)
 	admin.Put("/teams/:id", h.Team.Update)
