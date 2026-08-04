@@ -55,6 +55,7 @@ func main() {
 	submissionRepo := repositories.NewSubmissionRepository(db)
 	proctoringRepo := repositories.NewProctoringRepository(db)
 	adminDashboardRepo := repositories.NewAdminDashboardRepository(db)
+	teamRepo := repositories.NewTeamRepository(db)
 
 	authService := services.NewAuthService(userRepo, cfg)
 	competitionService := services.NewCompetitionService(competitionRepo)
@@ -64,6 +65,7 @@ func main() {
 	questionService := services.NewQuestionService(questionRepo)
 	proctoringService := services.NewProctoringService(submissionRepo, proctoringRepo)
 	adminDashboardService := services.NewAdminDashboardService(adminDashboardRepo)
+	teamService := services.NewTeamService(teamRepo)
 
 	app := fiber.New(fiber.Config{
 		AppName: "Online Competition Platform API",
@@ -96,6 +98,7 @@ func main() {
 		Proctoring:     handlers.NewProctoringHandler(proctoringService, cfg),
 		AdminDashboard: handlers.NewAdminDashboardHandler(adminDashboardService),
 		Document:       handlers.NewDocumentHandler(db, cfg),
+		Team:           handlers.NewTeamHandler(teamService),
 	}, cfg)
 
 	log.Fatal(app.Listen(":" + cfg.AppPort))

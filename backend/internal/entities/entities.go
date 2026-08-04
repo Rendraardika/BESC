@@ -202,3 +202,21 @@ type AdminDashboard struct {
 	TotalRegistrations int                      `json:"total_registrations"`
 	RecentActivities   []AdminDashboardActivity `json:"recent_activities"`
 }
+
+type Team struct {
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	LeaderName   string     `json:"leader_name"`
+	LeaderEmail  string     `json:"leader_email"`
+	LeaderPhone  string     `json:"leader_phone"`
+	Member1Name  string     `json:"member1_name"`
+	Member1Email string     `json:"member1_email"`
+	Member2Name  string     `json:"member2_name"`
+	Member2Email string     `json:"member2_email"`
+	Institution  string     `json:"institution"`
+	Category     string     `json:"category"`
+	Status       string     `json:"status"`
+	Notes        string     `json:"notes,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}

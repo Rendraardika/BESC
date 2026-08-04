@@ -9,7 +9,7 @@ export default function WhyBesc() {
           <div className="space-y-5">
             {[
               ['🔬', 'Soal Berkualitas Tinggi', 'Soal disusun oleh tim ahli biologi dari perguruan tinggi terkemuka di Indonesia.'],
-              ['🏆', 'Hadiah & Beasiswa Bergengsi', 'Total hadiah Rp 19 juta + beasiswa + kesempatan olimpiade internasional.'],
+              ['🏆', 'Hadiah & Beasiswa Bergengsi', 'Total hadiah Rp 19 juta.'],
               ['📜', 'Sertifikat Resmi Bersertifikasi', 'Sertifikat keikutsertaan dan penghargaan yang diakui secara nasional.'],
               ['🌿', 'Komunitas Ilmuwan Muda', 'Bergabung dengan ribuan pelajar berprestasi se-Indonesia dalam ekosistem belajar yang positif.'],
             ].map(([icon, title, desc]) => (

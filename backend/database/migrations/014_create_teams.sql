@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS teams (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  leader_name VARCHAR(150) NOT NULL DEFAULT '',
+  leader_email VARCHAR(150) NOT NULL DEFAULT '',
+  leader_phone VARCHAR(30) NOT NULL DEFAULT '',
+  member1_name VARCHAR(150) NOT NULL DEFAULT '',
+  member1_email VARCHAR(150) NOT NULL DEFAULT '',
+  member2_name VARCHAR(150) NOT NULL DEFAULT '',
+  member2_email VARCHAR(150) NOT NULL DEFAULT '',
+  institution VARCHAR(150) NOT NULL DEFAULT '',
+  category ENUM('Olimpiade', 'LKTI', 'Umum') NOT NULL DEFAULT 'Umum',
+  status ENUM('active', 'inactive', 'disqualified') NOT NULL DEFAULT 'active',
+  notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_teams_name (name),
+  INDEX idx_teams_category (category),
+  INDEX idx_teams_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

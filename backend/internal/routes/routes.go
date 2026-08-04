@@ -20,6 +20,7 @@ type Handlers struct {
 	Proctoring     *handlers.ProctoringHandler
 	AdminDashboard *handlers.AdminDashboardHandler
 	Document       *handlers.DocumentHandler
+	Team           *handlers.TeamHandler
 }
 
 func Register(app *fiber.App, h Handlers, cfg config.Config) {
@@ -72,4 +73,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
 	admin.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
+	admin.Get("/teams", h.Team.List)
+	admin.Post("/teams", h.Team.Create)
+	admin.Put("/teams/:id", h.Team.Update)
+	admin.Delete("/teams/:id", h.Team.Delete)
 }

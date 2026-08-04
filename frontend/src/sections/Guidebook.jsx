@@ -2,18 +2,18 @@ import SectionHeader from '../components/SectionHeader.jsx';
 
 const guidebooks = [
   {
-    title: 'Guidebook LKTI BESC 2026',
-    desc: 'Panduan lengkap Lomba Karya Tulis Ilmiah BESC 2026 meliputi ketentuan, format penulisan, dan jadwal.',
-    icon: '📄',
-    file: '/lkti-guidebook.pdf',
-    filename: 'Guidebook-LKTI-BESC-2026.pdf',
-  },
-  {
-    title: 'Guidebook Olimpiade BESC 2026',
+    title: '[OLIM] Guidebook BESC 2026',
     desc: 'Panduan lengkap Olimpiade Biologi BESC 2026 meliputi materi, ketentuan ujian, dan jadwal pelaksanaan.',
     icon: '📋',
-    file: '/olimpiade-guidebook.pdf',
-    filename: 'Guidebook-Olimpiade-BESC-2026.pdf',
+    file: '/[OLIM] Guidebook BESC 2026.pdf',
+    filename: '[OLIM] Guidebook BESC 2026.pdf',
+  },
+  {
+    title: '[LKTI] Guidebook BESC 2026',
+    desc: 'Panduan lengkap Lomba Karya Tulis Ilmiah BESC 2026 meliputi ketentuan, format penulisan, dan jadwal.',
+    icon: '📄',
+    file: '/[LKTI] Guidebook BESC 2026.pdf',
+    filename: '[LKTI] Guidebook BESC 2026.pdf',
   },
 ];
 
