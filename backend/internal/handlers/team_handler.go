@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -11,10 +13,11 @@ import (
 
 type TeamHandler struct {
 	service services.TeamService
+	db      *sql.DB
 }
 
-func NewTeamHandler(service services.TeamService) *TeamHandler {
-	return &TeamHandler{service: service}
+func NewTeamHandler(service services.TeamService, db *sql.DB) *TeamHandler {
+	return &TeamHandler{service: service, db: db}
 }
 
 type teamInput struct {
@@ -33,11 +36,65 @@ type teamInput struct {
 }
 
 func (h *TeamHandler) List(c *fiber.Ctx) error {
+	// Try to get teams from teams table first
 	teams, err := h.service.List()
 	if err != nil {
-		return handleError(c, err)
+		teams = []entities.Team{}
 	}
+
+	// Also get teams from users table (registration data)
+	teamsFromUsers := h.teamsFromUsers()
+
+	// Merge: use teams from users table as base, then add teams table entries that aren't duplicates
+	existingNames := make(map[string]bool)
+	for _, t := range teams {
+		existingNames[t.Name] = true
+	}
+	for _, t := range teamsFromUsers {
+		if !existingNames[t.Name] {
+			teams = append(teams, t)
+		}
+	}
+
 	return response.JSON(c, fiber.StatusOK, "teams", teams)
+}
+
+func (h *TeamHandler) teamsFromUsers() []entities.Team {
+	rows, err := h.db.Query(`
+		SELECT 
+			u.id as user_id,
+			COALESCE(u.team_name, '') as team_name,
+			u.name as leader_name,
+			u.email as leader_email,
+			COALESCE(u.phone, '') as leader_phone,
+			COALESCE(u.member1_name, '') as member1_name,
+			COALESCE(u.member2_name, '') as member2_name,
+			COALESCE(u.institution, '') as institution,
+			'Umum' as category,
+			'active' as status,
+			r.created_at
+		FROM registrations r
+		JOIN users u ON u.id = r.user_id
+		WHERE u.team_name != '' AND u.team_name IS NOT NULL
+		GROUP BY u.id
+		ORDER BY r.created_at DESC
+		LIMIT 100
+	`)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	items := []entities.Team{}
+	for rows.Next() {
+		var item entities.Team
+		var createdAt interface{}
+		if err := rows.Scan(&item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone, &item.Member1Name, &item.Member2Name, &item.Institution, &item.Category, &item.Status, &createdAt); err != nil {
+			continue
+		}
+		items = append(items, item)
+	}
+	return items
 }
 
 func (h *TeamHandler) Create(c *fiber.Ctx) error {

@@ -47,6 +47,46 @@ func NewAdminDashboardRepository(db *sql.DB) AdminDashboardRepository {
 	return &adminDashboardRepository{db: db}
 }
 
+func (r *adminDashboardRepository) TeamsFromRegistrations() ([]entities.Team, error) {
+	rows, err := r.db.Query(`
+		SELECT 
+			COALESCE(r.competition_id, '') as comp_id,
+			u.id as user_id,
+			COALESCE(u.team_name, '') as name,
+			u.name as leader_name,
+			u.email as leader_email,
+			COALESCE(u.phone, '') as leader_phone,
+			COALESCE(u.member1_name, '') as member1_name,
+			COALESCE(u.member2_name, '') as member2_name,
+			COALESCE(u.institution, '') as institution,
+			COALESCE(c.category, 'Umum') as category,
+			r.status,
+			COALESCE(c.title, '') as notes,
+			r.created_at,
+			r.created_at
+		FROM registrations r
+		JOIN users u ON u.id = r.user_id
+		LEFT JOIN competitions c ON c.id = r.competition_id
+		WHERE u.team_name != ''
+		ORDER BY r.created_at DESC
+		LIMIT 100
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []entities.Team{}
+	for rows.Next() {
+		var item entities.Team
+		if err := rows.Scan(&item.UserID, &item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone, &item.Member1Name, &item.Member2Name, &item.Institution, &item.Category, &item.Status, &item.Notes, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			continue
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (r *adminDashboardRepository) Summary() (*entities.AdminDashboard, error) {
 	var dashboard entities.AdminDashboard
 	err := r.db.QueryRow(`

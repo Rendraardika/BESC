@@ -99,7 +99,7 @@ func main() {
 		Proctoring:     handlers.NewProctoringHandler(proctoringService, cfg),
 		AdminDashboard: handlers.NewAdminDashboardHandler(adminDashboardService),
 		Document:       handlers.NewDocumentHandler(db, cfg),
-		Team:           handlers.NewTeamHandler(teamService),
+		Team:           handlers.NewTeamHandler(teamService, db),
 		UserTeam:       userTeamHandler,
 	}, cfg)
 
