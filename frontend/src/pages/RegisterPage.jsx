@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
+import indonesiaWilayah from '../indonesia_wilayah.json';
 import { apiRequest } from '../lib/api.js';
 
 export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
+  const [provinsiId, setProvinsiId] = useState('');
   const [form, setForm] = useState({
     teamName: '',
     leaderName: '',
@@ -13,6 +15,9 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     email: '',
     phone: '',
     birthDate: '',
+    gender: '',
+    province: '',
+    city: '',
     institution: '',
     password: '',
     confirmPassword: '',
@@ -29,6 +34,11 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     symbol: /[^A-Za-z0-9]/.test(form.password),
   };
   const passwordIsValid = Object.values(passwordRules).every(Boolean);
+
+  const kotaOptions = useMemo(() => {
+    if (!provinsiId) return [];
+    return indonesiaWilayah.kota_kabupaten.filter((k) => String(k.provinsi_id) === String(provinsiId));
+  }, [provinsiId]);
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -61,6 +71,9 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
           phone: form.phone,
           institution: form.institution,
           birth_date: form.birthDate,
+          gender: form.gender,
+          province: form.province,
+          city: form.city,
         }),
       });
       const profileKey = `besc_profile_${auth.user?.id || auth.user?.email || form.email}`;
@@ -69,6 +82,9 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
         whatsapp: form.phone,
         school: form.institution,
         birthDate: form.birthDate,
+        gender: form.gender,
+        province: form.province,
+        city: form.city,
       }));
       onRegisterSuccess(auth, { source: 'manual' });
     } catch (err) {
@@ -93,9 +109,119 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900/25 via-transparent to-slate-950/20" />
             <div className="relative z-10 flex h-full flex-col justify-between">
               <div>
+                <div className="mb-5 inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-bold uppercase tracking-widest text-blue-100">Pendaftaran BESC</div>
+                <h1 className="max-w-xs font-['Plus_Jakarta_Sans'] text-4xl font-extrabold leading-tight text-white">Mulai perjalanan kompetisimu hari ini.</h1>
+                <p className="mt-4 max-w-sm text-sm leading-7 text-blue-100/90">Lengkapi data diri dengan benar agar proses verifikasi peserta berjalan lancar dan kamu siap mengikuti kompetisi.</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur">
+                <div className="text-3xl font-extrabold text-white">BESC 2026</div>
+                <div className="mt-2 text-sm text-blue-100/90">Biology Environmental Smart Competition</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 md:p-10">
+            <h2 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-slate-950">Daftar Akun</h2>
+            <p className="mt-2 text-sm text-slate-500">Lengkapi data diri untuk mengikuti kompetisi.</p>
+            {error && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
+
+            <form className="mt-8 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Kelompok/Tim</label>
+                <input className={inputClass} value={form.teamName} onChange={updateField('teamName')} required />
+              </div>
+              <div>
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Ketua</label>
                 <input className={inputClass} value={form.leaderName} onChange={updateField('leaderName')} required />
               </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Email</label>
+                <input className={inputClass} type="email" value={form.email} onChange={updateField('email')} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
+                <input className={inputClass} value={form.member1Name} onChange={updateField('member1Name')} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 2</label>
+                <input className={inputClass} value={form.member2Name} onChange={updateField('member2Name')} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nomor WA Aktif</label>
+                <input className={inputClass} value={form.phone} onChange={updateField('phone')} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Tanggal Lahir</label>
+                <input className={inputClass} type="date" value={form.birthDate} onChange={updateField('birthDate')} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1 block text-xs font-bold text-slate-700">Nama Sekolah</label>
+                <input className={inputClass} value={form.institution} onChange={updateField('institution')} />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Password</label>
+                <div className="relative">
+                  <input className={`${inputClass} pr-12`} type={showPassword ? 'text' : 'password'} value={form.password} onChange={updateField('password')} minLength={8} required />
+                  <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-slate-400 hover:text-[#1c79c6]" aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}>
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+                      {showPassword ? <><path d="M3 3l18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 4.2A10.6 10.6 0 0 1 12 4c5.5 0 9 5 9 5a16.8 16.8 0 0 1-2.1 2.7M6.6 6.6C4.4 8 3 10 3 10s3.5 5 9 5c1 0 1.9-.2 2.7-.4" /></> : <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Confirm Password</label>
+                <div className="relative">
+                  <input className={`${inputClass} pr-12`} type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={updateField('confirmPassword')} minLength={8} required />
+                  <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="absolute inset-y-0 right-0 grid w-11 place-items-center text-slate-400 hover:text-[#1c79c6]" aria-label={showConfirmPassword ? 'Sembunyikan confirm password' : 'Lihat confirm password'}>
+                    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+                      {showConfirmPassword ? <><path d="M3 3l18 18" /><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" /><path d="M9.9 4.2A10.6 10.6 0 0 1 12 4c5.5 0 9 5 9 5a16.8 16.8 0 0 1-2.1 2.7M6.6 6.6C4.4 8 3 10 3 10s3.5 5 9 5c1 0 1.9-.2 2.7-.4" /></> : <><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-1 text-xs font-semibold text-slate-500 md:col-span-2 sm:grid-cols-2">
+                <span className={passwordRules.length ? 'text-emerald-600' : ''}>Minimal 8 karakter</span>
+                <span className={passwordRules.uppercase && passwordRules.lowercase ? 'text-emerald-600' : ''}>Huruf besar dan kecil</span>
+                <span className={passwordRules.number ? 'text-emerald-600' : ''}>Minimal satu angka</span>
+                <span className={passwordRules.symbol ? 'text-emerald-600' : ''}>Minimal satu simbol unik</span>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Jenis Kelamin</label>
+                <select className={inputClass} value={form.gender || ''} onChange={updateField('gender')}>
+                  <option value="" disabled>Pilih Jenis Kelamin</option>
+                  <option>Laki-laki</option>
+                  <option>Perempuan</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
+                <select className={inputClass} value={form.province || ''} onChange={(event) => { setProvinsiId(event.target.value); setForm((c) => ({ ...c, province: event.target.options[event.target.selectedIndex]?.text || '', city: '' })); }}>
+                  <option value="" disabled>Pilih Provinsi</option>
+                  {indonesiaWilayah.provinsi.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-bold text-slate-700">Kota Domisili</label>
+                <select className={inputClass} value={form.city || ''} onChange={(event) => setForm((c) => ({ ...c, city: event.target.options[event.target.selectedIndex]?.text || '' }))}>
+                  <option value="" disabled>Pilih Kota</option>
+                  {kotaOptions.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+                </select>
+              </div>
+              <button type="submit" disabled={isSubmitting} className="mt-2 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2">
+                {isSubmitting ? 'Memproses...' : 'Daftar'}
+              </button>
+            </form>
+
+            <div className="mt-7">
+              <p className="mt-6 text-center text-sm text-slate-500">
+                Sudah punya akun?{' '}
+                <button type="button" onClick={onLogin} className="font-bold text-[#1c79c6]">Masuk</button>
+              </p>
+              <p className="mt-1 text-center text-xs text-slate-400">(c) 2026 BESC. Semua hak dilindungi.</p>
+            </div>
+          </div>
         </div>
       </section>
     </main>
