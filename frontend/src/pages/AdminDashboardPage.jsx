@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
-import TeamDetailModal from '../components/TeamDetailModal.jsx';
 
 const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Tim', 'Pembayaran', 'Bank Soal', 'Hasil Ujian', 'Pengaturan'];
 
@@ -148,7 +147,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [showTeamForm, setShowTeamForm] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamFilter, setTeamFilter] = useState('');
-  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
+  const [expandedTeam, setExpandedTeam] = useState(null);
 
   const refreshDashboard = async () => {
     const data = await apiRequest('/admin/dashboard');
@@ -538,27 +537,44 @@ export default function AdminDashboardPage({ admin, onLogout }) {
 
           {activePage === 'Tim' && <>
             <section className="border border-slate-200 bg-white">
-              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Data tim yang terdaftar di BESC 2026.</p></div></div>
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Data tim yang terdaftar di BESC 2026. Klik "Lihat" untuk detail lengkap.</p></div></div>
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left">
+                <table className="w-full text-left">
                   <thead className="bg-[#f3f8f7]"><tr>{['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi'].map((h) => <th key={h} className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{h}</th>)}</tr></thead>
                   <tbody>
-                    {filteredTeams.map((item, idx) => (
-                      <tr key={idx} className="border-t border-slate-100">
-                        <td className="px-6 py-4 text-sm font-bold max-w-[200px] truncate">{item.name}</td>
-                        <td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td>
-                        <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
-                        <td className="px-6 py-4"><Status value={item.category} /></td>
-                        <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
-                        <td className="px-6 py-4"><button type="button" onClick={() => setSelectedTeamDetail(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat</button></td>
-                      </tr>
-                    ))}
+                    {filteredTeams.map((item, idx) => {
+                      const isOpen = expandedTeam === idx;
+                      return [
+                        <tr key={'row-'+idx} className="border-t border-slate-100 hover:bg-slate-50">
+                          <td className="px-6 py-4 text-sm font-bold">{item.name}</td>
+                          <td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td>
+                          <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
+                          <td className="px-6 py-4"><Status value={item.category} /></td>
+                          <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
+                          <td className="px-6 py-4"><button type="button" onClick={() => setExpandedTeam(isOpen ? null : idx)} className={`rounded-lg px-3 py-2 text-xs font-extrabold ${isOpen ? 'bg-slate-200 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>{isOpen ? 'Tutup' : 'Lihat'}</button></td>
+                        </tr>,
+                        isOpen && <tr key={'detail-'+idx} className="border-t border-blue-200 bg-blue-50/30">
+                          <td colSpan={6} className="px-6 py-5">
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Nama Tim</div><div className="text-sm font-bold text-slate-800 mt-1">{item.name}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Ketua</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_name}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Email</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_email}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">WhatsApp</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_phone || '-'}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Institusi</div><div className="text-sm font-bold text-slate-800 mt-1">{item.institution || '-'}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Kategori</div><div className="text-sm font-bold text-slate-800 mt-1">{item.category}</div></div>
+                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Status</div><div className="text-sm font-bold text-slate-800 mt-1">{item.status || 'active'}</div></div>
+                              {item.member1_name && <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Anggota 1</div><div className="text-sm font-bold text-slate-800 mt-1">{item.member1_name}</div></div>}
+                              {item.member2_name && <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Anggota 2</div><div className="text-sm font-bold text-slate-800 mt-1">{item.member2_name}</div></div>}
+                            </div>
+                          </td>
+                        </tr>
+                      ];
+                    })}
                   </tbody>
                 </table>
                 {filteredTeams.length === 0 && <div className="px-6 py-14 text-center text-sm font-semibold text-slate-400">Belum ada data untuk ditampilkan.</div>}
               </div>
             </section>
-            {selectedTeamDetail && <TeamDetailModal team={selectedTeamDetail} onClose={() => setSelectedTeamDetail(null)} />}
           </>}
 
           {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah setelah admin membuka bukti pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
@@ -715,37 +731,5 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
     return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
   }, [activity]);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
-
-function TeamDetailModal({ team, onClose }) {
-  const t = team || {};
-  const InfoRow = ({ label, value }) => (
-    <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-extrabold">{t.name || 'Detail Tim'}</h2>
-          <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-700">×</button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <InfoRow label="Nama Tim" value={t.name} />
-          <InfoRow label="Ketua" value={t.leader_name} />
-          <InfoRow label="Email" value={t.leader_email} />
-          <InfoRow label="WhatsApp" value={t.leader_phone} />
-          <InfoRow label="Anggota 1" value={t.member1_name} />
-          <InfoRow label="Anggota 2" value={t.member2_name} />
-          <InfoRow label="Institusi" value={t.institution} />
-          <InfoRow label="Kategori" value={t.category} />
-          <InfoRow label="Status" value={t.status} />
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-bold">Tutup</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 }
