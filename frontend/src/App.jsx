@@ -121,9 +121,14 @@ export default function App() {
 
   useEffect(() => {
     if (!['home', 'olimpiade', 'competition-detail', 'event-registration'].includes(page)) return;
+    const cached = localStorage.getItem('besc_competitions_cache');
+    const cacheTime = localStorage.getItem('besc_competitions_cache_time');
+    if (cached && cacheTime && Date.now() - Number(cacheTime) < 300000) {
+      try { setApiCompetitions(JSON.parse(cached)); } catch {}
+    }
     setCompetitionsLoading(true);
     apiRequest('/competitions?limit=100')
-      .then(setApiCompetitions)
+      .then((data) => { setApiCompetitions(data); try { localStorage.setItem('besc_competitions_cache', JSON.stringify(data)); localStorage.setItem('besc_competitions_cache_time', String(Date.now())); } catch {} })
       .catch(() => setApiCompetitions([]))
       .finally(() => setCompetitionsLoading(false));
   }, [page]);
