@@ -147,6 +147,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [showTeamForm, setShowTeamForm] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamFilter, setTeamFilter] = useState('');
+  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
 
   const refreshDashboard = async () => {
     const data = await apiRequest('/admin/dashboard');
@@ -534,14 +535,30 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             <div key={item.id} className="flex gap-2"><button type="button" onClick={() => openEditCompetition(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Edit</button><button type="button" onClick={() => deleteCompetition(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
           ])} />}
 
-          {activePage === 'Tim' && <DataTable title="Manajemen Tim" subtitle="Data tim yang terdaftar di BESC 2026." action={null} headers={['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi']} rows={filteredTeams.map((item) => [
-            <div key={item.id} className="font-bold">{item.name}</div>,
-            <div key={item.id}><div className="font-semibold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></div>,
-            item.institution || '-',
-            <Status key={item.id} value={item.category} />,
-            <span key={item.id} className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase `}>{item.status}</span>,
-            <div key={item.id} className="flex gap-2"><button type="button" onClick={() => openEditTeam(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Edit</button><button type="button" onClick={() => deleteTeam(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
-          ])} />}
+          {activePage === 'Tim' && <>
+            <section className="border border-slate-200 bg-white">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Data tim yang terdaftar di BESC 2026.</p></div></div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left">
+                  <thead className="bg-[#f3f8f7]"><tr>{['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi'].map((h) => <th key={h} className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{h}</th>)}</tr></thead>
+                  <tbody>
+                    {filteredTeams.map((item, idx) => (
+                      <tr key={idx} className="border-t border-slate-100">
+                        <td className="px-6 py-4 text-sm font-bold max-w-[200px] truncate">{item.name}</td>
+                        <td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td>
+                        <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
+                        <td className="px-6 py-4"><Status value={item.category} /></td>
+                        <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
+                        <td className="px-6 py-4"><button type="button" onClick={() => setSelectedTeamDetail(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredTeams.length === 0 && <div className="px-6 py-14 text-center text-sm font-semibold text-slate-400">Belum ada data untuk ditampilkan.</div>}
+              </div>
+            </section>
+            {selectedTeamDetail && <TeamDetailModal team={selectedTeamDetail} onClose={() => setSelectedTeamDetail(null)} />}
+          </>}
 
           {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah setelah admin membuka bukti pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
             const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
@@ -697,4 +714,108 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
     return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
   }, [activity]);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
+
+function TeamDetailModal({ team, onClose }) {
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  useEffect(() => {
+    const loadDocs = async () => {
+      try {
+        if (team.user_id) {
+          const regs = await apiRequest('/me/competitions?limit=100');
+          for (const reg of regs) {
+            try {
+              const docs = await apiRequest(`/admin/registrations/${reg.id}/documents`);
+              if (docs && docs.length > 0) setDocuments((prev) => [...prev, ...docs]);
+            } catch {}
+          }
+        }
+      } catch {} finally { setLoadingDocs(false); }
+    };
+    loadDocs();
+  }, [team]);
+
+  const InfoRow = ({ label, value }) => (
+    <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-5" onClick={onClose}>
+      <section className="content-transition w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-6">
+          <div><h2 className="text-xl font-extrabold">{team.name || 'Detail Tim'}</h2><p className="mt-1 text-xs text-slate-400">Informasi lengkap peserta BESC 2026</p></div>
+          <button type="button" onClick={onClose} className="text-xl text-slate-400 hover:text-slate-700">&#215;</button>
+        </div>
+
+        <div className="space-y-4">
+          <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Informasi Tim</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Nama Tim" value={team.name} />
+              <InfoRow label="Kategori" value={team.category} />
+              <InfoRow label="Status" value={team.status} />
+              <InfoRow label="Institusi" value={team.institution} />
+              <InfoRow label="Provinsi" value={team.province} />
+              <InfoRow label="Kota" value={team.city} />
+              <InfoRow label="Alamat" value={team.address} />
+            </div>
+          </div>
+
+          <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Ketua Tim</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Nama Lengkap" value={team.leader_name} />
+              <InfoRow label="Email" value={team.leader_email} />
+              <InfoRow label="WhatsApp" value={team.leader_phone} />
+              <InfoRow label="NISN" value={team.leader_nisn} />
+              <InfoRow label="Kelas" value={team.leader_kelas} />
+            </div>
+          </div>
+
+          {(team.member1_name) && <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Anggota 1</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Nama Lengkap" value={team.member1_name} />
+              <InfoRow label="Email" value={team.member1_email} />
+              <InfoRow label="NISN" value={team.member1_nisn} />
+              <InfoRow label="Kelas" value={team.member1_kelas} />
+            </div>
+          </div>}
+
+          {(team.member2_name) && <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Anggota 2</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Nama Lengkap" value={team.member2_name} />
+              <InfoRow label="Email" value={team.member2_email} />
+              <InfoRow label="NISN" value={team.member2_nisn} />
+              <InfoRow label="Kelas" value={team.member2_kelas} />
+            </div>
+          </div>}
+
+          {(team.guardian_name || team.guardian_hp || team.guardian_email) && <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Guru Pembimbing</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoRow label="Nama Guru" value={team.guardian_name} />
+              <InfoRow label="HP Guru" value={team.guardian_hp} />
+              <InfoRow label="Email Guru" value={team.guardian_email} />
+            </div>
+          </div>}
+
+          {team.notes && <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Catatan</h3><InfoRow label="Keterangan" value={team.notes} /></div>}
+
+          <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Dokumen yang Di-upload</h3>
+            {loadingDocs ? <div className="text-xs text-slate-400">Memuat dokumen...</div> : documents.length > 0 ? (
+              <div className="grid gap-2">{documents.map((doc) => (
+                <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 hover:bg-blue-50 transition">
+                  <span className="grid h-8 w-8 place-items-center rounded bg-blue-100 text-sm">📄</span>
+                  <div className="flex-1 min-w-0"><div className="text-sm font-bold text-slate-700 truncate">{doc.original_name}</div><div className="text-xs text-slate-400">{doc.doc_type}</div></div>
+                  <span className="text-xs font-bold text-blue-600">Lihat</span>
+                </a>
+              ))}</div>
+            ) : <div className="text-xs text-slate-400">Tidak ada dokumen yang di-upload.</div>}
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold">Tutup</button></div>
+      </section>
+    </div>
+  );
+}
+
 }
