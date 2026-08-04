@@ -114,7 +114,12 @@ func (h *DocumentHandler) ViewDocument(c *fiber.Ctx) error {
 
 	diskPath := filepath.Join(h.cfg.UploadDir, "private", filePath)
 	if _, err := os.Stat(diskPath); err != nil {
-		return handleError(c, utils.ErrNotFound)
+		// File doesn't exist on disk - try alternative paths
+		altPath := filepath.Join(h.cfg.UploadDir, filePath)
+		if _, err2 := os.Stat(altPath); err2 == nil {
+			return servePrivateFile(c, h.cfg, filePath)
+		}
+		return response.Error(c, fiber.StatusNotFound, "File dokumen tidak ditemukan di server. Peserta perlu upload ulang dokumen.", nil)
 	}
 
 	return servePrivateFile(c, h.cfg, filePath)
