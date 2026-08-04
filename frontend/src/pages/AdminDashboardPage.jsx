@@ -716,20 +716,6 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
 
 function TeamDetailModal({ team, onClose }) {
-  const [documents, setDocuments] = useState([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
-
-  useEffect(() => {
-    const loadDocs = async () => {
-      try {
-        if (team.user_id) {
-          const docs = await apiRequest(`/admin/teams/${team.user_id}/documents`);
-          if (docs) setDocuments(docs);
-        }
-      } catch {} finally { setLoadingDocs(false); }
-    };
-    loadDocs();
-  }, [team]);
 
   const InfoRow = ({ label, value }) => (
     <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
@@ -794,17 +780,6 @@ function TeamDetailModal({ team, onClose }) {
 
           {team.notes && <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Catatan</h3><InfoRow label="Keterangan" value={team.notes} /></div>}
 
-          <div><h3 className="mb-3 text-sm font-bold text-slate-800 border-b pb-2">Dokumen yang Di-upload</h3>
-            {loadingDocs ? <div className="text-xs text-slate-400">Memuat dokumen...</div> : documents.length > 0 ? (
-              <div className="grid gap-2">{documents.map((doc) => (
-                <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 hover:bg-blue-50 transition">
-                  <span className="grid h-8 w-8 place-items-center rounded bg-blue-100 text-sm">📄</span>
-                  <div className="flex-1 min-w-0"><div className="text-sm font-bold text-slate-700 truncate">{doc.original_name}</div><div className="text-xs text-slate-400">{doc.doc_type}</div></div>
-                  <span className="text-xs font-bold text-blue-600">Lihat</span>
-                </a>
-              ))}</div>
-            ) : <div className="text-xs text-slate-400">Tidak ada dokumen yang di-upload.</div>}
-          </div>
         </div>
 
         <div className="mt-6 flex justify-end"><button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold">Tutup</button></div>
