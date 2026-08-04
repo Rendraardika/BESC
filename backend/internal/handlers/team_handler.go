@@ -68,3 +68,37 @@ func (h *TeamHandler) Update(c *fiber.Ctx) error {
 func (h *TeamHandler) Delete(c *fiber.Ctx) error {
 	return response.JSON(c, fiber.StatusOK, "teams are managed through user registration", nil)
 }
+
+func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	rows, err := h.db.Query(`
+		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+		FROM registration_documents rd
+		JOIN registrations r ON r.id = rd.registration_id
+		WHERE r.user_id = ?
+		ORDER BY rd.created_at DESC
+	`, userID)
+	if err != nil {
+		return response.JSON(c, fiber.StatusOK, "documents", []interface{}{})
+	}
+	defer rows.Close()
+
+	type Doc struct {
+		ID             string `json:"id"`
+		RegistrationID string `json:"registration_id"`
+		DocType        string `json:"doc_type"`
+		FilePath       string `json:"file_path"`
+		OriginalName   string `json:"original_name"`
+		CreatedAt      string `json:"created_at"`
+	}
+
+	var docs []Doc
+	for rows.Next() {
+		var d Doc
+		if err := rows.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+			continue
+		}
+		docs = append(docs, d)
+	}
+	return response.JSON(c, fiber.StatusOK, "documents", docs)
+}

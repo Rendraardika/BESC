@@ -723,13 +723,8 @@ function TeamDetailModal({ team, onClose }) {
     const loadDocs = async () => {
       try {
         if (team.user_id) {
-          const regs = await apiRequest('/me/competitions?limit=100');
-          for (const reg of regs) {
-            try {
-              const docs = await apiRequest(`/admin/registrations/${reg.id}/documents`);
-              if (docs && docs.length > 0) setDocuments((prev) => [...prev, ...docs]);
-            } catch {}
-          }
+          const docs = await apiRequest(`/admin/teams/${team.user_id}/documents`);
+          if (docs) setDocuments(docs);
         }
       } catch {} finally { setLoadingDocs(false); }
     };

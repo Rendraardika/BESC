@@ -76,6 +76,7 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
 	protected.Post("/me/teams", h.UserTeam.SubmitTeam)
 	admin.Get("/teams", h.Team.List)
+	admin.Get("/teams/:user_id/documents", h.Team.UserDocuments)
 	admin.Post("/teams", h.Team.Create)
 	admin.Put("/teams/:id", h.Team.Update)
 	admin.Delete("/teams/:id", h.Team.Delete)
