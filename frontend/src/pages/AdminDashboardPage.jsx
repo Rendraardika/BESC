@@ -1,7 +1,6 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
-import TeamForm from '../components/TeamForm.jsx';
 
 const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Tim', 'Pembayaran', 'Bank Soal', 'Hasil Ujian', 'Pengaturan'];
 
@@ -535,7 +534,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             <div key={item.id} className="flex gap-2"><button type="button" onClick={() => openEditCompetition(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Edit</button><button type="button" onClick={() => deleteCompetition(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
           ])} />}
 
-          {activePage === 'Tim' && <DataTable title="Manajemen Tim" subtitle="Data tim yang terdaftar di BESC 2026." action={<button type="button" onClick={openCreateTeam} className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Tambah Tim</button>} headers={['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi']} rows={filteredTeams.map((item) => [
+          {activePage === 'Tim' && <DataTable title="Manajemen Tim" subtitle="Data tim yang terdaftar di BESC 2026." action={null} headers={['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi']} rows={filteredTeams.map((item) => [
             <div key={item.id} className="font-bold">{item.name}</div>,
             <div key={item.id}><div className="font-semibold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></div>,
             item.institution || '-',
@@ -587,7 +586,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       </section>
       {selectedParticipant && <ParticipantModal participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} onDelete={() => deleteParticipant(selectedParticipant)} />}
       {showCompetitionForm && <CompetitionForm initialData={editingCompetition} onClose={closeCompetitionForm} onSubmit={saveCompetition} />}
-      {showTeamForm && <TeamForm initialData={editingTeam} onClose={closeTeamForm} onSubmit={saveTeam} />}
       {proofActivity && <ProofModal activity={proofActivity} onClose={() => setProofActivity(null)} onDownload={handleDownloadProof} onViewed={async (paymentID) => { setReviewedPayments((current) => new Set([...current, paymentID])); await refreshDashboard(); }} />}
     </main>
   );
