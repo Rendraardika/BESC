@@ -41,7 +41,12 @@ function PersonSection({ prefix, form, setForm, showNISN, showUploads, required 
       {showUploads && <>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Scan Kartu Pelajar {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('kartuPelajar', e.target.files?.[0])} required={required} /></div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Foto Formal {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('fotoFormal', e.target.files?.[0])} required={required} /></div>
-        <div><label className="mb-1 block text-xs font-semibold text-slate-600">Upload Twibbon {required && '*'}</label><input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('twibbon', e.target.files?.[0])} required={required} /></div>
+        <div>
+          <label className="mb-1 block text-xs font-semibold text-slate-600">Upload Twibbon {required && '*'}</label>
+          <input className={fc} type="file" accept=".png,.jpg,.jpeg" onChange={(e) => update('twibbon', e.target.files?.[0])} required={required} />
+          <p className="mt-1 text-xs text-slate-500">Download template twibbon: <a href="https://drive.google.com/drive/folders/1To5O0QDokpbTMf8kDtvuAnWVqpSJyBMV" target="_blank" rel="noopener noreferrer" className="text-[#1c79c6] font-semibold hover:underline">Klik di sini</a></p>
+          <p className="mt-1 text-xs text-slate-400 italic">"Saya bangga menjadi bagian dari BESC 2026! 🌿"</p>
+        </div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Follow IG & TikTok BESC (.pdf) {required && '*'}</label><input className={fc} type="file" accept=".pdf" onChange={(e) => update('followProof', e.target.files?.[0])} required={required} /></div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Username IG {required && '*'}</label><input className={ic} value={get('ig')} onChange={(e) => update('ig', e.target.value)} placeholder="@username" required={required} /></div>
         <div><label className="mb-1 block text-xs font-semibold text-slate-600">Username TikTok {required && '*'}</label><input className={ic} value={get('tiktok')} onChange={(e) => update('tiktok', e.target.value)} placeholder="@username" required={required} /></div>
