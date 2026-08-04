@@ -820,7 +820,7 @@ function TeamDetailModal({ team, onClose }) {
           ) : docs.length > 0 ? (
             <div className="grid gap-2">
               {docs.map((doc) => (
-                <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer"
+                <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
                    className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 hover:bg-blue-50 transition">
                   <span className="text-xl">&#128196;</span>
                   <div className="flex-1 min-w-0">

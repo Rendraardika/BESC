@@ -74,6 +74,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
 	admin.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
+	// Public document view (no auth needed for viewing files)
+	api.Get("/docs/view/:doc_id", h.Document.ViewDocument)
 	protected.Post("/me/teams", h.UserTeam.SubmitTeam)
 	admin.Get("/teams", h.Team.List)
 	admin.Get("/teams/:user_id/documents", h.Team.UserDocuments)
