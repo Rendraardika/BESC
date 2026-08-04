@@ -161,14 +161,13 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 		}
 	}
 
-	// Method 3: If still no docs, return ALL documents (admin view)
-	if len(docs) == 0 {
-		rows3, err3 := h.db.Query(`
-			SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
-			FROM registration_documents rd
-			ORDER BY rd.created_at DESC
-			LIMIT 50
-		`)
+	// Method 3: Always also get ALL documents as additional context
+	rows3, err3 := h.db.Query(`
+		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+		FROM registration_documents rd
+		ORDER BY rd.created_at DESC
+		LIMIT 50
+	`)
 		if err3 == nil {
 			defer rows3.Close()
 			for rows3.Next() {
