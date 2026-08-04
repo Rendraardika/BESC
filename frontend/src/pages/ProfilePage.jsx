@@ -9,6 +9,17 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
   const readCachedProfile = () => JSON.parse(localStorage.getItem(profileStorageKey) ?? '{}');
   const profileFromServer = () => {
     const savedProfile = readCachedProfile();
+    const prov = user?.province || savedProfile.province || '';
+    const cit = user?.city || savedProfile.city || '';
+    // Validate city matches province
+    let validCity = cit;
+    if (prov && cit) {
+      const provinsi = indonesiaWilayah.provinsi?.find((p) => p.nama === prov);
+      if (provinsi) {
+        const kotaList = indonesiaWilayah.kota_kabupaten?.filter((k) => String(k.provinsi_id) === String(provinsi.id)) || [];
+        if (!kotaList.find((k) => k.nama === cit)) validCity = '';
+      }
+    }
     return {
       photo: user?.photo || savedProfile.photo || '',
       fullName: user?.name || savedProfile.fullName || '',
@@ -17,8 +28,8 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
       birthDate: user?.birth_date ? String(user.birth_date).slice(0, 10) : savedProfile.birthDate || '',
       school: user?.institution || savedProfile.school || '',
       gender: user?.gender || savedProfile.gender || '',
-      province: user?.province || savedProfile.province || '',
-      city: user?.city || savedProfile.city || '',
+      province: prov,
+      city: validCity,
       cardPhoto: user?.student_card || savedProfile.cardPhoto || '',
       teamName: user?.team_name || savedProfile.teamName || '',
       member1Name: user?.member1_name || savedProfile.member1Name || '',
