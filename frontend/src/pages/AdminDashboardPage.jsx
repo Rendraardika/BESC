@@ -718,28 +718,73 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
 
 function TeamDetailModal({ team, onClose }) {
   const t = team || {};
+  const [docs, setDocs] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (t.user_id) {
+      setLoadingDocs(true);
+      apiRequest('/admin/teams/' + t.user_id + '/documents')
+        .then((d) => { if (!cancelled) setDocs(d || []); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setLoadingDocs(false); });
+    } else {
+      setLoadingDocs(false);
+    }
+    return () => { cancelled = true; };
+  }, [t.user_id]);
+
   const InfoRow = ({ label, value }) => (
     <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
   );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-extrabold">{t.name || 'Detail Tim'}</h2>
           <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-700">×</button>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <InfoRow label="Nama Tim" value={t.name} />
-          <InfoRow label="Ketua" value={t.leader_name} />
-          <InfoRow label="Email" value={t.leader_email} />
-          <InfoRow label="WhatsApp" value={t.leader_phone} />
-          <InfoRow label="Anggota 1" value={t.member1_name} />
-          <InfoRow label="Anggota 2" value={t.member2_name} />
-          <InfoRow label="Institusi" value={t.institution} />
-          <InfoRow label="Kategori" value={t.category} />
-          <InfoRow label="Status" value={t.status} />
+
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Informasi Tim</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <InfoRow label="Nama Tim" value={t.name} />
+            <InfoRow label="Ketua" value={t.leader_name} />
+            <InfoRow label="Email" value={t.leader_email} />
+            <InfoRow label="WhatsApp" value={t.leader_phone} />
+            <InfoRow label="Anggota 1" value={t.member1_name} />
+            <InfoRow label="Anggota 2" value={t.member2_name} />
+            <InfoRow label="Institusi" value={t.institution} />
+            <InfoRow label="Kategori" value={t.category} />
+            <InfoRow label="Status" value={t.status} />
+          </div>
         </div>
+
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Dokumen Pendaftaran</h3>
+          {loadingDocs ? (
+            <div className="text-xs text-slate-400 py-2">Memuat dokumen...</div>
+          ) : docs.length > 0 ? (
+            <div className="grid gap-2">
+              {docs.map((doc) => (
+                <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer"
+                   className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 hover:bg-blue-50 transition">
+                  <span className="text-xl">&#128196;</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold text-slate-700 truncate">{doc.original_name}</div>
+                    <div className="text-xs text-slate-400">{doc.doc_type}</div>
+                  </div>
+                  <span className="text-xs font-bold text-blue-600">Buka</span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-slate-400 py-2">Tidak ada dokumen yang di-upload.</div>
+          )}
+        </div>
+
         <div className="mt-4 flex justify-end">
           <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-bold">Tutup</button>
         </div>
