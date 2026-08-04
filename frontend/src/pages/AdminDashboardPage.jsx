@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
 
@@ -147,7 +147,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [showTeamForm, setShowTeamForm] = useState(false);
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamFilter, setTeamFilter] = useState('');
-  const [expandedTeam, setExpandedTeam] = useState(null);
+  const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
 
   const refreshDashboard = async () => {
     const data = await apiRequest('/admin/dashboard');
@@ -535,7 +535,30 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             <div key={item.id} className="flex gap-2"><button type="button" onClick={() => openEditCompetition(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Edit</button><button type="button" onClick={() => deleteCompetition(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
           ])} />}
 
-          {activePage === 'Tim' && <TeamSection teams={filteredTeams} expandedTeam={expandedTeam} setExpandedTeam={setExpandedTeam} />}
+          {activePage === 'Tim' && <>
+            <section className="border border-slate-200 bg-white">
+              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Data tim yang terdaftar di BESC 2026.</p></div></div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-left">
+                  <thead className="bg-[#f3f8f7]"><tr>{['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi'].map((h) => <th key={h} className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{h}</th>)}</tr></thead>
+                  <tbody>
+                    {filteredTeams.map((item, idx) => (
+                      <tr key={idx} className="border-t border-slate-100">
+                        <td className="px-6 py-4 text-sm font-bold max-w-[200px] truncate">{item.name}</td>
+                        <td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td>
+                        <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
+                        <td className="px-6 py-4"><Status value={item.category} /></td>
+                        <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
+                        <td className="px-6 py-4"><button type="button" onClick={() => setSelectedTeamDetail(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filteredTeams.length === 0 && <div className="px-6 py-14 text-center text-sm font-semibold text-slate-400">Belum ada data untuk ditampilkan.</div>}
+              </div>
+            </section>
+            {selectedTeamDetail && <TeamDetailModal team={selectedTeamDetail} onClose={() => setSelectedTeamDetail(null)} />}
+          </>}
 
           {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah setelah admin membuka bukti pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
             const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
@@ -692,127 +715,35 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
   }, [activity]);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
 
-
-function TeamSection({ teams, expandedTeam, setExpandedTeam }) {
-  const [docs, setDocs] = useState({});
-  const [loadingDocs, setLoadingDocs] = useState({});
-
-  const toggleExpand = async (idx, item) => {
-    if (expandedTeam === idx) { setExpandedTeam(null); return; }
-    setExpandedTeam(idx);
-    if (!docs[idx] && item.user_id && !loadingDocs[idx]) {
-      setLoadingDocs((p) => ({ ...p, [idx]: true }));
-      try {
-        const d = await apiRequest('/admin/teams/' + item.user_id + '/documents');
-        setDocs((p) => ({ ...p, [idx]: d || [] }));
-      } catch (e) { console.error('Load docs error:', e); }
-      finally { setLoadingDocs((p) => ({ ...p, [idx]: false })); }
-    }
-  };
-
-  if (!teams || teams.length === 0) {
-    return (
-      <section className="border border-slate-200 bg-white">
-        <div className="px-6 py-5 border-b border-slate-200">
-          <h1 className="text-xl font-extrabold">Manajemen Tim</h1>
-          <p className="mt-1 text-xs text-slate-500">Belum ada data tim.</p>
-        </div>
-        <div className="px-6 py-14 text-center text-sm text-slate-400">Belum ada data untuk ditampilkan.</div>
-      </section>
-    );
-  }
+function TeamDetailModal({ team, onClose }) {
+  const t = team || {};
+  const InfoRow = ({ label, value }) => (
+    <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
+  );
 
   return (
-    <section className="border border-slate-200 bg-white">
-      <div className="px-6 py-5 border-b border-slate-200">
-        <h1 className="text-xl font-extrabold">Manajemen Tim</h1>
-        <p className="mt-1 text-xs text-slate-500">Klik Lihat untuk detail lengkap.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-extrabold">{t.name || 'Detail Tim'}</h2>
+          <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-700">×</button>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <InfoRow label="Nama Tim" value={t.name} />
+          <InfoRow label="Ketua" value={t.leader_name} />
+          <InfoRow label="Email" value={t.leader_email} />
+          <InfoRow label="WhatsApp" value={t.leader_phone} />
+          <InfoRow label="Anggota 1" value={t.member1_name} />
+          <InfoRow label="Anggota 2" value={t.member2_name} />
+          <InfoRow label="Institusi" value={t.institution} />
+          <InfoRow label="Kategori" value={t.category} />
+          <InfoRow label="Status" value={t.status} />
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-bold">Tutup</button>
+        </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Nama Tim</th>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Ketua</th>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Institusi</th>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Kategori</th>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Status</th>
-              <th className="px-4 py-3 text-[10px] font-extrabold uppercase text-gray-500">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teams.map((item, idx) => (
-              <React.Fragment key={idx}>
-                <tr className="border-t border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-bold">{item.name || '-'}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="font-bold">{item.leader_name || '-'}</div>
-                    <div className="text-xs text-gray-400">{item.leader_email || ''}</div>
-                  </td>
-                  <td className="px-4 py-3 text-sm">{item.institution || '-'}</td>
-                  <td className="px-4 py-3 text-sm font-semibold">{item.category || '-'}</td>
-                  <td className="px-4 py-3">
-                    <span className={'inline-flex rounded px-2 py-1 text-[10px] font-bold uppercase ' + (item.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500')}>
-                      {item.status || 'active'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button type="button" onClick={() => toggleExpand(idx, item)} style={{padding:'6px 12px',borderRadius:'6px',fontSize:'12px',fontWeight:'700',cursor:'pointer',backgroundColor: expandedTeam === idx ? '#e5e7eb' : '#dbeafe', color: expandedTeam === idx ? '#374151' : '#1d4ed8', border:'none'}}>
-                      {expandedTeam === idx ? 'Tutup' : 'Lihat'}
-                    </button>
-                  </td>
-                </tr>
-                {expandedTeam === idx && (
-                  <tr className="bg-blue-50">
-                    <td colSpan={6} style={{padding:'20px'}}>
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px',marginBottom:'16px'}}>
-                        {[
-                          ['Nama Tim', item.name],
-                          ['Ketua', item.leader_name],
-                          ['Email', item.leader_email],
-                          ['WhatsApp', item.leader_phone],
-                          ['Anggota 1', item.member1_name],
-                          ['Anggota 2', item.member2_name],
-                          ['Institusi', item.institution],
-                          ['Kategori', item.category],
-                          ['Status', item.status],
-                        ].map(([label, value]) => (
-                          <div key={label} style={{background:'#fff',borderRadius:'8px',padding:'10px',border:'1px solid #e5e7eb'}}>
-                            <div style={{fontSize:'10px',fontWeight:'700',color:'#9ca3af',textTransform:'uppercase'}}>{label}</div>
-                            <div style={{fontSize:'14px',fontWeight:'700',color:'#111827',marginTop:'4px'}}>{value || '-'}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div>
-                        <div style={{fontSize:'12px',fontWeight:'700',color:'#4b5563',marginBottom:'8px'}}>Dokumen Pendaftaran</div>
-                        {loadingDocs[idx] ? (
-                          <div style={{fontSize:'12px',color:'#9ca3af'}}>Memuat dokumen...</div>
-                        ) : docs[idx] && docs[idx].length > 0 ? (
-                          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(250px,1fr))',gap:'8px'}}>
-                            {docs[idx].map((doc) => (
-                              <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer" style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px',borderRadius:'8px',border:'1px solid #e5e7eb',background:'#fff',textDecoration:'none',color:'inherit'}}>
-                                <span style={{fontSize:'18px'}}>&#128196;</span>
-                                <div style={{flex:1,minWidth:0}}>
-                                  <div style={{fontSize:'12px',fontWeight:'700',color:'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc.original_name}</div>
-                                  <div style={{fontSize:'10px',color:'#9ca3af'}}>{doc.doc_type}</div>
-                                </div>
-                                <span style={{fontSize:'10px',fontWeight:'700',color:'#2563eb'}}>Buka</span>
-                              </a>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{fontSize:'12px',color:'#9ca3af'}}>Tidak ada dokumen yang di-upload.</div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    </div>
   );
 }
 
