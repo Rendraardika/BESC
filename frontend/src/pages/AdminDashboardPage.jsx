@@ -535,47 +535,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             <div key={item.id} className="flex gap-2"><button type="button" onClick={() => openEditCompetition(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Edit</button><button type="button" onClick={() => deleteCompetition(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div>,
           ])} />}
 
-          {activePage === 'Tim' && <>
-            <section className="border border-slate-200 bg-white">
-              <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Data tim yang terdaftar di BESC 2026. Klik "Lihat" untuk detail lengkap.</p></div></div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-[#f3f8f7]"><tr>{['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi'].map((h) => <th key={h} className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{h}</th>)}</tr></thead>
-                  <tbody>
-                    {filteredTeams.map((item, idx) => {
-                      const isOpen = expandedTeam === idx;
-                      return [
-                        <tr key={'row-'+idx} className="border-t border-slate-100 hover:bg-slate-50">
-                          <td className="px-6 py-4 text-sm font-bold">{item.name}</td>
-                          <td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td>
-                          <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
-                          <td className="px-6 py-4"><Status value={item.category} /></td>
-                          <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
-                          <td className="px-6 py-4"><button type="button" onClick={() => setExpandedTeam(isOpen ? null : idx)} className={`rounded-lg px-3 py-2 text-xs font-extrabold ${isOpen ? 'bg-slate-200 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>{isOpen ? 'Tutup' : 'Lihat'}</button></td>
-                        </tr>,
-                        isOpen && <tr key={'detail-'+idx} className="border-t border-blue-200 bg-blue-50/30">
-                          <td colSpan={6} className="px-6 py-5">
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Nama Tim</div><div className="text-sm font-bold text-slate-800 mt-1">{item.name}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Ketua</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_name}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Email</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_email}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">WhatsApp</div><div className="text-sm font-bold text-slate-800 mt-1">{item.leader_phone || '-'}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Institusi</div><div className="text-sm font-bold text-slate-800 mt-1">{item.institution || '-'}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Kategori</div><div className="text-sm font-bold text-slate-800 mt-1">{item.category}</div></div>
-                              <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Status</div><div className="text-sm font-bold text-slate-800 mt-1">{item.status || 'active'}</div></div>
-                              {item.member1_name && <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Anggota 1</div><div className="text-sm font-bold text-slate-800 mt-1">{item.member1_name}</div></div>}
-                              {item.member2_name && <div className="rounded-lg bg-white p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">Anggota 2</div><div className="text-sm font-bold text-slate-800 mt-1">{item.member2_name}</div></div>}
-                            </div>
-                          </td>
-                        </tr>
-                      ];
-                    })}
-                  </tbody>
-                </table>
-                {filteredTeams.length === 0 && <div className="px-6 py-14 text-center text-sm font-semibold text-slate-400">Belum ada data untuk ditampilkan.</div>}
-              </div>
-            </section>
-          </>}
+          {activePage === 'Tim' && <TeamSection teams={filteredTeams} expandedTeam={expandedTeam} setExpandedTeam={setExpandedTeam} />}
 
           {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Status pembayaran dapat diubah setelah admin membuka bukti pembayaran." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
             const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
@@ -731,5 +691,51 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
     return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
   }, [activity]);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
+
+
+function TeamSection({ teams, expandedTeam, setExpandedTeam }) {
+  const [docs, setDocs] = useState({});
+  const [loadingDocs, setLoadingDocs] = useState({});
+
+  const toggleExpand = async (idx, item) => {
+    if (expandedTeam === idx) { setExpandedTeam(null); return; }
+    setExpandedTeam(idx);
+    if (!docs[idx] && item.user_id && !loadingDocs[idx]) {
+      setLoadingDocs((p) => ({ ...p, [idx]: true }));
+      try {
+        const d = await apiRequest('/admin/teams/' + item.user_id + '/documents');
+        setDocs((p) => ({ ...p, [idx]: d || [] }));
+      } catch {} finally { setLoadingDocs((p) => ({ ...p, [idx]: false })); }
+    }
+  };
+
+  const Info = ({ label, value }) => <div className="bg-white rounded-lg p-3 border border-slate-100"><div className="text-[10px] font-bold text-slate-400 uppercase">{label}</div><div className="text-sm font-bold text-slate-800 mt-1 break-all">{value || '-'}</div></div>;
+
+  return (
+    <section className="border border-slate-200 bg-white">
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"><div><h1 className="text-xl font-extrabold">Manajemen Tim</h1><p className="mt-1 text-xs text-slate-500">Klik "Lihat" untuk melihat semua informasi dan file pendaftaran.</p></div></div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className="bg-[#f3f8f7]"><tr>{['Nama Tim', 'Ketua', 'Institusi', 'Kategori', 'Status', 'Aksi'].map((h) => <th key={h} className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{h}</th>)}</tr></thead>
+          <tbody>
+            {teams.map((item, idx) => {
+              const isOpen = expandedTeam === idx;
+              return [
+                <tr key={'r'+idx} className="border-t border-slate-100 hover:bg-slate-50"><td className="px-6 py-4 text-sm font-bold">{item.name}</td><td className="px-6 py-4 text-sm"><div className="font-bold">{item.leader_name}</div><div className="text-xs text-slate-400">{item.leader_email}</div></td><td className="px-6 py-4 text-sm">{item.institution || '-'}</td><td className="px-6 py-4"><Status value={item.category} /></td><td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td><td className="px-6 py-4"><button type="button" onClick={() => toggleExpand(idx, item)} className={`rounded-lg px-3 py-2 text-xs font-extrabold ${isOpen ? 'bg-slate-200 text-slate-700' : 'bg-blue-50 text-blue-700'}`}>{isOpen ? 'Tutup' : 'Lihat'}</button></td></tr>,
+                isOpen && <tr key={'d'+idx} className="border-t border-blue-200 bg-blue-50/30"><td colSpan={6} className="px-6 py-5 space-y-4">
+                  <div><h4 className="text-xs font-bold text-slate-600 mb-2">Informasi Tim</h4><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><Info label="Nama Tim" value={item.name} /><Info label="Ketua" value={item.leader_name} /><Info label="Email" value={item.leader_email} /><Info label="WhatsApp" value={item.leader_phone} /><Info label="Anggota 1" value={item.member1_name} /><Info label="Anggota 2" value={item.member2_name} /><Info label="Institusi" value={item.institution} /><Info label="Kategori" value={item.category} /></div></div>
+                  <div><h4 className="text-xs font-bold text-slate-600 mb-2">Dokumen Pendaftaran</h4>
+                    {loadingDocs[idx] ? <div className="text-xs text-slate-400">Memuat...</div> : docs[idx] && docs[idx].length > 0 ? <div className="grid gap-2 sm:grid-cols-2">{docs[idx].map((doc) => <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2 hover:bg-blue-50 transition"><span className="text-lg">&#128196;</span><div className="flex-1 min-w-0"><div className="text-xs font-bold text-slate-700 truncate">{doc.original_name}</div><div className="text-[10px] text-slate-400">{doc.doc_type}</div></div><span className="text-[10px] font-bold text-blue-600">Buka</span></a>)}</div> : <div className="text-xs text-slate-400">Tidak ada dokumen.</div>}
+                  </div>
+                </td></tr>
+              ];
+            })}
+          </tbody>
+        </table>
+        {teams.length === 0 && <div className="px-6 py-14 text-center text-sm font-semibold text-slate-400">Belum ada data untuk ditampilkan.</div>}
+      </div>
+    </section>
+  );
+}
 
 }
