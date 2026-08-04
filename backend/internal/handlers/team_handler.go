@@ -104,6 +104,7 @@ func (h *TeamHandler) Delete(c *fiber.Ctx) error {
 
 func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 	userID := c.Params("user_id")
+	// Try query with user_id from registrations table
 	rows, err := h.db.Query(`
 		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
 		FROM registration_documents rd
@@ -133,5 +134,32 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 		}
 		docs = append(docs, d)
 	}
+
+	// If no docs found by user_id, try by user email
+	if len(docs) == 0 {
+		var email string
+		h.db.QueryRow("SELECT email FROM users WHERE id = ?", userID).Scan(&email)
+		if email != "" {
+			rows2, err2 := h.db.Query(`
+				SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+				FROM registration_documents rd
+				JOIN registrations r ON r.id = rd.registration_id
+				JOIN users u ON u.id = r.user_id
+				WHERE u.email = ?
+				ORDER BY rd.created_at DESC
+			`, email)
+			if err2 == nil {
+				defer rows2.Close()
+				for rows2.Next() {
+					var d Doc
+					if err := rows2.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+						continue
+					}
+					docs = append(docs, d)
+				}
+			}
+		}
+	}
+
 	return response.JSON(c, fiber.StatusOK, "documents", docs)
 }
