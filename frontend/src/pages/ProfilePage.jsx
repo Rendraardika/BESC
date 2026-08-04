@@ -29,10 +29,12 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const selectedProvince = indonesiaWilayah.provinsi.find((item) => item.nama === profile.province);
+  const provinceOptions = indonesiaWilayah.provinsi || [];
+  const selectedProvince = useMemo(() => provinceOptions.find((item) => item.nama === profile.province), [profile.province, provinceOptions]);
   const cityOptions = useMemo(() => {
     if (!selectedProvince) return [];
-    return indonesiaWilayah.kota_kabupaten.filter((item) => String(item.provinsi_id) === String(selectedProvince.id));
+    const pid = String(selectedProvince.id);
+    return indonesiaWilayah.kota_kabupaten.filter((item) => String(item.provinsi_id) === pid);
   }, [selectedProvince]);
 
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
