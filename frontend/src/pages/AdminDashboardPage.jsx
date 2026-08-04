@@ -751,16 +751,67 @@ function TeamDetailModal({ team, onClose }) {
           <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Informasi Tim</h3>
           <div className="grid grid-cols-2 gap-2">
             <InfoRow label="Nama Tim" value={t.name} />
-            <InfoRow label="Ketua" value={t.leader_name} />
-            <InfoRow label="Email" value={t.leader_email} />
-            <InfoRow label="WhatsApp" value={t.leader_phone} />
-            <InfoRow label="Anggota 1" value={t.member1_name} />
-            <InfoRow label="Anggota 2" value={t.member2_name} />
-            <InfoRow label="Institusi" value={t.institution} />
             <InfoRow label="Kategori" value={t.category} />
             <InfoRow label="Status" value={t.status} />
+            <InfoRow label="Institusi" value={t.institution} />
+            <InfoRow label="Provinsi" value={t.province} />
+            <InfoRow label="Kota" value={t.city} />
+            <InfoRow label="Alamat" value={t.address} />
           </div>
         </div>
+
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Ketua Tim</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <InfoRow label="Nama" value={t.leader_name} />
+            <InfoRow label="Email" value={t.leader_email} />
+            <InfoRow label="WhatsApp" value={t.leader_phone} />
+            <InfoRow label="NISN" value={t.leader_nisn} />
+            <InfoRow label="Kelas" value={t.leader_kelas} />
+          </div>
+        </div>
+
+        {t.member1_name && (
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Anggota 1</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoRow label="Nama" value={t.member1_name} />
+              <InfoRow label="Email" value={t.member1_email} />
+              <InfoRow label="NISN" value={t.member1_nisn} />
+              <InfoRow label="Kelas" value={t.member1_kelas} />
+            </div>
+          </div>
+        )}
+
+        {t.member2_name && (
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Anggota 2</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoRow label="Nama" value={t.member2_name} />
+              <InfoRow label="Email" value={t.member2_email} />
+              <InfoRow label="NISN" value={t.member2_nisn} />
+              <InfoRow label="Kelas" value={t.member2_kelas} />
+            </div>
+          </div>
+        )}
+
+        {(t.guardian_name || t.guardian_hp || t.guardian_email) && (
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Guru Pembimbing</h3>
+            <div className="grid grid-cols-2 gap-2">
+              <InfoRow label="Nama Guru" value={t.guardian_name} />
+              <InfoRow label="HP Guru" value={t.guardian_hp} />
+              <InfoRow label="Email Guru" value={t.guardian_email} />
+            </div>
+          </div>
+        )}
+
+        {t.notes && (
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Catatan</h3>
+            <InfoRow label="Keterangan" value={t.notes} />
+          </div>
+        )}
 
         <div className="mb-4">
           <h3 className="text-sm font-bold text-slate-700 border-b pb-2 mb-3">Dokumen Pendaftaran</h3>

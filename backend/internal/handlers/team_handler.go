@@ -18,7 +18,40 @@ func NewTeamHandler(db *sql.DB) *TeamHandler {
 }
 
 func (h *TeamHandler) List(c *fiber.Ctx) error {
+	// First try teams table (full registration data)
 	rows, err := h.db.Query(`
+		SELECT id, COALESCE(user_id,''), name, leader_name, leader_email, leader_phone,
+			COALESCE(leader_nisn,''), COALESCE(leader_kelas,''),
+			member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''),
+			member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''),
+			institution, COALESCE(province,''), COALESCE(city,''), COALESCE(address,''),
+			COALESCE(guardian_name,''), COALESCE(guardian_hp,''), COALESCE(guardian_email,''),
+			category, status, COALESCE(notes,''), created_at, updated_at
+		FROM teams ORDER BY created_at DESC
+	`)
+	if err == nil {
+		defer rows.Close()
+		items := []entities.Team{}
+		for rows.Next() {
+			var item entities.Team
+			if err := rows.Scan(&item.ID, &item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone,
+				&item.LeaderNISN, &item.LeaderKelas,
+				&item.Member1Name, &item.Member1Email, &item.Member1NISN, &item.Member1Kelas,
+				&item.Member2Name, &item.Member2Email, &item.Member2NISN, &item.Member2Kelas,
+				&item.Institution, &item.Province, &item.City, &item.Address,
+				&item.GuardianName, &item.GuardianHP, &item.GuardianEmail,
+				&item.Category, &item.Status, &item.Notes, &item.CreatedAt, &item.UpdatedAt); err != nil {
+				continue
+			}
+			items = append(items, item)
+		}
+		if len(items) > 0 {
+			return response.JSON(c, fiber.StatusOK, "teams", items)
+		}
+	}
+
+	// Fallback: query from users table (basic data)
+	rows2, err := h.db.Query(`
 		SELECT 
 			u.id as user_id,
 			COALESCE(u.team_name, '') as team_name,
@@ -44,17 +77,17 @@ func (h *TeamHandler) List(c *fiber.Ctx) error {
 	if err != nil {
 		return response.JSON(c, fiber.StatusOK, "teams", []entities.Team{})
 	}
-	defer rows.Close()
+	defer rows2.Close()
 
-	items := []entities.Team{}
-	for rows.Next() {
+	items2 := []entities.Team{}
+	for rows2.Next() {
 		var item entities.Team
-		if err := rows.Scan(&item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone, &item.Member1Name, &item.Member2Name, &item.Institution, &item.Category, &item.Status, &item.Notes, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows2.Scan(&item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone, &item.Member1Name, &item.Member2Name, &item.Institution, &item.Category, &item.Status, &item.Notes, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			continue
 		}
-		items = append(items, item)
+		items2 = append(items2, item)
 	}
-	return response.JSON(c, fiber.StatusOK, "teams", items)
+	return response.JSON(c, fiber.StatusOK, "teams", items2)
 }
 
 func (h *TeamHandler) Create(c *fiber.Ctx) error {
