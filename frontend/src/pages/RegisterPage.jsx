@@ -1,12 +1,10 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
-import indonesiaWilayah from '../indonesia_wilayah.json';
 import { apiRequest } from '../lib/api.js';
 
 export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
-  const [provinsiId, setProvinsiId] = useState('');
   const [form, setForm] = useState({
     teamName: '',
     leaderName: '',
@@ -15,9 +13,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     email: '',
     phone: '',
     birthDate: '',
-    gender: '',
-    province: '',
-    city: '',
     institution: '',
     password: '',
     confirmPassword: '',
@@ -34,11 +29,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
     symbol: /[^A-Za-z0-9]/.test(form.password),
   };
   const passwordIsValid = Object.values(passwordRules).every(Boolean);
-
-  const kotaOptions = useMemo(() => {
-    if (!provinsiId) return [];
-    return indonesiaWilayah.kota_kabupaten.filter((k) => String(k.provinsi_id) === String(provinsiId));
-  }, [provinsiId]);
 
   const updateField = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
@@ -71,9 +61,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
           phone: form.phone,
           institution: form.institution,
           birth_date: form.birthDate,
-          gender: form.gender,
-          province: form.province,
-          city: form.city,
         }),
       });
       const profileKey = `besc_profile_${auth.user?.id || auth.user?.email || form.email}`;
@@ -82,9 +69,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
         whatsapp: form.phone,
         school: form.institution,
         birthDate: form.birthDate,
-        gender: form.gender,
-        province: form.province,
-        city: form.city,
       }));
       onRegisterSuccess(auth, { source: 'manual' });
     } catch (err) {
@@ -187,28 +171,6 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
                 <span className={passwordRules.symbol ? 'text-emerald-600' : ''}>Minimal satu simbol unik</span>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-700">Jenis Kelamin</label>
-                <select className={inputClass} value={form.gender || ''} onChange={updateField('gender')}>
-                  <option value="" disabled>Pilih Jenis Kelamin</option>
-                  <option>Laki-laki</option>
-                  <option>Perempuan</option>
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
-                <select className={inputClass} value={form.province || ''} onChange={(event) => { setProvinsiId(event.target.value); setForm((c) => ({ ...c, province: event.target.options[event.target.selectedIndex]?.text || '', city: '' })); }}>
-                  <option value="" disabled>Pilih Provinsi</option>
-                  {indonesiaWilayah.provinsi.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-bold text-slate-700">Kota Domisili</label>
-                <select className={inputClass} value={form.city || ''} onChange={(event) => setForm((c) => ({ ...c, city: event.target.options[event.target.selectedIndex]?.text || '' }))}>
-                  <option value="" disabled>Pilih Kota</option>
-                  {kotaOptions.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
-                </select>
-              </div>
               <button type="submit" disabled={isSubmitting} className="mt-2 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2">
                 {isSubmitting ? 'Memproses...' : 'Daftar'}
               </button>
