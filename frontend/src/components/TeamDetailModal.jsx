@@ -67,27 +67,23 @@ export default function TeamDetailModal({ team, onClose }) {
           <Row label="Username TikTok" value={t.leader_tiktok} />
         </Section>
 
-        {t.member1_name ? (
-          <Section title="Anggota 1">
-            <Row label="Nama" value={t.member1_name} />
-            <Row label="Email" value={t.member1_email} />
-            <Row label="NISN" value={t.member1_nisn} />
-            <Row label="Kelas" value={t.member1_kelas} />
-            <Row label="Username IG" value={t.member1_ig} />
-            <Row label="Username TikTok" value={t.member1_tiktok} />
-          </Section>
-        ) : null}
+        <Section title="Anggota 1">
+          <Row label="Nama" value={t.member1_name} />
+          <Row label="Email" value={t.member1_email} />
+          <Row label="NISN" value={t.member1_nisn} />
+          <Row label="Kelas" value={t.member1_kelas} />
+          <Row label="Username IG" value={t.member1_ig} />
+          <Row label="Username TikTok" value={t.member1_tiktok} />
+        </Section>
 
-        {t.member2_name ? (
-          <Section title="Anggota 2">
-            <Row label="Nama" value={t.member2_name} />
-            <Row label="Email" value={t.member2_email} />
-            <Row label="NISN" value={t.member2_nisn} />
-            <Row label="Kelas" value={t.member2_kelas} />
-            <Row label="Username IG" value={t.member2_ig} />
-            <Row label="Username TikTok" value={t.member2_tiktok} />
-          </Section>
-        ) : null}
+        <Section title="Anggota 2">
+          <Row label="Nama" value={t.member2_name} />
+          <Row label="Email" value={t.member2_email} />
+          <Row label="NISN" value={t.member2_nisn} />
+          <Row label="Kelas" value={t.member2_kelas} />
+          <Row label="Username IG" value={t.member2_ig} />
+          <Row label="Username TikTok" value={t.member2_tiktok} />
+        </Section>
 
         {(t.guardian_name || t.guardian_hp || t.guardian_email) ? (
           <Section title="Guru Pembimbing">
