@@ -150,9 +150,10 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       });
       if (docTypes.length > 0) {
         docTypes.forEach((t) => docsFormData.append('doc_types', t));
-        const docResponse = await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
-        if (!docResponse.ok) {
-          console.warn('Gagal mengunggah dokumen, silakan coba lagi.', docResponse.status);
+        const docsResponse = await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
+        const docsBody = await docsResponse.json().catch(() => ({}));
+        if (!docsResponse.ok || docsBody.success === false) {
+          throw new Error(docsBody.message || 'Gagal mengunggah dokumen pendaftaran. Silakan coba lagi.');
         }
       }
       localStorage.removeItem('besc_reg_form');
