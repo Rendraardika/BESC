@@ -161,8 +161,14 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 		}
 	}
 
-	// Method 3: Always also get ALL documents as additional context
-	rows3, err3 := h.db.Query(`SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at FROM registration_documents rd ORDER BY rd.created_at DESC LIMIT 50`)
+	// Method 3: Get documents from latest registration that has files on disk
+	rows3, err3 := h.db.Query(`
+		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+		FROM registration_documents rd
+		WHERE rd.file_path IS NOT NULL AND rd.file_path != ''
+		ORDER BY rd.created_at DESC
+		LIMIT 50
+	`)
 	if err3 == nil {
 		defer rows3.Close()
 		for rows3.Next() {
