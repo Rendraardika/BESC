@@ -713,133 +713,38 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
     loadProof();
     return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
   }, [activity]);
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">&#215;</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
-}
+  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
 
 function TeamDetailModal({ team, onClose }) {
   const t = team || {};
-  const [docs, setDocs] = useState([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (t.user_id) {
-      setLoadingDocs(true);
-      apiRequest('/admin/teams/' + t.user_id + '/documents')
-        .then((d) => { if (!cancelled) setDocs(d || []); })
-        .catch(() => {})
-        .finally(() => { if (!cancelled) setLoadingDocs(false); });
-    } else {
-      setLoadingDocs(false);
-    }
-    return () => { cancelled = true; };
-  }, [t.user_id]);
-
-  const Info = ({ label, value }) => (
-    <div className="bg-gray-50 rounded-lg p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">{label}</div><div className="mt-1 text-sm font-bold text-gray-800 break-all">{value || '-'}</div></div>
+  const InfoRow = ({ label, value }) => (
+    <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{backgroundColor:'rgba(0,0,0,0.5)'}} onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" style={{padding:'24px'}} onClick={(e) => e.stopPropagation()}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:'800'}}>{t.name || 'Detail Tim'}</h2>
-          <button onClick={onClose} style={{fontSize:'24px',color:'#999',cursor:'pointer',background:'none',border:'none'}}>x</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-extrabold">{t.name || 'Detail Tim'}</h2>
+          <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-700">×</button>
         </div>
-
-        <div style={{marginBottom:'16px'}}>
-          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Informasi Tim</h3>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
-            <Info label="Nama Tim" value={t.name} />
-            <Info label="Kategori" value={t.category} />
-            <Info label="Status" value={t.status} />
-            <Info label="Institusi" value={t.institution} />
-            <Info label="Provinsi" value={t.province} />
-            <Info label="Kota" value={t.city} />
-            <Info label="Alamat" value={t.address} />
-          </div>
+        <div className="grid grid-cols-2 gap-3">
+          <InfoRow label="Nama Tim" value={t.name} />
+          <InfoRow label="Ketua" value={t.leader_name} />
+          <InfoRow label="Email" value={t.leader_email} />
+          <InfoRow label="WhatsApp" value={t.leader_phone} />
+          <InfoRow label="Anggota 1" value={t.member1_name} />
+          <InfoRow label="Anggota 2" value={t.member2_name} />
+          <InfoRow label="Institusi" value={t.institution} />
+          <InfoRow label="Kategori" value={t.category} />
+          <InfoRow label="Status" value={t.status} />
         </div>
-
-        <div style={{marginBottom:'16px'}}>
-          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Ketua Tim</h3>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
-            <Info label="Nama Lengkap" value={t.leader_name} />
-            <Info label="NISN" value={t.leader_nisn} />
-            <Info label="Kelas" value={t.leader_kelas} />
-            <Info label="WhatsApp" value={t.leader_phone} />
-            <Info label="Email" value={t.leader_email} />
-          </div>
-        </div>
-
-        {t.member1_name && (
-          <div style={{marginBottom:'16px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Anggota 1</h3>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
-              <Info label="Nama" value={t.member1_name} />
-              <Info label="NISN" value={t.member1_nisn} />
-              <Info label="Kelas" value={t.member1_kelas} />
-              <Info label="Email" value={t.member1_email} />
-            </div>
-          </div>
-        )}
-
-        {t.member2_name && (
-          <div style={{marginBottom:'16px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Anggota 2</h3>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
-              <Info label="Nama" value={t.member2_name} />
-              <Info label="NISN" value={t.member2_nisn} />
-              <Info label="Kelas" value={t.member2_kelas} />
-              <Info label="Email" value={t.member2_email} />
-            </div>
-          </div>
-        )}
-
-        {(t.guardian_name || t.guardian_hp || t.guardian_email) && (
-          <div style={{marginBottom:'16px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Guru Pembimbing</h3>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
-              <Info label="Nama Guru" value={t.guardian_name} />
-              <Info label="HP Guru" value={t.guardian_hp} />
-              <Info label="Email Guru" value={t.guardian_email} />
-            </div>
-          </div>
-        )}
-
-        {t.notes && (
-          <div style={{marginBottom:'16px'}}>
-            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Catatan / Karya</h3>
-            <Info label="Keterangan" value={t.notes} />
-          </div>
-        )}
-
-        <div style={{marginBottom:'16px'}}>
-          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Dokumen Pendaftaran</h3>
-          {loadingDocs ? (
-            <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Memuat dokumen...</div>
-          ) : docs.length > 0 ? (
-            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-              {docs.map((doc) => (
-                <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
-                   style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'8px',border:'1px solid #e5e7eb',backgroundColor:'#f9fafb',textDecoration:'none',color:'inherit'}}>
-                  <span style={{fontSize:'20px'}}>&#128196;</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:'14px',fontWeight:'700',color:'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc.original_name}</div>
-                    <div style={{fontSize:'12px',color:'#9ca3af'}}>{doc.doc_type}</div>
-                  </div>
-                  <span style={{fontSize:'12px',fontWeight:'700',color:'#2563eb'}}>Buka</span>
-                </a>
-              ))}
-            </div>
-          ) : (
-            <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Tidak ada dokumen yang di-upload.</div>
-          )}
-        </div>
-
-        <div style={{marginTop:'20px',display:'flex',justifyContent:'flex-end'}}>
-          <button onClick={onClose} style={{padding:'8px 16px',borderRadius:'8px',border:'1px solid #e5e7eb',fontSize:'14px',fontWeight:'700',cursor:'pointer',backgroundColor:'white'}}>Tutup</button>
+        <div className="mt-4 flex justify-end">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-bold">Tutup</button>
         </div>
       </div>
     </div>
+  );
+}
 
 }
