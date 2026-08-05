@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
+import TeamDetailModal from '../components/TeamDetailModal.jsx';
 
 const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Tim', 'Pembayaran', 'Bank Soal', 'Hasil Ujian', 'Pengaturan'];
 
@@ -714,37 +715,5 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
     return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
   }, [activity]);
   return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/60 p-5" onClick={onClose}><section className="content-transition w-full max-w-3xl rounded-lg bg-white p-5" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between"><div><h2 className="text-xl font-extrabold">Bukti Pembayaran</h2><p className="mt-1 text-sm text-slate-500">{activity.user_name} â€¢ {activity.competition_title}</p></div><button type="button" onClick={onClose} className="text-xl">Ã—</button></div><div className="mt-5 grid min-h-80 place-items-center overflow-hidden rounded-lg bg-slate-100 p-3">{error ? <div className="text-sm font-bold text-red-600">{error}</div> : proofURL ? <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[65vh] max-w-full object-contain" /> : <div className="text-sm font-bold text-slate-500">Memuat bukti pembayaran...</div>}</div><div className="mt-4 flex justify-end">{proofURL && <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white">Buka Ukuran Penuh</a>}</div></section></div>;
-
-function TeamDetailModal({ team, onClose }) {
-  const t = team || {};
-  const InfoRow = ({ label, value }) => (
-    <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
-  );
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-extrabold">{t.name || 'Detail Tim'}</h2>
-          <button onClick={onClose} className="text-2xl text-gray-400 hover:text-gray-700">×</button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <InfoRow label="Nama Tim" value={t.name} />
-          <InfoRow label="Ketua" value={t.leader_name} />
-          <InfoRow label="Email" value={t.leader_email} />
-          <InfoRow label="WhatsApp" value={t.leader_phone} />
-          <InfoRow label="Anggota 1" value={t.member1_name} />
-          <InfoRow label="Anggota 2" value={t.member2_name} />
-          <InfoRow label="Institusi" value={t.institution} />
-          <InfoRow label="Kategori" value={t.category} />
-          <InfoRow label="Status" value={t.status} />
-        </div>
-        <div className="mt-4 flex justify-end">
-          <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-bold">Tutup</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 }
