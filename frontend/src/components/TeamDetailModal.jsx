@@ -122,7 +122,7 @@ export default function TeamDetailModal({ team, onClose }) {
                           var label = doc.doc_type.replace(prefix + '_', '').replace(/([A-Z])/g, ' $1').trim();
                           var isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
                           return (
-                            <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
+                            <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer"
                                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',padding:'8px',borderRadius:'8px',border:'1px solid #e5e7eb',backgroundColor:'#f9fafb',textDecoration:'none',color:'inherit',textAlign:'center'}}>
                               <span style={{fontSize:'24px'}}>{isPdf ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F'}</span>
                               <div style={{fontSize:'11px',fontWeight:'600',color:'#374151'}}>{label}</div>
