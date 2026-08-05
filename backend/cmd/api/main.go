@@ -67,7 +67,8 @@ func main() {
 	userTeamHandler := handlers.NewUserTeamHandler(db)
 
 	app := fiber.New(fiber.Config{
-		AppName: "Online Competition Platform API",
+		AppName:   "Online Competition Platform API",
+		BodyLimit: 15 * 1024 * 1024,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			var fiberErr *fiber.Error
 			if errors.As(err, &fiberErr) && fiberErr.Code < fiber.StatusInternalServerError {
