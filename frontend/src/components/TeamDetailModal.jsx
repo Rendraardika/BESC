@@ -5,15 +5,15 @@ export default function TeamDetailModal({ team, onClose }) {
   const t = team || {};
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(!!t.user_id);
-  const [docsError, setDocsError] = useState('');
+  const [docsError, setDocsError] = useState(false);
 
   const loadDocs = function() {
     if (!t.user_id) { setLoadingDocs(false); return; }
     setLoadingDocs(true);
-    setDocsError('');
+    setDocsError(false);
     apiRequest('/admin/teams/' + t.user_id + '/documents')
       .then(function(d) { setDocs(d || []); })
-      .catch(function(e) { setDocsError('Gagal memuat dokumen, coba lagi.'); })
+      .catch(function() { setDocsError(true); })
       .finally(function() { setLoadingDocs(false); });
   };
 
@@ -107,9 +107,7 @@ export default function TeamDetailModal({ team, onClose }) {
             {loadingDocs ? (
               <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Memuat dokumen...</div>
             ) : docsError ? (
-              <div style={{padding:'10px',background:'#fef2f2',borderRadius:'8px',border:'1px solid #fecaca',fontSize:'12px',color:'#991b1b'}}>
-                {docsError} <button onClick={loadDocs} style={{marginLeft:'8px',color:'#2563eb',fontWeight:'700',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Coba lagi</button>
-              </div>
+              <div style={{fontSize:'12px',color:'#dc2626',padding:'8px 0'}}>Gagal memuat dokumen. Coba tutup dan buka lagi.</div>
             ) : docs.length > 0 ? (
               <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
                 {['ketua', 'anggota1', 'anggota2'].map(function(prefix) {
