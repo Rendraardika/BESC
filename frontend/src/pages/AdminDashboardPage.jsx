@@ -735,6 +735,132 @@ function TeamDetailModal({ team, onClose }) {
     return () => { cancelled = true; };
   }, [t.user_id]);
 
+  const Info = ({ label, value }) => (
+    <div className="bg-gray-50 rounded-lg p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400">{label}</div><div className="mt-1 text-sm font-bold text-gray-800 break-all">{value || '-'}</div></div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{backgroundColor:'rgba(0,0,0,0.5)'}} onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto" style={{padding:'24px'}} onClick={(e) => e.stopPropagation()}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
+          <h2 style={{fontSize:'18px',fontWeight:'800'}}>{t.name || 'Detail Tim'}</h2>
+          <button onClick={onClose} style={{fontSize:'24px',color:'#999',cursor:'pointer',background:'none',border:'none'}}>x</button>
+        </div>
+
+        <div style={{marginBottom:'16px'}}>
+          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Informasi Tim</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
+            <Info label="Nama Tim" value={t.name} />
+            <Info label="Kategori" value={t.category} />
+            <Info label="Status" value={t.status} />
+            <Info label="Institusi" value={t.institution} />
+            <Info label="Provinsi" value={t.province} />
+            <Info label="Kota" value={t.city} />
+            <Info label="Alamat" value={t.address} />
+          </div>
+        </div>
+
+        <div style={{marginBottom:'16px'}}>
+          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Ketua Tim</h3>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
+            <Info label="Nama Lengkap" value={t.leader_name} />
+            <Info label="NISN" value={t.leader_nisn} />
+            <Info label="Kelas" value={t.leader_kelas} />
+            <Info label="WhatsApp" value={t.leader_phone} />
+            <Info label="Email" value={t.leader_email} />
+          </div>
+        </div>
+
+        {t.member1_name && (
+          <div style={{marginBottom:'16px'}}>
+            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Anggota 1</h3>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
+              <Info label="Nama" value={t.member1_name} />
+              <Info label="NISN" value={t.member1_nisn} />
+              <Info label="Kelas" value={t.member1_kelas} />
+              <Info label="Email" value={t.member1_email} />
+            </div>
+          </div>
+        )}
+
+        {t.member2_name && (
+          <div style={{marginBottom:'16px'}}>
+            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Anggota 2</h3>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
+              <Info label="Nama" value={t.member2_name} />
+              <Info label="NISN" value={t.member2_nisn} />
+              <Info label="Kelas" value={t.member2_kelas} />
+              <Info label="Email" value={t.member2_email} />
+            </div>
+          </div>
+        )}
+
+        {(t.guardian_name || t.guardian_hp || t.guardian_email) && (
+          <div style={{marginBottom:'16px'}}>
+            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Guru Pembimbing</h3>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'8px'}}>
+              <Info label="Nama Guru" value={t.guardian_name} />
+              <Info label="HP Guru" value={t.guardian_hp} />
+              <Info label="Email Guru" value={t.guardian_email} />
+            </div>
+          </div>
+        )}
+
+        {t.notes && (
+          <div style={{marginBottom:'16px'}}>
+            <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Catatan / Karya</h3>
+            <Info label="Keterangan" value={t.notes} />
+          </div>
+        )}
+
+        <div style={{marginBottom:'16px'}}>
+          <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Dokumen Pendaftaran</h3>
+          {loadingDocs ? (
+            <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Memuat dokumen...</div>
+          ) : docs.length > 0 ? (
+            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+              {docs.map((doc) => (
+                <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
+                   style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px',borderRadius:'8px',border:'1px solid #e5e7eb',backgroundColor:'#f9fafb',textDecoration:'none',color:'inherit'}}>
+                  <span style={{fontSize:'20px'}}>&#128196;</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:'14px',fontWeight:'700',color:'#374151',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{doc.original_name}</div>
+                    <div style={{fontSize:'12px',color:'#9ca3af'}}>{doc.doc_type}</div>
+                  </div>
+                  <span style={{fontSize:'12px',fontWeight:'700',color:'#2563eb'}}>Buka</span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Tidak ada dokumen yang di-upload.</div>
+          )}
+        </div>
+
+        <div style={{marginTop:'20px',display:'flex',justifyContent:'flex-end'}}>
+          <button onClick={onClose} style={{padding:'8px 16px',borderRadius:'8px',border:'1px solid #e5e7eb',fontSize:'14px',fontWeight:'700',cursor:'pointer',backgroundColor:'white'}}>Tutup</button>
+        </div>
+      </div>
+    </div>
+  );
+}) {
+  const t = team || {};
+  const [docs, setDocs] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (t.user_id) {
+      setLoadingDocs(true);
+      apiRequest('/admin/teams/' + t.user_id + '/documents')
+        .then((d) => { if (!cancelled) setDocs(d || []); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setLoadingDocs(false); });
+    } else {
+      setLoadingDocs(false);
+    }
+    return () => { cancelled = true; };
+  }, [t.user_id]);
+
   const InfoRow = ({ label, value }) => (
     <div className="rounded-lg bg-slate-50 p-3"><div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-1 text-sm font-bold text-[#17324d] break-all">{value || '-'}</div></div>
   );
