@@ -98,14 +98,20 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
           leader_phone: form.ketua_wa,
           leader_nisn: form.ketua_nisn,
           leader_kelas: form.ketua_kelas,
+          leader_ig: form.ketua_ig || '',
+          leader_tiktok: form.ketua_tiktok || '',
           member1_name: form.anggota1_name,
           member1_email: form.anggota1_email,
           member1_nisn: form.anggota1_nisn,
           member1_kelas: form.anggota1_kelas,
+          member1_ig: form.anggota1_ig || '',
+          member1_tiktok: form.anggota1_tiktok || '',
           member2_name: form.anggota2_name,
           member2_email: form.anggota2_email,
           member2_nisn: form.anggota2_nisn,
           member2_kelas: form.anggota2_kelas,
+          member2_ig: form.anggota2_ig || '',
+          member2_tiktok: form.anggota2_tiktok || '',
           institution: form.namaSekolah,
           province: form.provinsi,
           city: form.kabKota,
@@ -148,6 +154,10 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
           if (file) collectFile(`${prefix}_${field}`, `${prefix}_${field}`, file);
         });
       });
+      // Collect extra files: biodata kelompok, biodata guru, abstrak
+      if (form._biodataKelompok) collectFile('biodataKelompok', 'biodataKelompok', form._biodataKelompok);
+      if (form._biodataGuru) collectFile('biodataGuru', 'biodataGuru', form._biodataGuru);
+      if (form._abstrak) collectFile('abstrak', 'abstrak', form._abstrak);
       if (docTypes.length > 0) {
         docTypes.forEach((t) => docsFormData.append('doc_types', t));
         const docsResponse = await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });

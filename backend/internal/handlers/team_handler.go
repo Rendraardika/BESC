@@ -21,9 +21,9 @@ func (h *TeamHandler) List(c *fiber.Ctx) error {
 	// First try teams table (full registration data)
 	rows, err := h.db.Query(`
 		SELECT id, COALESCE(user_id,''), name, leader_name, leader_email, leader_phone,
-			COALESCE(leader_nisn,''), COALESCE(leader_kelas,''),
-			member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''),
-			member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''),
+			COALESCE(leader_nisn,''), COALESCE(leader_kelas,''), COALESCE(leader_ig,''), COALESCE(leader_tiktok,''),
+			member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''), COALESCE(member1_ig,''), COALESCE(member1_tiktok,''),
+			member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''), COALESCE(member2_ig,''), COALESCE(member2_tiktok,''),
 			institution, COALESCE(province,''), COALESCE(city,''), COALESCE(address,''),
 			COALESCE(guardian_name,''), COALESCE(guardian_hp,''), COALESCE(guardian_email,''),
 			category, status, COALESCE(notes,''), created_at, updated_at
@@ -35,9 +35,9 @@ func (h *TeamHandler) List(c *fiber.Ctx) error {
 		for rows.Next() {
 			var item entities.Team
 			if err := rows.Scan(&item.ID, &item.UserID, &item.Name, &item.LeaderName, &item.LeaderEmail, &item.LeaderPhone,
-				&item.LeaderNISN, &item.LeaderKelas,
-				&item.Member1Name, &item.Member1Email, &item.Member1NISN, &item.Member1Kelas,
-				&item.Member2Name, &item.Member2Email, &item.Member2NISN, &item.Member2Kelas,
+				&item.LeaderNISN, &item.LeaderKelas, &item.LeaderIG, &item.LeaderTikTok,
+				&item.Member1Name, &item.Member1Email, &item.Member1NISN, &item.Member1Kelas, &item.Member1IG, &item.Member1TikTok,
+				&item.Member2Name, &item.Member2Email, &item.Member2NISN, &item.Member2Kelas, &item.Member2IG, &item.Member2TikTok,
 				&item.Institution, &item.Province, &item.City, &item.Address,
 				&item.GuardianName, &item.GuardianHP, &item.GuardianEmail,
 				&item.Category, &item.Status, &item.Notes, &item.CreatedAt, &item.UpdatedAt); err != nil {
@@ -161,25 +161,5 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 		}
 	}
 
-	// Method 3: Only if no docs found, get ALL documents as fallback
-	if len(docs) == 0 {
-		rows3, err3 := h.db.Query(`
-			SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
-			FROM registration_documents rd
-			WHERE rd.file_path IS NOT NULL AND rd.file_path != ''
-			ORDER BY rd.created_at DESC
-			LIMIT 50
-		`)
-		if err3 == nil {
-			defer rows3.Close()
-			for rows3.Next() {
-				var d Doc
-				if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
-					continue
-				}
-				docs = append(docs, d)
-			}
-		}
-	}
 	return response.JSON(c, fiber.StatusOK, "documents", docs)
 }

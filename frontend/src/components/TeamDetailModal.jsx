@@ -63,6 +63,8 @@ export default function TeamDetailModal({ team, onClose }) {
           <Row label="WhatsApp" value={t.leader_phone} />
           <Row label="NISN" value={t.leader_nisn} />
           <Row label="Kelas" value={t.leader_kelas} />
+          <Row label="Username IG" value={t.leader_ig} />
+          <Row label="Username TikTok" value={t.leader_tiktok} />
         </Section>
 
         {t.member1_name ? (
@@ -71,6 +73,8 @@ export default function TeamDetailModal({ team, onClose }) {
             <Row label="Email" value={t.member1_email} />
             <Row label="NISN" value={t.member1_nisn} />
             <Row label="Kelas" value={t.member1_kelas} />
+            <Row label="Username IG" value={t.member1_ig} />
+            <Row label="Username TikTok" value={t.member1_tiktok} />
           </Section>
         ) : null}
 
@@ -80,6 +84,8 @@ export default function TeamDetailModal({ team, onClose }) {
             <Row label="Email" value={t.member2_email} />
             <Row label="NISN" value={t.member2_nisn} />
             <Row label="Kelas" value={t.member2_kelas} />
+            <Row label="Username IG" value={t.member2_ig} />
+            <Row label="Username TikTok" value={t.member2_tiktok} />
           </Section>
         ) : null}
 
@@ -122,7 +128,7 @@ export default function TeamDetailModal({ team, onClose }) {
                           var label = doc.doc_type.replace(prefix + '_', '').replace(/([A-Z])/g, ' $1').trim();
                           var isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
                           return (
-                            <a key={doc.id} href={API_URL + '/admin/documents/' + doc.id + '/view'} target="_blank" rel="noopener noreferrer"
+                            <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
                                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',padding:'8px',borderRadius:'8px',border:'1px solid #e5e7eb',backgroundColor:'#f9fafb',textDecoration:'none',color:'inherit',textAlign:'center'}}>
                               <span style={{fontSize:'24px'}}>{isPdf ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F'}</span>
                               <div style={{fontSize:'11px',fontWeight:'600',color:'#374151'}}>{label}</div>
@@ -134,6 +140,26 @@ export default function TeamDetailModal({ team, onClose }) {
                     </div>
                   );
                 })}
+                {/* Extra documents: biodata kelompok, biodata guru, abstrak */}
+                {docs.filter(function(d) { return !d.doc_type || (!d.doc_type.startsWith('ketua_') && !d.doc_type.startsWith('anggota1_') && !d.doc_type.startsWith('anggota2_')); }).length > 0 && (
+                  <div style={{border:'1px solid #e5e7eb',borderRadius:'8px',padding:'12px'}}>
+                    <div style={{fontSize:'12px',fontWeight:'700',color:'#374151',marginBottom:'8px'}}>Dokumen Lainnya</div>
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))',gap:'8px'}}>
+                      {docs.filter(function(d) { return !d.doc_type || (!d.doc_type.startsWith('ketua_') && !d.doc_type.startsWith('anggota1_') && !d.doc_type.startsWith('anggota2_')); }).map(function(doc) {
+                        var label = (doc.doc_type || 'Dokumen').replace(/([A-Z])/g, ' $1').trim();
+                        var isPdf = doc.original_name && doc.original_name.toLowerCase().endsWith('.pdf');
+                        return (
+                          <a key={doc.id} href={API_URL + '/docs/view/' + doc.id} target="_blank" rel="noopener noreferrer"
+                             style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'4px',padding:'8px',borderRadius:'8px',border:'1px solid #e5e7eb',backgroundColor:'#f9fafb',textDecoration:'none',color:'inherit',textAlign:'center'}}>
+                            <span style={{fontSize:'24px'}}>{isPdf ? '\uD83D\uDCC4' : '\uD83D\uDDBC\uFE0F'}</span>
+                            <div style={{fontSize:'11px',fontWeight:'600',color:'#374151'}}>{label}</div>
+                            <div style={{fontSize:'10px',color:'#2563eb',fontWeight:'600'}}>Buka</div>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Tidak ada dokumen yang di-upload.</div>
