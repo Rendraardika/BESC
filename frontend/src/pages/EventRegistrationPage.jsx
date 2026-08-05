@@ -150,7 +150,10 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       });
       if (docTypes.length > 0) {
         docTypes.forEach((t) => docsFormData.append('doc_types', t));
-        await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
+        const docResponse = await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
+        if (!docResponse.ok) {
+          console.warn('Gagal mengunggah dokumen, silakan coba lagi.', docResponse.status);
+        }
       }
       localStorage.removeItem('besc_reg_form');
       setCurrentStep(3);

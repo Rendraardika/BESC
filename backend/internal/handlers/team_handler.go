@@ -161,22 +161,24 @@ func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
 		}
 	}
 
-	// Method 3: Get documents from latest registration that has files on disk
-	rows3, err3 := h.db.Query(`
-		SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
-		FROM registration_documents rd
-		WHERE rd.file_path IS NOT NULL AND rd.file_path != ''
-		ORDER BY rd.created_at DESC
-		LIMIT 50
-	`)
-	if err3 == nil {
-		defer rows3.Close()
-		for rows3.Next() {
-			var d Doc
-			if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
-				continue
+	// Method 3: Only if no docs found, get ALL documents as fallback
+	if len(docs) == 0 {
+		rows3, err3 := h.db.Query(`
+			SELECT rd.id, rd.registration_id, rd.doc_type, rd.file_path, rd.original_name, rd.created_at
+			FROM registration_documents rd
+			WHERE rd.file_path IS NOT NULL AND rd.file_path != ''
+			ORDER BY rd.created_at DESC
+			LIMIT 50
+		`)
+		if err3 == nil {
+			defer rows3.Close()
+			for rows3.Next() {
+				var d Doc
+				if err := rows3.Scan(&d.ID, &d.RegistrationID, &d.DocType, &d.FilePath, &d.OriginalName, &d.CreatedAt); err != nil {
+					continue
+				}
+				docs = append(docs, d)
 			}
-			docs = append(docs, d)
 		}
 	}
 	return response.JSON(c, fiber.StatusOK, "documents", docs)

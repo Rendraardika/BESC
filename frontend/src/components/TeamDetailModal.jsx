@@ -5,16 +5,19 @@ export default function TeamDetailModal({ team, onClose }) {
   const t = team || {};
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(!!t.user_id);
+  const [docsError, setDocsError] = useState('');
 
-  useEffect(() => {
+  const loadDocs = function() {
     if (!t.user_id) { setLoadingDocs(false); return; }
-    let cancelled = false;
+    setLoadingDocs(true);
+    setDocsError('');
     apiRequest('/admin/teams/' + t.user_id + '/documents')
-      .then(function(d) { if (!cancelled) setDocs(d || []); })
-      .catch(function() {})
-      .finally(function() { if (!cancelled) setLoadingDocs(false); });
-    return function() { cancelled = true; };
-  }, [t.user_id]);
+      .then(function(d) { setDocs(d || []); })
+      .catch(function(e) { setDocsError('Gagal memuat dokumen, coba lagi.'); })
+      .finally(function() { setLoadingDocs(false); });
+  };
+
+  useEffect(function() { loadDocs(); }, [t.user_id]);
 
   var Row = function(props) {
     return (
@@ -103,6 +106,10 @@ export default function TeamDetailModal({ team, onClose }) {
             <h3 style={{fontSize:'14px',fontWeight:'700',borderBottom:'1px solid #e5e7eb',paddingBottom:'8px',marginBottom:'12px'}}>Dokumen Pendaftaran</h3>
             {loadingDocs ? (
               <div style={{fontSize:'12px',color:'#9ca3af',padding:'8px 0'}}>Memuat dokumen...</div>
+            ) : docsError ? (
+              <div style={{padding:'10px',background:'#fef2f2',borderRadius:'8px',border:'1px solid #fecaca',fontSize:'12px',color:'#991b1b'}}>
+                {docsError} <button onClick={loadDocs} style={{marginLeft:'8px',color:'#2563eb',fontWeight:'700',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}}>Coba lagi</button>
+              </div>
             ) : docs.length > 0 ? (
               <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
                 {['ketua', 'anggota1', 'anggota2'].map(function(prefix) {
