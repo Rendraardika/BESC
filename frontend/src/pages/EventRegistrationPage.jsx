@@ -212,7 +212,7 @@ Terima kasih.`);
                 <form onSubmit={handleStep1Submit} className="space-y-4">
                   <div><label className="mb-1 block text-sm font-semibold text-slate-700">Nama Tim *</label><input className={ic} value={form.namaTim} onChange={(e) => setF('namaTim', e.target.value)} required /></div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4"><h4 className="mb-3 text-sm font-bold text-slate-800">Ketua Tim *</h4><PersonSection prefix="ketua" form={form} setForm={setF} showNISN showUploads /></div>
-                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 (opsional)</h4><PersonSection prefix="anggota1" form={form} setForm={setF} showNISN showUploads required={false} /></div>
+                  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 1 *</h4><PersonSection prefix="anggota1" form={form} setForm={setF} showNISN showUploads required={true} /></div>
                   <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4"><h4 className="mb-3 text-sm font-bold text-slate-700">Anggota 2 (opsional)</h4><PersonSection prefix="anggota2" form={form} setForm={setF} showNISN showUploads required={false} /></div>
                   <div><label className="mb-1 block text-sm font-semibold text-slate-700">Lembar Biodata Kelompok (.pdf) *</label><input className={fc} type="file" accept=".pdf" onChange={(e) => setF('_biodataKelompok', e.target.files?.[0])} required /></div>
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
