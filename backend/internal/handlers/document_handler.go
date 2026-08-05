@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -103,14 +104,21 @@ func (h *DocumentHandler) ListDocuments(c *fiber.Ctx) error {
 
 func (h *DocumentHandler) ViewDocument(c *fiber.Ctx) error {
 	docID := c.Params("doc_id")
+	log.Printf("ViewDocument: doc_id=%s", docID)
 	var filePath string
 	err := h.db.QueryRow("SELECT file_path FROM registration_documents WHERE id = ?", docID).Scan(&filePath)
 	if err != nil {
+		log.Printf("ViewDocument: query error for doc_id=%s: %v", docID, err)
 		if errors.Is(err, sql.ErrNoRows) {
+			// Check if table has any rows at all
+			var count int
+			_ = h.db.QueryRow("SELECT COUNT(*) FROM registration_documents").Scan(&count)
+			log.Printf("ViewDocument: total documents in table: %d", count)
 			return handleError(c, utils.ErrNotFound)
 		}
 		return handleError(c, err)
 	}
+	log.Printf("ViewDocument: found file_path=%s for doc_id=%s", filePath, docID)
 
 	diskPath := filepath.Join(h.cfg.UploadDir, "private", filePath)
 	if _, err := os.Stat(diskPath); err != nil {
