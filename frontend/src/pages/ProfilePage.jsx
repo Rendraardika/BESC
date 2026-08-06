@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
-import { apiRequest } from '../lib/api.js';
+import { apiRequest, safeSetItem } from '../lib/api.js';
 import indonesiaWilayah from '../indonesia_wilayah.json';
 
 export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile, onRegister, onSaveProfile, onTryout, user }) {
@@ -91,7 +91,7 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           member2_name: profile.member2Name,
         }),
       });
-      localStorage.setItem(profileStorageKey, JSON.stringify(profile));
+      safeSetItem(profileStorageKey, JSON.stringify(profile));
       setSuccess('Profil berhasil disimpan.');
       window.setTimeout(() => onSaveProfile({ ...profile, backendUser: updatedUser }), 900);
     } catch (err) {

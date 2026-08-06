@@ -35,7 +35,20 @@ export function saveAuthSession(auth) {
   localStorage.removeItem('besc_token');
   localStorage.removeItem('besc_admin_token');
   localStorage.removeItem('besc_admin');
-  localStorage.setItem('besc_user', JSON.stringify(auth.user));
+  safeSetItem('besc_user', JSON.stringify(auth.user));
+}
+
+export function safeSetItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    try {
+      localStorage.clear();
+      localStorage.setItem(key, value);
+    } catch {
+      // Silently ignore - app will work without localStorage cache
+    }
+  }
 }
 
 export function clearAuthSession() {

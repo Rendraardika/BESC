@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
-import { API_URL, apiRequest } from '../lib/api.js';
+import { API_URL, apiRequest, safeSetItem } from '../lib/api.js';
 import qrisBesc from '../assets/images/qris-besc.jpeg';
 
 const subtemaOptions = ['Bioenergy Genetics', 'Molecular Bioremediation', 'Microbial Bioenergy', 'Metabolic Engineering', 'Sustainable Biotechnology'];
@@ -164,7 +164,7 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       const next = { ...c, [field]: value };
       const toSave = { ...next };
       Object.keys(toSave).forEach((k) => { if (k.startsWith('_')) delete toSave[k]; });
-      localStorage.setItem('besc_reg_form', JSON.stringify(toSave));
+      safeSetItem('besc_reg_form', JSON.stringify(toSave));
       return next;
     });
   };

@@ -18,58 +18,57 @@ func NewUserTeamHandler(db *sql.DB) *UserTeamHandler {
 }
 
 func (h *UserTeamHandler) GetMyTeam(c *fiber.Ctx) error {
-	userID := userID(c)
+	uid := userID(c)
 	category := c.Query("category", "")
 
-	var team map[string]interface{}
-	team = make(map[string]interface{})
-
+	query := `
+		SELECT id, COALESCE(user_id,''), name, leader_name, leader_email, leader_phone,
+			COALESCE(leader_nisn,''), COALESCE(leader_kelas,''), COALESCE(leader_ig,''), COALESCE(leader_tiktok,''),
+			member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''), COALESCE(member1_ig,''), COALESCE(member1_tiktok,''),
+			member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''), COALESCE(member2_ig,''), COALESCE(member2_tiktok,''),
+			institution, COALESCE(province,''), COALESCE(city,''), COALESCE(address,''),
+			COALESCE(guardian_name,''), COALESCE(guardian_hp,''), COALESCE(guardian_email,''),
+			COALESCE(notes,'')
+		FROM teams WHERE user_id = ?
+	`
+	args := []interface{}{uid}
 	if category != "" {
-		err := h.db.QueryRow(`
-			SELECT id, COALESCE(user_id,''), name, leader_name, leader_email, leader_phone,
-				COALESCE(leader_nisn,''), COALESCE(leader_kelas,''), COALESCE(leader_ig,''), COALESCE(leader_tiktok,''),
-				member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''), COALESCE(member1_ig,''), COALESCE(member1_tiktok,''),
-				member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''), COALESCE(member2_ig,''), COALESCE(member2_tiktok,''),
-				institution, COALESCE(province,''), COALESCE(city,''), COALESCE(address,''),
-				COALESCE(guardian_name,''), COALESCE(guardian_hp,''), COALESCE(guardian_email,''),
-				COALESCE(notes,'')
-			FROM teams WHERE user_id = ? AND category = ? LIMIT 1
-		`, userID, category).Scan(
-			&team["id"], &team["user_id"], &team["name"],
-			&team["leader_name"], &team["leader_email"], &team["leader_phone"],
-			&team["leader_nisn"], &team["leader_kelas"], &team["leader_ig"], &team["leader_tiktok"],
-			&team["member1_name"], &team["member1_email"], &team["member1_nisn"], &team["member1_kelas"], &team["member1_ig"], &team["member1_tiktok"],
-			&team["member2_name"], &team["member2_email"], &team["member2_nisn"], &team["member2_kelas"], &team["member2_ig"], &team["member2_tiktok"],
-			&team["institution"], &team["province"], &team["city"], &team["address"],
-			&team["guardian_name"], &team["guardian_hp"], &team["guardian_email"],
-			&team["notes"],
-		)
-		if err != nil {
-			return response.JSON(c, fiber.StatusOK, "no team found", nil)
-		}
-	} else {
-		err := h.db.QueryRow(`
-			SELECT id, COALESCE(user_id,''), name, leader_name, leader_email, leader_phone,
-				COALESCE(leader_nisn,''), COALESCE(leader_kelas,''), COALESCE(leader_ig,''), COALESCE(leader_tiktok,''),
-				member1_name, member1_email, COALESCE(member1_nisn,''), COALESCE(member1_kelas,''), COALESCE(member1_ig,''), COALESCE(member1_tiktok,''),
-				member2_name, member2_email, COALESCE(member2_nisn,''), COALESCE(member2_kelas,''), COALESCE(member2_ig,''), COALESCE(member2_tiktok,''),
-				institution, COALESCE(province,''), COALESCE(city,''), COALESCE(address,''),
-				COALESCE(guardian_name,''), COALESCE(guardian_hp,''), COALESCE(guardian_email,''),
-				COALESCE(notes,'')
-			FROM teams WHERE user_id = ? ORDER BY created_at DESC LIMIT 1
-		`, userID).Scan(
-			&team["id"], &team["user_id"], &team["name"],
-			&team["leader_name"], &team["leader_email"], &team["leader_phone"],
-			&team["leader_nisn"], &team["leader_kelas"], &team["leader_ig"], &team["leader_tiktok"],
-			&team["member1_name"], &team["member1_email"], &team["member1_nisn"], &team["member1_kelas"], &team["member1_ig"], &team["member1_tiktok"],
-			&team["member2_name"], &team["member2_email"], &team["member2_nisn"], &team["member2_kelas"], &team["member2_ig"], &team["member2_tiktok"],
-			&team["institution"], &team["province"], &team["city"], &team["address"],
-			&team["guardian_name"], &team["guardian_hp"], &team["guardian_email"],
-			&team["notes"],
-		)
-		if err != nil {
-			return response.JSON(c, fiber.StatusOK, "no team found", nil)
-		}
+		query += " AND category = ?"
+		args = append(args, category)
+	}
+	query += " ORDER BY created_at DESC LIMIT 1"
+
+	var (
+		id, userId, name, leaderName, leaderEmail, leaderPhone string
+		leaderNISN, leaderKelas, leaderIG, leaderTikTok string
+		member1Name, member1Email, member1NISN, member1Kelas, member1IG, member1TikTok string
+		member2Name, member2Email, member2NISN, member2Kelas, member2IG, member2TikTok string
+		institution, province, city, address string
+		guardianName, guardianHP, guardianEmail, notes string
+	)
+
+	err := h.db.QueryRow(query, args...).Scan(
+		&id, &userId, &name, &leaderName, &leaderEmail, &leaderPhone,
+		&leaderNISN, &leaderKelas, &leaderIG, &leaderTikTok,
+		&member1Name, &member1Email, &member1NISN, &member1Kelas, &member1IG, &member1TikTok,
+		&member2Name, &member2Email, &member2NISN, &member2Kelas, &member2IG, &member2TikTok,
+		&institution, &province, &city, &address,
+		&guardianName, &guardianHP, &guardianEmail,
+		&notes,
+	)
+	if err != nil {
+		return response.JSON(c, fiber.StatusOK, "no team found", nil)
+	}
+
+	team := map[string]interface{}{
+		"id": id, "user_id": userId, "name": name,
+		"leader_name": leaderName, "leader_email": leaderEmail, "leader_phone": leaderPhone,
+		"leader_nisn": leaderNISN, "leader_kelas": leaderKelas, "leader_ig": leaderIG, "leader_tiktok": leaderTikTok,
+		"member1_name": member1Name, "member1_email": member1Email, "member1_nisn": member1NISN, "member1_kelas": member1Kelas, "member1_ig": member1IG, "member1_tiktok": member1TikTok,
+		"member2_name": member2Name, "member2_email": member2Email, "member2_nisn": member2NISN, "member2_kelas": member2Kelas, "member2_ig": member2IG, "member2_tiktok": member2TikTok,
+		"institution": institution, "province": province, "city": city, "address": address,
+		"guardian_name": guardianName, "guardian_hp": guardianHP, "guardian_email": guardianEmail,
+		"notes": notes,
 	}
 
 	return response.JSON(c, fiber.StatusOK, "team data", team)

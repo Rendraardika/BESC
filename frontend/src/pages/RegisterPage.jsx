@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
-import { apiRequest } from '../lib/api.js';
+import { apiRequest, safeSetItem } from '../lib/api.js';
 
 export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
@@ -64,7 +64,7 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
         }),
       });
       const profileKey = `besc_profile_${auth.user?.id || auth.user?.email || form.email}`;
-      localStorage.setItem(profileKey, JSON.stringify({
+      safeSetItem(profileKey, JSON.stringify({
         fullName: form.leaderName,
         whatsapp: form.phone,
         school: form.institution,
