@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
@@ -62,7 +62,36 @@ function WaIcon() {
 export default function EventRegistrationPage({ competitionIndex = 0, competitions = [], onLogin, onLogout, onOlimpiade, onProfile, onRegister, onRegistrationSuccess, user }) {
   const [currentStep, setCurrentStep] = useState(1);
   const savedForm = useMemo(() => { try { return JSON.parse(localStorage.getItem('besc_reg_form') || '{}'); } catch { return {}; } }, []);
-  const [form, setForm] = useState({ namaTim: savedForm.namaTim || '', ketua_name: savedForm.ketua_name || '', ketua_nisn: savedForm.ketua_nisn || '', ketua_kelas: savedForm.ketua_kelas || '', ketua_wa: savedForm.ketua_wa || '', ketua_email: savedForm.ketua_email || '', anggota1_name: savedForm.anggota1_name || '', anggota1_nisn: savedForm.anggota1_nisn || '', anggota1_kelas: savedForm.anggota1_kelas || '', anggota1_wa: savedForm.anggota1_wa || '', anggota1_email: savedForm.anggota1_email || '', anggota2_name: savedForm.anggota2_name || '', anggota2_nisn: savedForm.anggota2_nisn || '', anggota2_kelas: savedForm.anggota2_kelas || '', anggota2_wa: savedForm.anggota2_wa || '', anggota2_email: savedForm.anggota2_email || '', namaSekolah: savedForm.namaSekolah || '', provinsi: savedForm.provinsi || '', kabKota: savedForm.kabKota || '', alamatSekolah: savedForm.alamatSekolah || '', guru_nama: savedForm.guru_nama || '', guru_hp: savedForm.guru_hp || '', guru_email: savedForm.guru_email || '', judulAbstrak: savedForm.judulAbstrak || '', subtema: savedForm.subtema || '' });
+
+  // Pre-fill form: localStorage > user object > empty
+  const getInitialForm = useCallback(() => ({
+    namaTim: savedForm.namaTim || user?.team_name || '',
+    ketua_name: savedForm.ketua_name || user?.name || '',
+    ketua_nisn: savedForm.ketua_nisn || '',
+    ketua_kelas: savedForm.ketua_kelas || '',
+    ketua_wa: savedForm.ketua_wa || user?.phone || '',
+    ketua_email: savedForm.ketua_email || user?.email || '',
+    anggota1_name: savedForm.anggota1_name || user?.member1_name || '',
+    anggota1_nisn: savedForm.anggota1_nisn || '',
+    anggota1_kelas: savedForm.anggota1_kelas || '',
+    anggota1_wa: savedForm.anggota1_wa || '',
+    anggota1_email: savedForm.anggota1_email || '',
+    anggota2_name: savedForm.anggota2_name || user?.member2_name || '',
+    anggota2_nisn: savedForm.anggota2_nisn || '',
+    anggota2_kelas: savedForm.anggota2_kelas || '',
+    anggota2_wa: savedForm.anggota2_wa || '',
+    anggota2_email: savedForm.anggota2_email || '',
+    namaSekolah: savedForm.namaSekolah || user?.institution || '',
+    provinsi: savedForm.provinsi || user?.province || '',
+    kabKota: savedForm.kabKota || user?.city || '',
+    alamatSekolah: savedForm.alamatSekolah || '',
+    guru_nama: savedForm.guru_nama || '',
+    guru_hp: savedForm.guru_hp || '',
+    guru_email: savedForm.guru_email || '',
+    judulAbstrak: savedForm.judulAbstrak || '',
+    subtema: savedForm.subtema || '',
+  }), [savedForm, user]);
+  const [form, setForm] = useState(getInitialForm);
   const [proof, setProof] = useState(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +102,62 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
   const paymentPrice = event?.price?.toLowerCase().includes('gratis') ? 'Gratis' : event?.price || 'Rp 90.000';
   const ic = 'h-11 w-full rounded-lg border border-slate-300 bg-white px-4 text-sm';
   const fc = 'h-11 w-full rounded-lg border border-slate-300 bg-white text-sm file:mr-3 file:h-9 file:rounded file:border file:border-slate-300 file:bg-slate-100 file:px-3 file:text-sm';
+
+  // Fetch existing team data from backend to fill additional fields (NISN, kelas, address, etc.)
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const category = isLKTI ? 'LKTI' : 'Olimpiade';
+        const teamData = await apiRequest(`/me/teams?category=${encodeURIComponent(category)}`);
+        if (!teamData || !teamData.id) return;
+        // Merge backend team data into form (only fill empty fields)
+        setForm((prev) => {
+          const next = { ...prev };
+          const fill = (key, val) => { if (val && !next[key]) next[key] = val; };
+          fill('namaTim', teamData.name);
+          fill('ketua_name', teamData.leader_name);
+          fill('ketua_nisn', teamData.leader_nisn);
+          fill('ketua_kelas', teamData.leader_kelas);
+          fill('ketua_wa', teamData.leader_phone);
+          fill('ketua_email', teamData.leader_email);
+          fill('ketua_ig', teamData.leader_ig);
+          fill('ketua_tiktok', teamData.leader_tiktok);
+          fill('anggota1_name', teamData.member1_name);
+          fill('anggota1_nisn', teamData.member1_nisn);
+          fill('anggota1_kelas', teamData.member1_kelas);
+          fill('anggota1_wa', teamData.member1_wa);
+          fill('anggota1_email', teamData.member1_email);
+          fill('anggota1_ig', teamData.member1_ig);
+          fill('anggota1_tiktok', teamData.member1_tiktok);
+          fill('anggota2_name', teamData.member2_name);
+          fill('anggota2_nisn', teamData.member2_nisn);
+          fill('anggota2_kelas', teamData.member2_kelas);
+          fill('anggota2_wa', teamData.member2_wa);
+          fill('anggota2_email', teamData.member2_email);
+          fill('anggota2_ig', teamData.member2_ig);
+          fill('anggota2_tiktok', teamData.member2_tiktok);
+          fill('namaSekolah', teamData.institution);
+          fill('provinsi', teamData.province);
+          fill('kabKota', teamData.city);
+          fill('alamatSekolah', teamData.address);
+          fill('guru_nama', teamData.guardian_name);
+          fill('guru_hp', teamData.guardian_hp);
+          fill('guru_email', teamData.guardian_email);
+          // Parse notes for abstract title and subtema
+          if (teamData.notes && teamData.notes.includes('Judul:')) {
+            const judulMatch = teamData.notes.match(/Judul:\s*([^|]+)/);
+            const subtemaMatch = teamData.notes.match(/Subtema:\s*(.+)/);
+            if (judulMatch) fill('judulAbstrak', judulMatch[1].trim());
+            if (subtemaMatch) fill('subtema', subtemaMatch[1].trim());
+          }
+          return next;
+        });
+      } catch {
+        // Silently ignore - form will use user data from initial state
+      }
+    };
+    fetchTeam();
+  }, [isLKTI]);
 
   const setF = (field, value) => {
     setForm((c) => {

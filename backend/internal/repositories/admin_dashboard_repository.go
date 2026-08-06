@@ -18,6 +18,24 @@ func (r *adminDashboardRepository) Participant(id string) (*entities.User, error
 }
 
 func (r *adminDashboardRepository) DeleteParticipant(id string) error {
+	// Cascade delete related data before deleting the user
+	// 1. Delete team documents related to user's registrations
+	r.db.Exec(`DELETE rd FROM registration_documents rd JOIN registrations r ON r.id = rd.registration_id WHERE r.user_id = ?`, id)
+	// 2. Delete proctoring snapshots related to user's submissions
+	r.db.Exec(`DELETE ps FROM proctoring_snapshots ps JOIN submissions s ON s.id = ps.submission_id WHERE s.user_id = ?`, id)
+	// 3. Delete proctoring events related to user's submissions
+	r.db.Exec(`DELETE pe FROM proctoring_events pe JOIN submissions s ON s.id = pe.submission_id WHERE s.user_id = ?`, id)
+	// 4. Delete answers related to user's submissions
+	r.db.Exec(`DELETE a FROM answers a JOIN submissions s ON s.id = a.submission_id WHERE s.user_id = ?`, id)
+	// 5. Delete submissions (this also cascades to answers, proctoring via FK)
+	r.db.Exec(`DELETE FROM submissions WHERE user_id = ?`, id)
+	// 6. Delete payments related to user's registrations
+	r.db.Exec(`DELETE p FROM payments p JOIN registrations r ON r.id = p.registration_id WHERE r.user_id = ?`, id)
+	// 7. Delete registrations
+	r.db.Exec(`DELETE FROM registrations WHERE user_id = ?`, id)
+	// 8. Delete teams (ON DELETE SET NULL won't auto-delete, so manually delete)
+	r.db.Exec(`DELETE FROM teams WHERE user_id = ?`, id)
+	// 9. Finally delete the user
 	return NewUserRepository(r.db).Delete(id)
 }
 

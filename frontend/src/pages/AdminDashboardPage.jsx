@@ -550,7 +550,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                         <td className="px-6 py-4 text-sm">{item.institution || '-'}</td>
                         <td className="px-6 py-4"><Status value={item.category} /></td>
                         <td className="px-6 py-4"><span className={`inline-flex rounded-md px-3 py-1.5 text-[10px] font-extrabold uppercase ${item.status === 'active' ? 'bg-teal-50 text-teal-700' : 'bg-slate-100 text-slate-500'}`}>{item.status || 'active'}</span></td>
-                        <td className="px-6 py-4"><button type="button" onClick={() => setSelectedTeamDetail(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat</button></td>
+<td className="px-6 py-4"><div className="flex gap-2"><button type="button" onClick={() => setSelectedTeamDetail(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat</button><button type="button" onClick={() => deleteTeam(item)} className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-600">Hapus</button></div></td>
                       </tr>
                     ))}
                   </tbody>

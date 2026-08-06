@@ -99,7 +99,16 @@ func (h *TeamHandler) Update(c *fiber.Ctx) error {
 }
 
 func (h *TeamHandler) Delete(c *fiber.Ctx) error {
-	return response.JSON(c, fiber.StatusOK, "teams are managed through user registration", nil)
+	id := c.Params("id")
+	result, err := h.db.Exec("DELETE FROM teams WHERE id = ?", id)
+	if err != nil {
+		return handleError(c, err)
+	}
+	affected, _ := result.RowsAffected()
+	if affected == 0 {
+		return response.JSON(c, fiber.StatusNotFound, "team not found", nil)
+	}
+	return response.JSON(c, fiber.StatusOK, "team deleted", nil)
 }
 
 func (h *TeamHandler) UserDocuments(c *fiber.Ctx) error {
