@@ -142,7 +142,7 @@ func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) erro
 		return err
 	}
 	if status == entities.PaymentVerified || status == entities.PaymentRejected {
-		if proofImage == "" || !proofViewedBy.Valid || proofViewedBy.String != adminID {
+		if proofImage == "" {
 			return utils.ErrPaymentProofNotViewed
 		}
 	}
