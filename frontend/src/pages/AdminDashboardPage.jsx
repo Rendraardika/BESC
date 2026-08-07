@@ -149,6 +149,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [editingTeam, setEditingTeam] = useState(null);
   const [teamFilter, setTeamFilter] = useState('');
   const [selectedTeamDetail, setSelectedTeamDetail] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const refreshDashboard = async () => {
     const data = await apiRequest('/admin/dashboard');
@@ -428,13 +429,40 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       <section className="lg:pl-[270px]">
         <header className="border-b border-slate-200 bg-white px-5 py-4 md:px-8">
           <div className="flex items-center justify-between">
-            <div>
-              <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#0d9488]">BESC Admin Workspace</div>
-              <div className="mt-1 text-sm text-slate-500">{activePage}</div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setMobileNavOpen(true)} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-600 lg:hidden" aria-label="Buka menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18" /></svg>
+              </button>
+              <div>
+                <div className="text-xs font-extrabold uppercase tracking-[0.2em] text-[#0d9488]">BESC Admin Workspace</div>
+                <div className="mt-1 text-sm text-slate-500">{activePage}</div>
+              </div>
             </div>
             <button type="button" onClick={onLogout} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-extrabold text-slate-600 lg:hidden">Keluar</button>
           </div>
         </header>
+
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-[70] bg-black/50 lg:hidden" onClick={() => setMobileNavOpen(false)}>
+            <div className="h-full w-[260px] bg-[#073b4c] p-5 text-white" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <img src={bescLogo} alt="BESC" className="h-8 w-auto" />
+                  <span className="text-sm font-extrabold">Admin</span>
+                </div>
+                <button type="button" onClick={() => setMobileNavOpen(false)} className="text-white">✕</button>
+              </div>
+              <nav className="space-y-1">
+                {menuItems.map((item) => (
+                  <button key={item} type="button" onClick={() => { setActivePage(item); setMobileNavOpen(false); }} className={`flex h-11 w-full items-center gap-3 rounded-lg px-4 text-left text-sm font-bold transition ${activePage === item ? 'bg-[#06a896] text-white' : 'text-teal-50/80 hover:bg-white/10 hover:text-white'}`}>
+                    <span className={`h-2 w-2 rounded-full ${activePage === item ? 'bg-[#ffd166]' : 'border border-current'}`}></span>
+                    {item}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )}
 
         <div key={activePage} className="content-transition px-5 py-7 md:px-8 lg:px-10">
           {activePage === 'Dashboard' && <><section className="relative overflow-hidden rounded-lg bg-[#0d9488] px-7 py-8 text-white md:px-9">

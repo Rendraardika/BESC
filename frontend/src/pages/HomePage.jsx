@@ -19,12 +19,12 @@ export default function HomePage({ competitions, competitionsLoading, onCompetit
         <Hero onCompetitions={onCompetitions} onTryoutPackage={onTryoutPackage} />
         <StatsStrip />
         <Events competitions={competitions} competitionsLoading={competitionsLoading} onCompetitionDetail={onCompetitionDetail} onVerifiedCompetition={onVerifiedCompetition} registrations={registrations} />
+        <Guidebook />
         <Materi />
         <Timeline />
         <WhyBesc />
         <Testimonials />
         <CTA onRegister={onRegister} />
-        <Guidebook />
         <FAQ />
       </main>
       <Footer />
