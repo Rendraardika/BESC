@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { apiRequest } from '../lib/api.js';
+import GoogleLoginButton from '../components/GoogleLoginButton.jsx';
 
 export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
@@ -73,12 +74,26 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
                 <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-[#1c79c6]" />
                 Ingat saya
               </label>
-              <a href="#login" className="font-bold text-[#1c79c6]">Lupa password?</a>
+              <button type="button" onClick={() => { window.location.hash = 'forgot-password'; }} className="font-bold text-[#1c79c6]">Lupa password?</button>
             </div>
             <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">
               {isSubmitting ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
+
+          <div className="mt-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200"></div>
+            <span className="text-xs font-semibold text-slate-400">atau</span>
+            <div className="h-px flex-1 bg-slate-200"></div>
+          </div>
+
+          <div className="mt-4">
+            <GoogleLoginButton
+              onAuthSuccess={onLoginSuccess}
+              onError={(msg) => setError(msg)}
+              text="Masuk dengan Google"
+            />
+          </div>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Belum punya akun?{' '}

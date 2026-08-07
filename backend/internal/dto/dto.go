@@ -82,6 +82,15 @@ type VerifyPaymentRequest struct {
 	Status string `json:"status" validate:"required,oneof=pending verified rejected"`
 }
 
+type ForgotPasswordRequest struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+type ResetPasswordRequest struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required,min=8"`
+}
+
 type SubmitExamRequest struct {
 	Answers []AnswerRequest `json:"answers" validate:"omitempty,dive"`
 }

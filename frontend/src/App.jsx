@@ -12,6 +12,8 @@ const EventRegistrationSuccessPage = lazy(() => import('./pages/EventRegistratio
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
 const ExamRulesPage = lazy(() => import('./pages/ExamRulesPage.jsx'));
 const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
 
 const Loading = () => (
   <div className="grid min-h-screen place-items-center bg-slate-50">
@@ -34,6 +36,8 @@ const getPageFromHash = () => {
   if (window.location.hash === '#admin-dashboard') return 'admin-dashboard';
   if (window.location.hash === '#ketentuan-ujian') return 'exam-rules';
   if (window.location.hash === '#kerjakan-soal') return 'exam';
+  if (window.location.hash.startsWith('#forgot-password')) return 'forgot-password';
+  if (window.location.hash.startsWith('#reset-password')) return 'reset-password';
   return 'home';
 };
 
@@ -184,6 +188,11 @@ export default function App() {
     if (afterProfile === 'event-registration' && window.location.hash === '#pendaftaran-event') { window.location.hash = 'pendaftaran-event'; window.scrollTo(0, 0); setPage('event-registration'); }
   };
 
+  const openForgotPassword = () => { window.location.hash = 'forgot-password'; window.scrollTo(0, 0); setPage('forgot-password'); };
+  const openResetPassword = () => { window.location.hash = 'reset-password'; window.scrollTo(0, 0); setPage('reset-password'); };
+
+  if (page === 'forgot-password') return <Suspense fallback={<Loading />}><ForgotPasswordPage onBack={openLogin} onLogin={openLogin} /></Suspense>;
+  if (page === 'reset-password') return <Suspense fallback={<Loading />}><ResetPasswordPage onBack={openLogin} onLogin={openLogin} /></Suspense>;
   if (page === 'register') return <Suspense fallback={<Loading />}><RegisterPage onLogin={openLogin} onRegisterSuccess={handleRegisterSuccess} /></Suspense>;
   if (page === 'login') return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;
   if (page === 'admin-login') return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;

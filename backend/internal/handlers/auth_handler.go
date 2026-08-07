@@ -75,6 +75,28 @@ func (h *AuthHandler) Me(c *fiber.Ctx) error {
 	return response.JSON(c, fiber.StatusOK, "current user", user)
 }
 
+func (h *AuthHandler) ForgotPassword(c *fiber.Ctx) error {
+	var input dto.ForgotPasswordRequest
+	if err := bindAndValidate(c, &input); err != nil {
+		return err
+	}
+	if err := h.service.ForgotPassword(input.Email); err != nil {
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusOK, "email reset password telah dikirim", nil)
+}
+
+func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
+	var input dto.ResetPasswordRequest
+	if err := bindAndValidate(c, &input); err != nil {
+		return err
+	}
+	if err := h.service.ResetPassword(input.Token, input.Password); err != nil {
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusOK, "password berhasil direset", nil)
+}
+
 func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
 	var input dto.UpdateProfileRequest
 	if err := bindAndValidate(c, &input); err != nil {

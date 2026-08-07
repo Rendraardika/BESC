@@ -34,6 +34,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	api := app.Group("/api/v1")
 	api.Post("/auth/register", h.Auth.Register)
 	api.Post("/auth/login", h.Auth.Login)
+	api.Post("/auth/forgot-password", h.Auth.ForgotPassword)
+	api.Post("/auth/reset-password", h.Auth.ResetPassword)
 	api.Post("/auth/logout", h.Auth.Logout)
 	api.Get("/competitions", h.Competition.List)
 	api.Get("/competitions/:id", h.Competition.Detail)

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import karakterImg from '../assets/images/karakter.png';
 import { apiRequest, safeSetItem } from '../lib/api.js';
+import GoogleLoginButton from '../components/GoogleLoginButton.jsx';
 
 export default function RegisterPage({ onLogin, onRegisterSuccess }) {
   const inputClass = 'h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
@@ -176,7 +177,21 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
               </button>
             </form>
 
-            <div className="mt-7">
+            <div className="mt-5 flex items-center gap-3 md:col-span-2">
+              <div className="h-px flex-1 bg-slate-200"></div>
+              <span className="text-xs font-semibold text-slate-400">atau daftar dengan</span>
+              <div className="h-px flex-1 bg-slate-200"></div>
+            </div>
+
+            <div className="md:col-span-2">
+              <GoogleLoginButton
+                onAuthSuccess={(auth) => onRegisterSuccess(auth, { source: 'google' })}
+                onError={(msg) => setError(msg)}
+                text="Daftar dengan Google"
+              />
+            </div>
+
+            <div className="md:col-span-2 mt-7">
               <p className="mt-6 text-center text-sm text-slate-500">
                 Sudah punya akun?{' '}
                 <button type="button" onClick={onLogin} className="font-bold text-[#1c79c6]">Masuk</button>

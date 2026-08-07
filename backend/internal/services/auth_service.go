@@ -24,6 +24,8 @@ type AuthService interface {
 	GoogleLogin(input dto.GoogleLoginRequest) (*dto.AuthResponse, error)
 	CurrentUser(userID string) (*entities.User, error)
 	UpdateProfile(userID string, input dto.UpdateProfileRequest) (*entities.User, error)
+	ForgotPassword(email string) error
+	ResetPassword(token, password string) error
 }
 
 func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileRequest) (*entities.User, error) {
@@ -243,6 +245,70 @@ func (p googleTokenInfo) validFor(clientID string, now time.Time) bool {
 		return false
 	}
 	return now.Unix() < expiresAt
+}
+
+func (s *authService) ForgotPassword(email string) error {
+	email = strings.ToLower(strings.TrimSpace(email))
+
+	// Silently return even if user not found (security best practice)
+	_, err := s.users.FindByEmail(email)
+	if err != nil {
+		return nil
+	}
+
+	token := uuid.NewString()
+	expiresAt := time.Now().Add(30 * time.Minute)
+
+	if err := s.users.CreatePasswordReset(email, token, expiresAt); err != nil {
+		return err
+	}
+
+	if err := sendResetPasswordEmail(s.cfg, email, token); err != nil {
+		return fmt.Errorf("gagal mengirim email: %v", err)
+	}
+	return nil
+}
+
+func (s *authService) ResetPassword(token, password string) error {
+	email, _, used, err := s.users.FindPasswordReset(token)
+	if err != nil {
+		return utils.ErrNotFound
+	}
+	if used {
+		return fmt.Errorf("token sudah digunakan")
+	}
+	hashed, err := utils.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	if err := s.users.UpdatePasswordByEmail(email, hashed); err != nil {
+		return err
+	}
+	if err := s.users.MarkPasswordResetUsed(token); err != nil {
+		return err
+	}
+	return nil
+}
+
+func sendResetPasswordEmail(cfg config.Config, recipient, token string) error {
+	if cfg.SMTPHost == "" || cfg.SMTPUser == "" || cfg.SMTPPass == "" {
+		return fmt.Errorf("smtp is not configured")
+	}
+	subject := "Reset Password BESC"
+	resetURL := "https://beschimbio.online/#reset-password?token=" + token
+	message := "Halo,\n\nKamu telah meminta reset password untuk akun BESC kamu.\n\nKlik link berikut untuk reset password (berlaku 30 menit):\n" + resetURL + "\n\nJika kamu tidak meminta ini, abaikan email ini.\n\nTerima kasih,\nTim BESC"
+
+	from := cfg.MailFrom
+	if from == "" {
+		from = cfg.SMTPUser
+	}
+	body := []byte("From: " + from + "\r\n" +
+		"To: " + recipient + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + message)
+
+	auth := smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPHost)
+	return smtp.SendMail(cfg.SMTPHost+":"+cfg.SMTPPort, auth, cfg.SMTPUser, []string{recipient}, body)
 }
 
 type googleEmailVerified bool
