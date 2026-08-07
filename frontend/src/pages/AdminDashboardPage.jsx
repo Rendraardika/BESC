@@ -561,12 +561,14 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             {selectedTeamDetail && <TeamDetailModal team={selectedTeamDetail} onClose={() => setSelectedTeamDetail(null)} />}
           </>}
 
-          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Ubah status pembayaran peserta. Bukti pembayaran bisa dilihat secara opsional." headers={['Peserta', 'Kompetisi', 'Tanggal', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
+          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Ubah status pembayaran peserta. Bukti pembayaran bisa dilihat secara opsional." headers={['Peserta', 'Kompetisi', 'Waktu Daftar', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
             const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
+            const payDate = new Date(item.created_at);
+            const payDateTime = `${payDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${payDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
             return [
               <div key={item.id} className="flex items-center gap-3"><Avatar src={item.user_photo} name={item.user_name} className="shrink-0" /><div><div className="font-bold">{item.user_name}</div><div className="text-xs text-slate-400">{item.user_email}</div></div></div>,
               item.competition_title,
-              new Date(item.created_at).toLocaleDateString('id-ID'),
+              <span key={item.id} title={payDate.toISOString()} className="whitespace-nowrap">{payDateTime}</span>,
               <div key={item.id} className="flex flex-wrap items-center gap-2"><button type="button" onClick={() => reviewProof(item)} className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700">Lihat Bukti</button><button type="button" onClick={() => handleDownloadProof(item)} className="rounded-lg bg-teal-50 px-3 py-2 text-xs font-extrabold text-teal-700">Download</button></div>,
               <select key={item.id} value={item.payment_status} disabled={updatingPayment === item.payment_id} onChange={(event) => updatePaymentStatus(item.payment_id, event.target.value)} title="Ubah status pembayaran" className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600 outline-none disabled:cursor-not-allowed disabled:opacity-50">
                 <option value="pending">Pending</option>
