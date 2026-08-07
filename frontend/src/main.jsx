@@ -1,6 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { useEffect, useState } from 'react';
 import App from './App.jsx';
+import ErrorBoundary from './App.jsx';
 import './styles.css';
 
 function AnimatedApp() {
@@ -12,7 +13,7 @@ function AnimatedApp() {
     return () => window.removeEventListener('hashchange', updateRouteKey);
   }, []);
 
-  return <div key={routeKey} className="page-transition"><App /></div>;
+  return <div key={routeKey} className="page-transition"><ErrorBoundary><App /></ErrorBoundary></div>;
 }
 
 createRoot(document.getElementById('root')).render(<AnimatedApp />);

@@ -1,5 +1,30 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState, Component } from 'react';
 import { apiRequest, clearAuthSession, safeSetItem, saveAuthSession } from './lib/api.js';
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="grid min-h-screen place-items-center bg-slate-50 p-6">
+          <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-red-50 text-3xl">⚠️</div>
+            <h2 className="text-xl font-extrabold text-slate-900">Terjadi Kesalahan</h2>
+            <p className="mt-2 text-sm text-slate-500">Aplikasi mengalami error. Silakan coba refresh halaman.</p>
+            <button onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }} className="mt-4 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-sm font-bold text-white">Muat Ulang</button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const HomePage = lazy(() => import('./pages/HomePage.jsx'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
