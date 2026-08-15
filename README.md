@@ -1,35 +1,98 @@
 # BESC
 
-Project ini terdiri dari dua aplikasi:
+BESC adalah platform kompetisi online yang terdiri dari:
 
 - `backend`: REST API Go Fiber dengan database MySQL.
 - `frontend`: React + Vite untuk tampilan web.
 
-Ikuti langkah di bawah ini setelah clone repository supaya project bisa dijalankan di komputer lokal.
+Dokumen ini dibuat untuk teman yang baru clone repository dan ingin menjalankan project di laptop lokal.
 
-## Prasyarat
+## Cara Paling Cepat
 
-Pastikan sudah terinstall:
+Pastikan sudah install:
 
-- Go 1.22 atau lebih baru
-- Node.js dan npm
-- MySQL
 - Git
+- Go 1.22 atau lebih baru
+- Node.js 20 atau lebih baru
+- MySQL 8 atau MySQL dari Laragon/XAMPP
 
-Jika memakai Laragon, aktifkan service MySQL terlebih dahulu.
-
-## 1. Clone Project
+Lalu jalankan alur ini:
 
 ```bash
 git clone <url-repository>
-cd besc
+cd <nama-folder-repository>
 ```
 
-## 2. Setup Database
+Siapkan database:
 
-Buat database MySQL bernama `competition_platform`.
+```sql
+CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
-Contoh lewat MySQL CLI:
+Copy file environment:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Import migration dan seed:
+
+```bash
+cd backend
+for file in database/migrations/*.sql; do mysql -uroot -p competition_platform < "$file"; done
+mysql -uroot -p competition_platform < database/seeds/001_seed_data.sql
+```
+
+Jalankan backend:
+
+```bash
+go mod tidy
+go run ./cmd/api
+```
+
+Buka terminal baru, jalankan frontend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Alamat aplikasi:
+
+- Frontend: `http://localhost:5173`
+- Backend health check: `http://localhost:8080/health`
+- API base URL: `http://localhost:8080/api/v1`
+
+## Catatan untuk Windows PowerShell
+
+Kalau memakai PowerShell, perintah `cp` tetap bisa dipakai. Untuk import semua migration, gunakan pipe ke `mysql` karena operator `<` adalah syntax Bash:
+
+```powershell
+cd backend
+Get-ChildItem database/migrations/*.sql | Sort-Object Name | ForEach-Object {
+  Get-Content $_.FullName | mysql -uroot -p competition_platform
+}
+Get-Content database/seeds/001_seed_data.sql | mysql -uroot -p competition_platform
+```
+
+Jika password MySQL kosong, tekan Enter saat diminta password. Jika memakai Laragon, pastikan service MySQL sudah menyala.
+
+## Setup Detail
+
+### 1. Clone Repository
+
+```bash
+git clone <url-repository>
+cd <nama-folder-repository>
+```
+
+Ganti `<url-repository>` dengan URL GitHub/GitLab project ini. Ganti `<nama-folder-repository>` dengan nama folder hasil clone.
+
+### 2. Setup Database
+
+Buat database MySQL:
 
 ```bash
 mysql -uroot -p
@@ -42,28 +105,17 @@ CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 EXIT;
 ```
 
-Import semua file migration secara berurutan dari folder `backend/database/migrations`.
+Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `018_create_password_resets.sql`.
 
 ```bash
 cd backend
-mysql -uroot -p competition_platform < database/migrations/001_create_schema.sql
-mysql -uroot -p competition_platform < database/migrations/002_add_proctoring.sql
-mysql -uroot -p competition_platform < database/migrations/003_add_user_profile.sql
-mysql -uroot -p competition_platform < database/migrations/004_extend_competitions.sql
-mysql -uroot -p competition_platform < database/migrations/005_add_exam_settings.sql
-mysql -uroot -p competition_platform < database/migrations/006_expand_competition_banner.sql
-mysql -uroot -p competition_platform < database/migrations/007_add_user_team_fields.sql
-mysql -uroot -p competition_platform < database/migrations/008_set_tab_switch_limit_to_three.sql
-mysql -uroot -p competition_platform < database/migrations/009_add_question_image.sql
-mysql -uroot -p competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
-mysql -uroot -p competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
-mysql -uroot -p competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
+for file in database/migrations/*.sql; do mysql -uroot -p competition_platform < "$file"; done
 mysql -uroot -p competition_platform < database/seeds/001_seed_data.sql
 ```
 
-Jika password MySQL kosong, tekan Enter saat diminta password.
+Seed hanya untuk development/testing. Jangan import seed demo di production.
 
-## 3. Setup Backend
+### 3. Setup Backend
 
 Masuk ke folder backend:
 
@@ -71,7 +123,13 @@ Masuk ke folder backend:
 cd backend
 ```
 
-Buat file `.env` di folder `backend`:
+Buat file `.env` dari contoh:
+
+```bash
+cp .env.example .env
+```
+
+Isi default untuk lokal:
 
 ```env
 APP_ENV=development
@@ -86,23 +144,21 @@ DB_NAME=competition_platform
 
 JWT_SECRET=development-only-secret-change-me
 JWT_EXPIRES_HOURS=24
+
 GOOGLE_CLIENT_ID=
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM=BESC <noreply@example.com>
 
 UPLOAD_DIR=uploads
 CORS_ALLOW_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-Untuk production, gunakan `backend/.env.production.example` sebagai template, lalu ganti placeholder dengan nilai server asli:
+Kalau MySQL lokal punya password, isi `DB_PASSWORD`.
 
-```env
-APP_ENV=production
-APP_URL=https://api.example.com
-CORS_ALLOW_ORIGINS=https://example.com,https://www.example.com
-JWT_SECRET=replace-with-a-long-random-secret
-GOOGLE_CLIENT_ID=
-```
-
-Install dependency Go dan jalankan API:
+Install dependency dan jalankan API:
 
 ```bash
 go mod tidy
@@ -115,13 +171,7 @@ Backend berjalan di:
 http://localhost:8080
 ```
 
-Endpoint API utama:
-
-```txt
-http://localhost:8080/api/v1
-```
-
-Cek apakah backend hidup:
+Cek backend:
 
 ```txt
 http://localhost:8080/health
@@ -133,7 +183,7 @@ Dokumentasi Swagger YAML:
 http://localhost:8080/docs/swagger.yaml
 ```
 
-## 4. Setup Frontend
+### 4. Setup Frontend
 
 Buka terminal baru, lalu masuk ke folder frontend:
 
@@ -141,17 +191,16 @@ Buka terminal baru, lalu masuk ke folder frontend:
 cd frontend
 ```
 
-Buat file `.env` di folder `frontend`:
+Buat file `.env` dari contoh:
+
+```bash
+cp .env.example .env
+```
+
+Isi default untuk lokal:
 
 ```env
 VITE_API_URL=http://localhost:8080/api/v1
-VITE_GOOGLE_CLIENT_ID=
-```
-
-Untuk production:
-
-```env
-VITE_API_URL=https://api.example.com/api/v1
 VITE_GOOGLE_CLIENT_ID=
 ```
 
@@ -168,11 +217,11 @@ Frontend biasanya berjalan di:
 http://localhost:5173
 ```
 
-Jika port tersebut sudah dipakai, Vite akan menampilkan URL lain di terminal.
+Jika port `5173` sudah dipakai, Vite akan menampilkan URL lain di terminal.
 
 ## Akun Demo
 
-Setelah seed database berhasil dijalankan, gunakan akun berikut:
+Setelah seed database berhasil diimport, gunakan akun berikut:
 
 ```txt
 Admin:
@@ -184,18 +233,16 @@ email    : user@example.com
 password : password
 ```
 
-Seed demo hanya untuk development/testing. Jangan jalankan seed demo secara otomatis di production; buat akun admin production dengan credential baru yang kuat.
+## Perintah Harian
 
-## Perintah yang Sering Dipakai
-
-Backend:
+Jalankan backend:
 
 ```bash
 cd backend
 go run ./cmd/api
 ```
 
-Frontend:
+Jalankan frontend:
 
 ```bash
 cd frontend
@@ -209,34 +256,73 @@ cd frontend
 npm run build
 ```
 
-Preview hasil build frontend:
+Preview hasil build:
 
 ```bash
 cd frontend
 npm run preview
 ```
 
-## Troubleshooting
+Jalankan test backend:
 
-Jika backend gagal connect database, cek kembali nilai `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, dan `DB_NAME` di `backend/.env`.
-
-Jika frontend tidak bisa request ke backend, pastikan backend berjalan di port `8080` dan `frontend/.env` berisi:
-
-```env
-VITE_API_URL=http://localhost:8080/api/v1
+```bash
+cd backend
+go test ./...
 ```
 
-Jika perubahan `.env` frontend tidak terbaca, hentikan server Vite lalu jalankan ulang `npm run dev`.
+## Troubleshooting
 
-Jika upload bukti pembayaran atau snapshot bermasalah, pastikan folder `backend/uploads` ada. Aplikasi akan membuat subfolder `payments` dan `proctoring` saat backend dijalankan.
+Backend gagal connect database:
 
-## Checklist Sebelum Deploy
+- Pastikan MySQL menyala.
+- Pastikan database `competition_platform` sudah dibuat.
+- Cek `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, dan `DB_NAME` di `backend/.env`.
 
-- Gunakan VPS untuk menjalankan backend Go, MySQL, Nginx, dan frontend build.
-- Jalankan semua migration `001` sampai `012` secara berurutan. Migration `011` menambahkan proteksi database agar satu user tidak memiliki submission ganda pada competition yang sama, dan migration `012` menambahkan kolom kebutuhan peserta serta status bukti pembayaran dilihat admin.
-- Ganti `JWT_SECRET`, password database, dan akun demo sebelum live.
-- Isi `GOOGLE_CLIENT_ID` di backend dan `VITE_GOOGLE_CLIENT_ID` di frontend dengan OAuth Client ID yang sama.
-- Batasi `CORS_ALLOW_ORIGINS` ke domain frontend. Authentication web memakai cookie `HttpOnly`, jadi production wajib HTTPS dan CORS harus mengizinkan credentials dari origin frontend yang eksplisit.
-- Build frontend dengan `VITE_API_URL` production.
-- Pastikan `backend/uploads` writable dan masuk backup rutin.
-- Jalankan backend sebagai service, misalnya `systemd`, agar otomatis hidup setelah reboot.
+Frontend tidak bisa request ke backend:
+
+- Pastikan backend jalan di `http://localhost:8080`.
+- Pastikan `frontend/.env` berisi `VITE_API_URL=http://localhost:8080/api/v1`.
+- Restart Vite setelah mengubah `.env`.
+
+Import migration gagal:
+
+- Pastikan sedang berada di folder `backend`.
+- Pastikan database `competition_platform` sudah ada.
+- Jika MySQL memakai password, masukkan password yang benar saat prompt muncul.
+- Jika sebagian migration sudah pernah diimport, database bisa bentrok karena tabel/kolom sudah ada. Untuk setup ulang lokal, drop database lalu buat ulang:
+
+```sql
+DROP DATABASE competition_platform;
+CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Upload bukti pembayaran atau snapshot bermasalah:
+
+- Pastikan folder `backend/uploads` ada.
+- Aplikasi akan membuat subfolder `payments` dan `proctoring` saat backend berjalan.
+
+Login Google tidak muncul/berfungsi:
+
+- Isi `GOOGLE_CLIENT_ID` di `backend/.env`.
+- Isi `VITE_GOOGLE_CLIENT_ID` di `frontend/.env`.
+- Untuk development tanpa Google Login, field tersebut boleh dikosongkan.
+
+## Docker dan Deploy
+
+File `docker-compose.yml` di repo ini disiapkan untuk production dengan Traefik dan domain `beschimbio.online`. Untuk teman yang hanya ingin menjalankan project di laptop lokal, gunakan cara manual di atas.
+
+Sebelum deploy production:
+
+- Ganti `JWT_SECRET` dengan secret panjang dan acak.
+- Gunakan user database non-root dan password kuat.
+- Batasi `CORS_ALLOW_ORIGINS` hanya ke domain frontend.
+- Isi `GOOGLE_CLIENT_ID` backend dan frontend jika memakai Google Login.
+- Pastikan `backend/uploads` disimpan di persistent volume dan dibackup.
+- Jalankan semua migration sampai file terbaru di `backend/database/migrations`.
+- Jangan gunakan akun demo dari seed untuk production.
+
+Script deploy yang tersedia:
+
+- `deploy-vps.sh`: setup awal di VPS.
+- `update.sh`: pull update dan rebuild container di VPS.
+- `enable-https.sh`: setup HTTPS.
