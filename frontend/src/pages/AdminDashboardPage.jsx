@@ -796,7 +796,7 @@ function Setting({ label, value }) {
 }
 function ParticipantModal({ onClose, onDelete, participant }) {
   const fields = [['Email', participant.email], ['WhatsApp', participant.phone], ['Sekolah', participant.institution], ['Tanggal Lahir', participant.birth_date ? new Date(participant.birth_date).toLocaleDateString('id-ID') : '-'], ['Jenis Kelamin', participant.gender], ['Domisili', [participant.city, participant.province].filter(Boolean).join(', ') || '-']];
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm" onClick={onClose}>
       <section className="relative my-4 sm:my-6 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 py-3.5">
@@ -834,7 +834,8 @@ function ParticipantModal({ onClose, onDelete, participant }) {
           </div>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 

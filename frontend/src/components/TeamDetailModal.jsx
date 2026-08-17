@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { API_URL, apiRequest } from '../lib/api.js';
 
 export default function TeamDetailModal({ team, onClose }) {
@@ -101,9 +102,9 @@ export default function TeamDetailModal({ team, onClose }) {
     );
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm"
       onClick={onClose}
     >
       <div 
@@ -250,6 +251,7 @@ export default function TeamDetailModal({ team, onClose }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
