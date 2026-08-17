@@ -170,7 +170,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [questions, setQuestions] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [proofActivity, setProofActivity] = useState(null);
-  const [reviewedPayments, setReviewedPayments] = useState(() => new Set());
+  const [payments, setPayments] = useState([]);
   const [editingCompetition, setEditingCompetition] = useState(null);
   const [teams, setTeams] = useState([]);
   const [showTeamForm, setShowTeamForm] = useState(false);
@@ -221,6 +221,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
         if (activePage === 'Peserta') {
           setParticipants(await apiRequest('/admin/participants'));
         }
+        if (activePage === 'Pembayaran') {
+          setPayments(await apiRequest('/admin/payments'));
+        }
         if (activePage === 'Kompetisi' || activePage === 'Bank Soal') {
           setCompetitions(await apiRequest('/competitions?limit=100'));
         }
@@ -241,6 +244,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       try {
         if (activePage === 'Peserta') {
           setParticipants(await apiRequest('/admin/participants'));
+        }
+        if (activePage === 'Pembayaran') {
+          setPayments(await apiRequest('/admin/payments'));
         }
         if (activePage === 'Tim') {
           setTeams(await apiRequest('/admin/teams'));
@@ -287,6 +293,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
         method: 'POST',
         body: JSON.stringify({ status }),
       });
+      setPayments((current) => current.map((item) => (item.payment_id === paymentID ? { ...item, payment_status: status } : item)));
       await refreshDashboard();
     } catch (err) {
       setError(err.message);
@@ -651,8 +658,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
             {selectedTeamDetail && <TeamDetailModal team={selectedTeamDetail} onClose={() => setSelectedTeamDetail(null)} />}
           </>}
 
-          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Ubah status pembayaran peserta. Bukti pembayaran bisa dilihat secara opsional." searchPlaceholder="Cari peserta, email, kompetisi, status pembayaran..." headers={['Peserta', 'Kompetisi', 'Waktu Daftar', 'Bukti', 'Status']} rows={(dashboard?.recent_activities || []).filter((item) => item.payment_status).map((item) => {
-            const proofViewed = Boolean(item.proof_viewed_at) || reviewedPayments.has(item.payment_id);
+          {activePage === 'Pembayaran' && <DataTable title="Verifikasi Pembayaran" subtitle="Ubah status pembayaran peserta. Bukti pembayaran bisa dilihat secara opsional." searchPlaceholder="Cari peserta, email, kompetisi, status pembayaran..." headers={['Peserta', 'Kompetisi', 'Waktu Daftar', 'Bukti', 'Status']} rows={(payments.length > 0 ? payments : (dashboard?.recent_activities || [])).filter((item) => item.payment_status).map((item) => {
             const payDate = new Date(item.created_at);
             const payDateTime = `${payDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${payDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
             return [

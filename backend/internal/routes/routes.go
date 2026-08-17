@@ -63,6 +63,7 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/participants", h.AdminDashboard.Participants)
 	admin.Get("/participants/:id", h.AdminDashboard.Participant)
 	admin.Delete("/participants/:id", h.AdminDashboard.DeleteParticipant)
+	admin.Get("/payments", h.AdminDashboard.Payments)
 	admin.Post("/competitions", h.Competition.Create)
 	admin.Put("/competitions/:id", h.Competition.Update)
 	admin.Delete("/competitions/:id", h.Competition.Delete)

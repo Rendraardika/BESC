@@ -11,6 +11,7 @@ type AdminDashboardRepository interface {
 	Participants() ([]entities.User, error)
 	Participant(id string) (*entities.User, error)
 	DeleteParticipant(id string) error
+	Payments() ([]entities.AdminDashboardActivity, error)
 }
 
 func (r *adminDashboardRepository) Participant(id string) (*entities.User, error) {
@@ -57,6 +58,31 @@ func (r *adminDashboardRepository) Participants() ([]entities.User, error) {
 			return nil, err
 		}
 		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (r *adminDashboardRepository) Payments() ([]entities.AdminDashboardActivity, error) {
+	rows, err := r.db.Query(`
+		SELECT r.id, COALESCE(p.id, ''), u.name, u.email, COALESCE(u.photo, ''), c.title, r.status, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''), p.proof_viewed_at, COALESCE(p.proof_viewed_by, ''), COALESCE(p.created_at, r.created_at)
+		FROM registrations r
+		JOIN users u ON u.id = r.user_id
+		JOIN competitions c ON c.id = r.competition_id
+		LEFT JOIN payments p ON p.registration_id = r.id
+		ORDER BY COALESCE(p.created_at, r.created_at) DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []entities.AdminDashboardActivity{}
+	for rows.Next() {
+		var activity entities.AdminDashboardActivity
+		if err := rows.Scan(&activity.ID, &activity.PaymentID, &activity.UserName, &activity.UserEmail, &activity.UserPhoto, &activity.CompetitionTitle, &activity.Status, &activity.PaymentStatus, &activity.ProofImage, &activity.ProofViewedAt, &activity.ProofViewedBy, &activity.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, activity)
 	}
 	return items, rows.Err()
 }

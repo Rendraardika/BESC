@@ -45,3 +45,11 @@ func (h *AdminDashboardHandler) DeleteParticipant(c *fiber.Ctx) error {
 	}
 	return response.JSON(c, fiber.StatusOK, "participant deleted", nil)
 }
+
+func (h *AdminDashboardHandler) Payments(c *fiber.Ctx) error {
+	payments, err := h.service.Payments()
+	if err != nil {
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusOK, "payments", payments)
+}

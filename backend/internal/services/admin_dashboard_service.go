@@ -10,6 +10,11 @@ type AdminDashboardService interface {
 	Participants() ([]entities.User, error)
 	Participant(id string) (*entities.User, error)
 	DeleteParticipant(id string) error
+	Payments() ([]entities.AdminDashboardActivity, error)
+}
+
+func (s *adminDashboardService) Payments() ([]entities.AdminDashboardActivity, error) {
+	return s.repository.Payments()
 }
 
 func (s *adminDashboardService) Participant(id string) (*entities.User, error) {
