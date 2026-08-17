@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
 import TeamDetailModal from '../components/TeamDetailModal.jsx';
@@ -1000,7 +1001,7 @@ function ProofModal({ activity, onClose, onDownload }) {
   const payDate = new Date(activity.created_at);
   const payDateTime = `${payDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${payDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose}>
       <section className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
         {/* Header */}
@@ -1073,7 +1074,8 @@ function ProofModal({ activity, onClose, onDownload }) {
           </div>
         </div>
       </section>
-    </div>
+    </div>,
+    document.body
   );
 }
 
