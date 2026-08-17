@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useState, Component } from 'react';
 import { apiRequest, clearAuthSession, safeSetItem, saveAuthSession } from './lib/api.js';
 
-class ErrorBoundary extends Component {
+export class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };
