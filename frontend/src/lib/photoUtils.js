@@ -7,10 +7,9 @@ export const normalizePhotoSrc = (src) => {
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:image')) {
     return value;
   }
-  // Backend returns paths like "public/avatars/user_xxx.jpg"
-  // Nginx serves /uploads/ → backend:8080/uploads/
-  // So the browser URL should be /uploads/public/avatars/user_xxx.jpg
-  const cleanPath = value.replace(/^\/?(uploads\/)?/, '');
+  // Backend stores public files under uploads/public, and serves that folder at /uploads.
+  // A stored path like "public/avatars/user_xxx.jpg" must become "/uploads/avatars/user_xxx.jpg".
+  const cleanPath = value.replace(/^\/?(uploads\/)?(public\/)?/, '');
   return `/uploads/${cleanPath}`;
 };
 
@@ -51,4 +50,3 @@ export const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality
     reader.onerror = (error) => reject(error);
   });
 };
-
