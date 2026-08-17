@@ -712,7 +712,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       </section>
       {selectedParticipant && <ParticipantModal participant={selectedParticipant} onClose={() => setSelectedParticipant(null)} onDelete={() => deleteParticipant(selectedParticipant)} />}
       {showCompetitionForm && <CompetitionForm initialData={editingCompetition} onClose={closeCompetitionForm} onSubmit={saveCompetition} />}
-      {proofActivity && <ProofModal activity={proofActivity} onClose={() => setProofActivity(null)} onDownload={handleDownloadProof} onViewed={async (paymentID) => { setReviewedPayments((current) => new Set([...current, paymentID])); await refreshDashboard(); }} />}
+      {proofActivity && <ProofModal activity={proofActivity} onClose={() => setProofActivity(null)} onDownload={handleDownloadProof} />}
       {deleteTarget && <ConfirmDeleteModal deleteTarget={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} isDeleting={isDeleting} />}
     </main>
   );
@@ -796,7 +796,7 @@ function Setting({ label, value }) {
 function ParticipantModal({ onClose, onDelete, participant }) {
   const fields = [['Email', participant.email], ['WhatsApp', participant.phone], ['Sekolah', participant.institution], ['Tanggal Lahir', participant.birth_date ? new Date(participant.birth_date).toLocaleDateString('id-ID') : '-'], ['Jenis Kelamin', participant.gender], ['Domisili', [participant.city, participant.province].filter(Boolean).join(', ') || '-']];
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm" onClick={onClose}>
       <section className="relative my-4 sm:my-6 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 py-3.5">
           <div className="flex items-center gap-3">
@@ -964,64 +964,96 @@ function QuestionEditor({ onClose, onSave, question }) {
   );
 }
 
-function ProofModal({ activity, onClose, onDownload, onViewed }) {
-  const [proofURL, setProofURL] = useState('');
-  const [error, setError] = useState('');
-  useEffect(() => {
-    let objectURL = '';
-    const loadProof = async () => {
-      try {
-        const response = await fetch(getProofURL(activity), {
-          credentials: 'include',
-        });
-        if (!response.ok) throw new Error('Gagal membuka bukti pembayaran.');
-        objectURL = URL.createObjectURL(await response.blob());
-        setProofURL(objectURL);
-        await onViewed(activity.payment_id);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-    loadProof();
-    return () => { if (objectURL) URL.revokeObjectURL(objectURL); };
-  }, [activity]);
+function ProofModal({ activity, onClose, onDownload }) {
+  const [opening, setOpening] = useState(false);
+
+  const handleOpenFull = async () => {
+    setOpening(true);
+    try {
+      const response = await fetch(getProofURL(activity), { credentials: 'include' });
+      if (!response.ok) throw new Error('Gagal membuka bukti.');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch {
+      window.open(getProofURL(activity), '_blank');
+    } finally {
+      setOpening(false);
+    }
+  };
+
+  const payDate = new Date(activity.created_at);
+  const payDateTime = `${payDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${payDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm" onClick={onClose}>
-      <section className="relative my-4 sm:my-6 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 py-3.5">
-          <div>
-            <h2 className="text-base font-extrabold text-slate-900 leading-tight">Bukti Pembayaran</h2>
-            <p className="mt-0.5 text-xs text-slate-500 font-medium">{activity.user_name} • {activity.competition_title}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150" onClick={onClose}>
+      <section className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-start justify-between border-b border-slate-100 bg-slate-50/90 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-teal-50 text-xl text-teal-700">
+              🧾
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900 leading-tight">Bukti Pembayaran</h2>
+              <p className="mt-0.5 text-xs text-slate-500 font-medium truncate max-w-[220px]">{activity.competition_title}</p>
+            </div>
           </div>
           <button type="button" onClick={onClose} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200/70 text-slate-600 hover:bg-slate-300 hover:text-slate-900 transition text-sm font-bold">✕</button>
         </div>
-        <div className="p-4 sm:p-5">
-          <div className="grid min-h-64 max-h-[55vh] place-items-center overflow-hidden rounded-xl bg-slate-100/70 p-2 border border-slate-200/60">
-            {error ? (
-              <div className="text-xs font-bold text-red-600">{error}</div>
-            ) : proofURL ? (
-              <img src={proofURL} alt={`Bukti pembayaran ${activity.user_name}`} className="max-h-[52vh] max-w-full object-contain rounded-lg shadow-sm" />
-            ) : (
-              <div className="text-xs font-bold text-slate-400">Memuat bukti pembayaran...</div>
-            )}
+
+        {/* Info Content */}
+        <div className="p-5 space-y-4">
+          <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-2.5 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-slate-500 font-semibold shrink-0">Nama Peserta:</span>
+              <span className="font-extrabold text-slate-900 truncate">{activity.user_name}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-slate-500 font-semibold shrink-0">Email:</span>
+              <span className="font-bold text-slate-700 truncate">{activity.user_email}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-slate-500 font-semibold shrink-0">Waktu Daftar:</span>
+              <span className="font-bold text-slate-700">{payDateTime}</span>
+            </div>
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-200/60">
+              <span className="text-slate-500 font-semibold">Status:</span>
+              <span className={`rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${activity.payment_status === 'verified' ? 'bg-emerald-100 text-emerald-800' : activity.payment_status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>
+                {activity.payment_status || 'Pending'}
+              </span>
+            </div>
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-            <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition">Tutup</button>
-            <div className="flex gap-2">
-              {proofURL && (
-                <button
-                  type="button"
-                  onClick={() => onDownload(activity)}
-                  className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2 text-xs font-bold text-teal-700 hover:bg-teal-100 transition inline-flex items-center gap-1.5"
-                >
-                  <span>📥</span> Unduh Bukti
-                </button>
-              )}
-              {proofURL && (
-                <a href={proofURL} target="_blank" rel="noreferrer" className="rounded-xl bg-[#0d9488] px-4 py-2 text-xs font-bold text-white hover:bg-teal-700 transition inline-flex items-center gap-1.5">
-                  <span>↗</span> Buka Penuh
-                </a>
-              )}
+
+          <p className="text-xs text-slate-500 leading-relaxed text-center">
+            Pilih opsi di bawah untuk mengunduh bukti transfer atau melihatnya dalam ukuran penuh.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-between gap-2.5 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Tutup
+            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onDownload(activity)}
+                className="rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-bold text-teal-700 hover:bg-teal-100 transition inline-flex items-center gap-1.5"
+              >
+                <span>📥</span> Unduh Bukti
+              </button>
+              <button
+                type="button"
+                disabled={opening}
+                onClick={handleOpenFull}
+                className="rounded-xl bg-[#0d9488] px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-teal-900/10 hover:bg-teal-700 transition inline-flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <span>↗</span> {opening ? 'Membuka...' : 'Lihat Penuh'}
+              </button>
             </div>
           </div>
         </div>
@@ -1033,7 +1065,7 @@ function ProofModal({ activity, onClose, onDownload, onViewed }) {
 function ConfirmDeleteModal({ deleteTarget, onClose, onConfirm, isDeleting }) {
   if (!deleteTarget) return null;
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-16 sm:pt-24 backdrop-blur-sm animate-in fade-in duration-150" onClick={!isDeleting ? onClose : undefined}>
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150" onClick={!isDeleting ? onClose : undefined}>
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start gap-4">
           <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-red-100 text-red-600 text-2xl shadow-sm">
