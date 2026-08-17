@@ -1,18 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import { useEffect, useState } from 'react';
 import App, { ErrorBoundary } from './App.jsx';
 import './styles.css';
 
-function AnimatedApp() {
-  const [routeKey, setRouteKey] = useState(window.location.hash);
+createRoot(document.getElementById('root')).render(
+  <ErrorBoundary>
+    <App />
+  </ErrorBoundary>
+);
 
-  useEffect(() => {
-    const updateRouteKey = () => setRouteKey(window.location.hash);
-    window.addEventListener('hashchange', updateRouteKey);
-    return () => window.removeEventListener('hashchange', updateRouteKey);
-  }, []);
-
-  return <div key={routeKey} className="page-transition"><ErrorBoundary><App /></ErrorBoundary></div>;
-}
-
-createRoot(document.getElementById('root')).render(<AnimatedApp />);

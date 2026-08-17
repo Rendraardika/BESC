@@ -1,6 +1,23 @@
 import { Suspense, lazy, useEffect, useState, Component } from 'react';
 import { apiRequest, clearAuthSession, safeSetItem, saveAuthSession } from './lib/api.js';
 
+const lazyWithRetry = (componentImport) =>
+  lazy(async () => {
+    const hasRefreshed = sessionStorage.getItem('chunk_retry');
+    try {
+      const component = await componentImport();
+      sessionStorage.removeItem('chunk_retry');
+      return component;
+    } catch (error) {
+      if (!hasRefreshed) {
+        sessionStorage.setItem('chunk_retry', '1');
+        window.location.reload();
+        return { default: () => null };
+      }
+      throw error;
+    }
+  });
+
 export class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -9,6 +26,24 @@ export class ErrorBoundary extends Component {
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
+  componentDidCatch(error) {
+    if (error?.message?.includes('dynamically imported') || error?.message?.includes('Failed to fetch')) {
+      const hasReloaded = sessionStorage.getItem('chunk_reload');
+      if (!hasReloaded) {
+        sessionStorage.setItem('chunk_reload', '1');
+        window.location.reload();
+      }
+    }
+  }
+  handleReset = () => {
+    try {
+      localStorage.removeItem('besc_competitions_cache');
+      localStorage.removeItem('besc_competitions_cache_time');
+      sessionStorage.clear();
+    } catch {}
+    this.setState({ hasError: false, error: null });
+    window.location.reload();
+  };
   render() {
     if (this.state.hasError) {
       return (
@@ -16,8 +51,8 @@ export class ErrorBoundary extends Component {
           <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-red-50 text-3xl">⚠️</div>
             <h2 className="text-xl font-extrabold text-slate-900">Terjadi Kesalahan</h2>
-            <p className="mt-2 text-sm text-slate-500">Aplikasi mengalami error. Silakan coba refresh halaman.</p>
-            <button onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }} className="mt-4 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-sm font-bold text-white">Muat Ulang</button>
+            <p className="mt-2 text-sm text-slate-500">Aplikasi sedang diperbarui. Silakan muat ulang halaman.</p>
+            <button onClick={this.handleReset} className="mt-5 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:opacity-90 transition">Muat Ulang</button>
           </div>
         </div>
       );
@@ -26,19 +61,19 @@ export class ErrorBoundary extends Component {
   }
 }
 
-const HomePage = lazy(() => import('./pages/HomePage.jsx'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
-const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
-const OlimpiadePage = lazy(() => import('./pages/OlimpiadePage.jsx'));
-const CompetitionDetailPage = lazy(() => import('./pages/CompetitionDetailPage.jsx'));
-const EventRegistrationPage = lazy(() => import('./pages/EventRegistrationPage.jsx'));
-const EventRegistrationSuccessPage = lazy(() => import('./pages/EventRegistrationSuccessPage.jsx'));
-const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
-const ExamRulesPage = lazy(() => import('./pages/ExamRulesPage.jsx'));
-const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
-const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
-const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
+const HomePage = lazyWithRetry(() => import('./pages/HomePage.jsx'));
+const RegisterPage = lazyWithRetry(() => import('./pages/RegisterPage.jsx'));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage.jsx'));
+const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage.jsx'));
+const OlimpiadePage = lazyWithRetry(() => import('./pages/OlimpiadePage.jsx'));
+const CompetitionDetailPage = lazyWithRetry(() => import('./pages/CompetitionDetailPage.jsx'));
+const EventRegistrationPage = lazyWithRetry(() => import('./pages/EventRegistrationPage.jsx'));
+const EventRegistrationSuccessPage = lazyWithRetry(() => import('./pages/EventRegistrationSuccessPage.jsx'));
+const AdminDashboardPage = lazyWithRetry(() => import('./pages/AdminDashboardPage.jsx'));
+const ExamRulesPage = lazyWithRetry(() => import('./pages/ExamRulesPage.jsx'));
+const ExamPage = lazyWithRetry(() => import('./pages/ExamPage.jsx'));
+const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage.jsx'));
+const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage.jsx'));
 
 const Loading = () => (
   <div className="grid min-h-screen place-items-center bg-slate-50">
