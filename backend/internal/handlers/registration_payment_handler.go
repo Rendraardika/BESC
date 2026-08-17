@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -94,7 +95,13 @@ func (h *PaymentHandler) Proof(c *fiber.Ctx) error {
 	if err := h.service.MarkProofViewed(c.Params("payment_id"), userID(c)); err != nil {
 		return handleError(c, err)
 	}
-	return servePrivateFile(c, h.cfg, path)
+	// Serve directly from resolved disk path to avoid double path resolution in servePrivateFile
+	content, err := os.ReadFile(diskPath)
+	if err != nil {
+		return handleError(c, err)
+	}
+	c.Type(strings.TrimPrefix(filepath.Ext(diskPath), "."))
+	return c.Send(content)
 }
 
 func (h *PaymentHandler) Status(c *fiber.Ctx) error {
