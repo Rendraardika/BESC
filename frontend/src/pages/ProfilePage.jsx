@@ -3,7 +3,7 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { apiRequest, safeSetItem } from '../lib/api.js';
 import { MAX_UPLOAD_FILE_SIZE_LABEL, validateUploadFile } from '../lib/fileValidation.js';
-import { normalizePhotoSrc } from '../lib/photoUtils.js';
+import { compressImageFile, normalizePhotoSrc } from '../lib/photoUtils.js';
 import indonesiaWilayah from '../indonesia_wilayah.json';
 
 export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile, onRegister, onSaveProfile, onTryout, user }) {
@@ -42,6 +42,11 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [profile.photo]);
   const provinceOptions = indonesiaWilayah.provinsi || [];
   const selectedProvince = useMemo(() => provinceOptions.find((item) => item.nama === profile.province), [profile.province, provinceOptions]);
   const cityOptions = useMemo(() => {
@@ -104,7 +109,7 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
     }
   };
 
-  const handlePhoto = (event) => {
+  const handlePhoto = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -117,12 +122,18 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
       setError(uploadError);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      updateProfile('photo', reader.result);
+    try {
+      const compressedDataUrl = await compressImageFile(file, 600, 600, 0.8);
+      updateProfile('photo', compressedDataUrl);
       setError('');
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        updateProfile('photo', reader.result);
+        setError('');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -146,7 +157,16 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 sm:flex-row">
               <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-blue-100 text-2xl font-extrabold text-[#1c79c6] shadow">
-                {normalizePhotoSrc(profile.photo) ? <img src={normalizePhotoSrc(profile.photo)} alt="Foto profil" className="h-full w-full object-cover" /> : profile.fullName?.charAt(0).toUpperCase()}
+                {normalizePhotoSrc(profile.photo) && !photoFailed ? (
+                  <img
+                    src={normalizePhotoSrc(profile.photo)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={() => setPhotoFailed(true)}
+                  />
+                ) : (
+                  profile.fullName?.charAt(0).toUpperCase() || 'U'
+                )}
               </div>
               <div className="text-center sm:text-left">
                 <label className="inline-flex cursor-pointer rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#087f75]">

@@ -9,23 +9,9 @@ const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Tim', 'Pembayaran', 'Ba
 
 const initials = (name = '') => name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'B';
 
-function Avatar({ src, name, className }) {
-  const [failed, setFailed] = useState(false);
-  const imageSrc = normalizePhotoSrc(src);
-  if (imageSrc && !failed) {
-    return (
-      <span className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700 ${className || ''}`}>
-        <img
-          src={imageSrc}
-          alt={name || 'Avatar'}
-          className="h-full w-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      </span>
-    );
-  }
+function Avatar({ name, className }) {
   return (
-    <span className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-50 text-xs font-extrabold text-teal-700 ${className || ''}`}>
+    <span className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-teal-100 text-xs font-extrabold text-teal-800 ${className || ''}`}>
       {initials(name)}
     </span>
   );
@@ -790,8 +776,8 @@ function ParticipantModal({ onClose, onDelete, participant }) {
       <section className="relative my-4 sm:my-6 w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150" onClick={(event) => event.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/90 px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-teal-50 font-extrabold text-teal-700 text-sm">
-              {normalizePhotoSrc(participant.photo) ? <img src={normalizePhotoSrc(participant.photo)} alt={participant.name} className="h-full w-full object-cover" /> : initials(participant.name)}
+            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-teal-100 font-extrabold text-teal-800 text-sm">
+              {initials(participant.name)}
             </div>
             <div>
               <h2 className="text-base font-extrabold text-slate-900 leading-tight">{participant.name}</h2>
@@ -804,22 +790,9 @@ function ParticipantModal({ onClose, onDelete, participant }) {
           <div className="grid gap-2.5 sm:grid-cols-2">
             {fields.map(([label, value]) => <Setting key={label} label={label} value={value} />)}
           </div>
-          <div className="mt-5 flex items-center justify-between gap-2.5 border-t border-slate-100 pt-4">
-            <div>
-              {normalizePhotoSrc(participant.photo) && (
-                <button
-                  type="button"
-                  onClick={() => downloadFileFromUrl(normalizePhotoSrc(participant.photo), `foto-profil-${(participant.name || 'peserta').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`)}
-                  className="rounded-xl border border-teal-200 bg-teal-50 px-3.5 py-2 text-xs font-bold text-teal-700 hover:bg-teal-100 transition inline-flex items-center gap-1.5"
-                >
-                  <span>📥</span> Unduh Foto
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition">Tutup</button>
-              <button type="button" onClick={onDelete} className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition">Hapus Peserta</button>
-            </div>
+          <div className="mt-5 flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4">
+            <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition">Tutup</button>
+            <button type="button" onClick={onDelete} className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white hover:bg-red-700 transition">Hapus Peserta</button>
           </div>
         </div>
       </section>

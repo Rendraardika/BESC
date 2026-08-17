@@ -4,6 +4,28 @@ import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import Button from './Button.jsx';
 import { normalizePhotoSrc } from '../lib/photoUtils.js';
 
+function HeaderAvatar({ photo, name, initial }) {
+  const [failed, setFailed] = useState(false);
+  const src = normalizePhotoSrc(photo);
+  if (src && !failed) {
+    return (
+      <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
+        <img
+          src={src}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={() => setFailed(true)}
+        />
+      </span>
+    );
+  }
+  return (
+    <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
+      {initial}
+    </span>
+  );
+}
+
 export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -93,9 +115,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
                   onClick={() => setProfileOpen(!profileOpen)}
                   className="flex items-center gap-3 rounded-xl bg-blue-100 px-4 py-2 text-sm font-bold text-[#044b86] transition hover:bg-blue-200"
                 >
-                  <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
-                    {user.photo ? <img src={normalizePhotoSrc(user.photo)} alt={user.name} className="h-full w-full object-cover" /> : userInitial}
-                  </span>
+                  <HeaderAvatar photo={user.photo} name={user.name} initial={userInitial} />
                   <span>{user.name}</span>
                   <svg viewBox="0 0 24 24" className={`h-4 w-4 fill-none stroke-current stroke-2 transition ${profileOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
                 </button>
@@ -198,9 +218,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
               {user ? (
                 <div className="rounded-xl bg-blue-50 p-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
-                      {user.photo ? <img src={user.photo} alt={user.name} className="h-full w-full object-cover" /> : userInitial}
-                    </span>
+                    <HeaderAvatar photo={user.photo} name={user.name} initial={userInitial} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-xs font-extrabold text-slate-950">{user.name}</div>
                       <div className="text-[10px] text-slate-500">Peserta BESC</div>
