@@ -55,7 +55,7 @@ func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileReques
 		user.Member2Name = input.Member2Name
 	}
 	if input.Photo != "" {
-		user.Photo = saveAvatarIfBase64(userID, input.Photo)
+		user.Photo = s.saveAvatarIfBase64(userID, input.Photo)
 	}
 	user.BirthDate = &birthDate
 	user.Gender = input.Gender
@@ -67,7 +67,7 @@ func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileReques
 	return s.users.FindByID(userID)
 }
 
-func saveAvatarIfBase64(userID, photoData string) string {
+func (s *authService) saveAvatarIfBase64(userID, photoData string) string {
 	if !strings.HasPrefix(photoData, "data:image") {
 		return photoData
 	}
@@ -88,7 +88,11 @@ func saveAvatarIfBase64(userID, photoData string) string {
 	if err != nil {
 		return photoData
 	}
-	avatarDir := filepath.Join("uploads", "public", "avatars")
+	uploadDir := strings.TrimSpace(s.cfg.UploadDir)
+	if uploadDir == "" {
+		uploadDir = "uploads"
+	}
+	avatarDir := filepath.Join(uploadDir, "public", "avatars")
 	_ = os.MkdirAll(avatarDir, 0755)
 
 	// Remove old avatar files for this user if any exist
@@ -98,7 +102,7 @@ func saveAvatarIfBase64(userID, photoData string) string {
 		}
 	}
 
-	filename := fmt.Sprintf("user_%s_%d%s", userID, time.Now().Unix(), ext)
+	filename := fmt.Sprintf("user_%s_%d%s", userID, time.Now().UnixNano(), ext)
 	filePath := filepath.Join(avatarDir, filename)
 	if err := os.WriteFile(filePath, decoded, 0644); err != nil {
 		return photoData

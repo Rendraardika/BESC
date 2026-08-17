@@ -92,9 +92,11 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           member2_name: profile.member2Name,
         }),
       });
-      safeSetItem(profileStorageKey, JSON.stringify(profile));
+      const savedProfile = { ...profile, photo: updatedUser.photo || profile.photo };
+      setProfile(savedProfile);
+      safeSetItem(profileStorageKey, JSON.stringify(savedProfile));
       setSuccess('Profil berhasil disimpan.');
-      window.setTimeout(() => onSaveProfile({ ...profile, backendUser: updatedUser }), 900);
+      window.setTimeout(() => onSaveProfile({ ...savedProfile, backendUser: updatedUser }), 900);
     } catch (err) {
       setError(err.message);
     } finally {

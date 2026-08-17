@@ -2,23 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import { API_URL, apiRequest } from '../lib/api.js';
+import { normalizePhotoSrc } from '../lib/photoUtils.js';
 import TeamDetailModal from '../components/TeamDetailModal.jsx';
 
 const menuItems = ['Dashboard', 'Peserta', 'Kompetisi', 'Tim', 'Pembayaran', 'Bank Soal', 'Hasil Ujian', 'Pengaturan'];
 
 const initials = (name = '') => name.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'B';
-
-const normalizePhotoSrc = (src) => {
-  if (!src) return '';
-  const value = String(src).trim();
-  if (!value || value === 'null' || value === 'undefined') return '';
-  if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:image')) {
-    return value;
-  }
-  const cleanPath = value.replace(/^public\//, '').replace(/^\/?uploads\//, '');
-  const baseUrl = API_URL.replace(/\/api\/v1\/?$/, '');
-  return `${baseUrl}/uploads/${cleanPath}`;
-};
 
 function Avatar({ src, name, className }) {
   const [failed, setFailed] = useState(false);

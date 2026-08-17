@@ -7,7 +7,7 @@ export const normalizePhotoSrc = (src) => {
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:image')) {
     return value;
   }
-  const cleanPath = value.replace(/^public\//, '').replace(/^\/?uploads\//, '');
+  const cleanPath = value.replace(/^(?:\/?uploads\/)?(?:public\/)?/, '');
   const baseUrl = API_URL.replace(/\/api\/v1\/?$/, '');
   return `${baseUrl}/uploads/${cleanPath}`;
 };
