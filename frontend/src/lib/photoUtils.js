@@ -8,7 +8,7 @@ export const normalizePhotoSrc = (src) => {
     return value;
   }
   const cleanPath = value.replace(/^(?:\/?uploads\/)?(?:public\/)?/, '');
-  return `${baseUrl}/uploads/${cleanPath}`;
+  return `${API_URL}/uploads/${cleanPath}`;
 };
 
 export const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.8) => {

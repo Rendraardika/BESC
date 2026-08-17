@@ -46,13 +46,12 @@ export class ErrorBoundary extends Component {
   };
   render() {
     if (this.state.hasError) {
-      const errMsg = this.state.error?.message || String(this.state.error);
       return (
         <div className="grid min-h-screen place-items-center bg-slate-50 p-6">
-          <div className="max-w-lg rounded-2xl bg-white p-8 text-center shadow-xl">
+          <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
             <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-red-50 text-3xl">⚠️</div>
             <h2 className="text-xl font-extrabold text-slate-900">Terjadi Kesalahan</h2>
-            <pre className="mt-3 overflow-auto rounded-lg bg-red-50 p-3 text-left text-xs text-red-700 whitespace-pre-wrap break-all">{errMsg}</pre>
+            <p className="mt-2 text-sm text-slate-500">Aplikasi sedang diperbarui. Silakan muat ulang halaman.</p>
             <button onClick={this.handleReset} className="mt-5 rounded-xl bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-500/20 hover:opacity-90 transition">Muat Ulang</button>
           </div>
         </div>
