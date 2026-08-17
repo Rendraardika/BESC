@@ -97,11 +97,15 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           member2_name: profile.member2Name,
         }),
       });
-      const savedProfile = { ...profile, photo: updatedUser.photo || profile.photo };
+      // Keep base64 for local preview so photo shows immediately in ProfilePage
+      // But pass the backend path (updatedUser.photo) to App state via onSaveProfile
+      const previewPhoto = profile.photo; // base64 or current value — for local display
+      const savedProfile = { ...profile, photo: previewPhoto };
       setProfile(savedProfile);
-      safeSetItem(profileStorageKey, JSON.stringify(savedProfile));
+      setPhotoFailed(false);
+      safeSetItem(profileStorageKey, JSON.stringify({ ...savedProfile, photo: updatedUser.photo || previewPhoto }));
       setSuccess('Profil berhasil disimpan.');
-      window.setTimeout(() => onSaveProfile({ ...savedProfile, backendUser: updatedUser }), 900);
+      window.setTimeout(() => onSaveProfile({ ...savedProfile, photo: updatedUser.photo || previewPhoto, backendUser: updatedUser }), 900);
     } catch (err) {
       setError(err.message);
     } finally {

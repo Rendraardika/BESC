@@ -274,21 +274,23 @@ export default function App() {
   const handleAdminLoginSuccess = (auth) => { localStorage.removeItem('besc_token'); localStorage.removeItem('besc_admin_token'); safeSetItem('besc_admin', JSON.stringify(auth.user)); localStorage.removeItem('besc_user'); setUser(null); setAdmin(auth.user); window.location.replace('#admin-dashboard'); window.scrollTo(0, 0); setPage('admin-dashboard'); };
   const handleAdminLogout = async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {}); localStorage.removeItem('besc_admin_token'); localStorage.removeItem('besc_admin'); setAdmin(null); window.location.replace('#admin-login'); window.scrollTo(0, 0); setPage('admin-login'); };
   const handleSaveProfile = (profile) => {
+    const newPhoto = profile.backendUser?.photo ?? profile.photo ?? user?.photo;
     const updatedUser = {
       ...user,
       ...profile.backendUser,
-      name: profile.fullName || user?.name,
-      photo: profile.backendUser?.photo || user?.photo,
-      phone: profile.whatsapp || user?.phone,
-      institution: profile.school || user?.institution,
-      birth_date: profile.birthDate || user?.birth_date,
-      gender: profile.gender || user?.gender,
-      province: profile.province || user?.province,
-      city: profile.city || user?.city,
-      student_card: profile.cardPhoto || user?.student_card,
-      team_name: profile.teamName || user?.team_name,
-      member1_name: profile.member1Name || user?.member1_name,
-      member2_name: profile.member2Name || user?.member2_name,
+      name: profile.fullName || profile.backendUser?.name || user?.name,
+      photo: newPhoto,
+      phone: profile.whatsapp || profile.backendUser?.phone || user?.phone,
+      institution: profile.school || profile.backendUser?.institution || user?.institution,
+      birth_date: profile.birthDate || profile.backendUser?.birth_date || user?.birth_date,
+      gender: profile.gender || profile.backendUser?.gender || user?.gender,
+      province: profile.province || profile.backendUser?.province || user?.province,
+      city: profile.city || profile.backendUser?.city || user?.city,
+      student_card: profile.cardPhoto || profile.backendUser?.student_card || user?.student_card,
+      team_name: profile.teamName || profile.backendUser?.team_name || user?.team_name,
+      member1_name: profile.member1Name || profile.backendUser?.member1_name || user?.member1_name,
+      member2_name: profile.member2Name || profile.backendUser?.member2_name || user?.member2_name,
+      profile_complete: profile.backendUser?.profile_complete ?? user?.profile_complete,
     };
     safeSetItem('besc_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
