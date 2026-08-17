@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
-import { API_URL, apiRequest, safeSetItem } from '../lib/api.js';
+import { apiRequest, safeSetItem } from '../lib/api.js';
 import { MAX_UPLOAD_FILE_SIZE_LABEL, validateUploadFile } from '../lib/fileValidation.js';
 import qrisBesc from '../assets/images/qris-besc.webp';
 
@@ -346,31 +346,35 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
       if (!targetComp) throw new Error('Kompetisi belum tersedia.');
       const registration = await apiRequest(`/competitions/${targetComp.id}/register`, { method: 'POST' });
       const formData = new FormData(); formData.append('proof', proof);
-      const response = await fetch(`${API_URL}/registrations/${registration.id}/payment-proof`, { method: 'POST', credentials: 'include', body: formData });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok || body.success === false) throw new Error(body.message || 'Gagal upload bukti pembayaran.');
-      // Upload all other documents
-      const docsFormData = new FormData();
-      const docTypes = [];
-      const collectFile = (key, type, file) => { if (file) { docsFormData.append('documents', file, file.name); docTypes.push(type); } };
-      // Collect all files from ketua, anggota1, anggota2 sections
+      await apiRequest(`/registrations/${registration.id}/payment-proof`, {
+        method: 'POST',
+        body: formData,
+        timeoutMs: 60000,
+        retries: 2,
+      });
+
+      const documents = [];
+      const collectFile = (type, file) => { if (file) documents.push({ type, file }); };
       ['ketua', 'anggota1', 'anggota2'].forEach((prefix) => {
         ['kartuPelajar', 'fotoFormal', 'twibbon', 'followProof'].forEach((field) => {
           const file = form[`${prefix}_${field}`];
-          if (file) collectFile(`${prefix}_${field}`, `${prefix}_${field}`, file);
+          if (file) collectFile(`${prefix}_${field}`, file);
         });
       });
-      // Collect extra files: biodata kelompok, biodata guru, abstrak
-      if (form._biodataKelompok) collectFile('biodataKelompok', 'biodataKelompok', form._biodataKelompok);
-      if (form._biodataGuru) collectFile('biodataGuru', 'biodataGuru', form._biodataGuru);
-      if (form._abstrak) collectFile('abstrak', 'abstrak', form._abstrak);
-      if (docTypes.length > 0) {
-        docTypes.forEach((t) => docsFormData.append('doc_types', t));
-        const docsResponse = await fetch(`${API_URL}/registrations/${registration.id}/documents`, { method: 'POST', credentials: 'include', body: docsFormData });
-        const docsBody = await docsResponse.json().catch(() => ({}));
-        if (!docsResponse.ok || docsBody.success === false) {
-          throw new Error(docsBody.message || 'Gagal mengunggah dokumen pendaftaran. Silakan coba lagi.');
-        }
+      if (form._biodataKelompok) collectFile('biodataKelompok', form._biodataKelompok);
+      if (form._biodataGuru) collectFile('biodataGuru', form._biodataGuru);
+      if (form._abstrak) collectFile('abstrak', form._abstrak);
+
+      for (const item of documents) {
+        const docsFormData = new FormData();
+        docsFormData.append('documents', item.file, item.file.name);
+        docsFormData.append('doc_types', item.type);
+        await apiRequest(`/registrations/${registration.id}/documents`, {
+          method: 'POST',
+          body: docsFormData,
+          timeoutMs: 60000,
+          retries: 2,
+        });
       }
       localStorage.removeItem('besc_reg_form');
       localStorage.removeItem('besc_resume_rejected');
