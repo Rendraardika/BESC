@@ -14,5 +14,8 @@ until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; do
   sleep 1
 done
 
+echo "Running database avatar migrations..."
+/app/migrate-avatars || true
+
 echo "Starting backend..."
 exec /app/besc-api

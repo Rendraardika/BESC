@@ -218,13 +218,13 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   useEffect(() => {
     const loadPageData = async () => {
       try {
-        if (activePage === 'Peserta' && participants.length === 0) {
+        if (activePage === 'Peserta') {
           setParticipants(await apiRequest('/admin/participants'));
         }
-        if ((activePage === 'Kompetisi' || activePage === 'Bank Soal') && competitions.length === 0) {
+        if (activePage === 'Kompetisi' || activePage === 'Bank Soal') {
           setCompetitions(await apiRequest('/competitions?limit=100'));
         }
-        if (activePage === 'Tim' && teams.length === 0) {
+        if (activePage === 'Tim') {
           setTeams(await apiRequest('/admin/teams'));
         }
         if (activePage === 'Hasil Ujian') {
@@ -236,7 +236,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
     };
     loadPageData();
 
-    // Auto-refresh data for specific pages every 5 seconds
+    // Auto-refresh data for specific pages every 20 seconds
     const interval = setInterval(async () => {
       try {
         if (activePage === 'Peserta') {
@@ -251,7 +251,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       } catch (err) {
         console.error('Failed to refresh page data:', err);
       }
-    }, 5000);
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [activePage]);
