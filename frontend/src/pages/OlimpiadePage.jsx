@@ -2,11 +2,56 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
 import { competitionToEvent } from '../lib/competitions.js';
-import eventBannerFallback from '../assets/images/TRY OUT.png';
+import eventBannerFallback from '../assets/images/TRY OUT.webp';
 
 const eventImages = [eventBannerFallback, eventBannerFallback, eventBannerFallback];
 
-export default function OlimpiadePage({ competitions = [], competitionsLoading = false, onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, user }) {
+const normalizeCategory = (value = '') => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw.includes('try out')) return 'try out';
+  if (raw.includes('lkti') || raw.includes('karya tulis')) return 'lkti';
+  if (raw.includes('olimpiade')) return 'olimpiade';
+  return raw;
+};
+
+const findCompetitionForRegistration = (reg, competitions = []) => {
+  if (!reg) return null;
+  return competitions.find((item) => {
+    const matchesId = item.id && reg.competition_id && String(item.id) === String(reg.competition_id);
+    const matchesSlug = item.slug && reg.competition_slug && String(item.slug) === String(reg.competition_slug);
+    const matchesTitle = item.title && reg.competition_title && String(item.title) === String(reg.competition_title);
+    return matchesId || matchesSlug || matchesTitle;
+  }) || null;
+};
+
+const getRegisteredCategories = (registrations = [], competitions = []) => {
+  const categorySet = new Set();
+  registrations.forEach((reg) => {
+    const comp = findCompetitionForRegistration(reg, competitions);
+    const normalizedCategory = normalizeCategory(comp?.category || '');
+    if (comp && normalizedCategory && normalizedCategory !== 'try out') {
+      categorySet.add(normalizedCategory);
+    }
+  });
+  return categorySet;
+};
+
+const canRegisterCompetition = (competition, registrations = [], competitions = []) => {
+  if (!competition) return false;
+  const normalizedCategory = normalizeCategory(competition.category);
+  if (normalizedCategory === 'try out') return true;
+  const registeredCategories = getRegisteredCategories(registrations, competitions);
+  if (registeredCategories.size === 0) return true;
+
+  if (normalizedCategory === 'olimpiade' && registeredCategories.has('olimpiade')) return true;
+  if (normalizedCategory === 'lkti' && registeredCategories.has('lkti')) return true;
+  if (registeredCategories.has('olimpiade') && normalizedCategory === 'lkti') return false;
+  if (registeredCategories.has('lkti') && normalizedCategory === 'olimpiade') return false;
+
+  return true;
+};
+
+export default function OlimpiadePage({ competitions = [], competitionsLoading = false, onCompetitionDetail, onLogin, onLogout, onOlimpiade, onProfile, onTryout, onVerifiedCompetition, user, registrations = [] }) {
   const displayEvents = competitions.length ? competitions.map(competitionToEvent) : events;
 
   return (
@@ -50,7 +95,12 @@ export default function OlimpiadePage({ competitions = [], competitionsLoading =
                 </div>
               </div>
             ))}
-            {!competitionsLoading && displayEvents.map((event, index) => (
+            {!competitionsLoading && displayEvents.map((event, index) => {
+              const competition = event.competition || competitions[index];
+              const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
+              const verified = registration?.status === 'verified';
+              const isBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
+              return (
               <article key={event.id || event.title} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_28px_75px_rgba(15,118,110,0.18)]">
                 <div className="relative h-60 overflow-hidden bg-emerald-900">
                   <img src={event.banner || eventImages[index % eventImages.length]} alt={event.title} className="h-full w-full object-cover object-center transition duration-500 group-hover:scale-105" />
@@ -87,13 +137,18 @@ export default function OlimpiadePage({ competitions = [], competitionsLoading =
                       {event.original && <span className="text-xs text-slate-400 line-through">{event.original}</span>}
                       {event.discount && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-extrabold text-emerald-700">{event.discount}</span>}
                     </div>
-                    <button type="button" onClick={() => onCompetitionDetail(index)} className="rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110">
-                      Daftar
+                    <button
+                      type="button"
+                      onClick={() => verified && onVerifiedCompetition ? onVerifiedCompetition(registration) : onCompetitionDetail(index)}
+                      disabled={isBlocked}
+                      className="rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                    >
+                      {verified ? 'Lihat Ketentuan' : registration ? 'Menunggu Verifikasi' : isBlocked ? 'Tidak Tersedia' : 'Daftar'}
                     </button>
                   </div>
                 </div>
               </article>
-            ))}
+            );})}
           </div>
         </section>
       </main>

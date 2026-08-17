@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
-import karakterImg from '../assets/images/karakter.png';
+import karakterImg from '../assets/images/karakter.webp';
 import { apiRequest, safeSetItem } from '../lib/api.js';
 import GoogleLoginButton from '../components/GoogleLoginButton.jsx';
 
@@ -81,14 +81,14 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white px-6 py-4 md:px-8">
+      <header className="border-b border-slate-200 bg-white px-4 py-3.5 sm:px-6 md:px-8">
         <div className="mx-auto flex max-w-7xl items-center">
-          <img src={bescLogo} alt="BESC Logo" className="h-11 w-auto object-contain" />
+          <img src={bescLogo} alt="BESC Logo" className="h-10 sm:h-11 w-auto object-contain" />
         </div>
       </header>
 
-      <section className="px-6 py-12 md:px-8">
-        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[2rem] bg-white shadow-2xl lg:grid-cols-[0.9fr_1.1fr]">
+      <section className="px-3.5 py-6 sm:px-6 md:px-8 md:py-12">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-2xl sm:rounded-[2rem] bg-white shadow-xl lg:grid-cols-[0.9fr_1.1fr]">
           <div className="relative hidden overflow-hidden p-10 text-white lg:block lg:overflow-hidden lg:rounded-tr-[2rem] lg:rounded-br-[2rem] lg:flex lg:flex-col lg:justify-between">
             <img src={karakterImg} alt="Karakter BESC" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom" />
             <div className="absolute inset-0 bg-gradient-to-b from-slate-900/25 via-transparent to-slate-950/20" />
@@ -105,45 +105,45 @@ export default function RegisterPage({ onLogin, onRegisterSuccess }) {
             </div>
           </div>
 
-          <div className="p-6 md:p-10">
-            <h2 className="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold text-slate-950">Daftar Akun</h2>
-            <p className="mt-2 text-sm text-slate-500">Lengkapi data diri untuk mengikuti kompetisi.</p>
+          <div className="p-4 sm:p-7 md:p-10 min-w-0">
+            <h2 className="font-['Plus_Jakarta_Sans'] text-2xl sm:text-3xl font-extrabold text-slate-950">Daftar Akun</h2>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-500">Lengkapi data diri untuk mengikuti kompetisi.</p>
             {error && <div className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
 
-            <form className="mt-8 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
-              <div className="md:col-span-2">
+            <form className="mt-6 sm:mt-8 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit}>
+              <div className="md:col-span-2 min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Kelompok/Tim</label>
                 <input className={inputClass} value={form.teamName} onChange={updateField('teamName')} required />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Ketua</label>
                 <input className={inputClass} value={form.leaderName} onChange={updateField('leaderName')} required />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Email</label>
                 <input className={inputClass} type="email" value={form.email} onChange={updateField('email')} required />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
                 <input className={inputClass} value={form.member1Name} onChange={updateField('member1Name')} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 2</label>
                 <input className={inputClass} value={form.member2Name} onChange={updateField('member2Name')} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nomor WA Aktif</label>
                 <input className={inputClass} value={form.phone} onChange={updateField('phone')} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Tanggal Lahir</label>
                 <input className={inputClass} type="date" value={form.birthDate} onChange={updateField('birthDate')} />
               </div>
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Nama Sekolah</label>
                 <input className={inputClass} value={form.institution} onChange={updateField('institution')} />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="mb-1 block text-xs font-bold text-slate-700">Password</label>
                 <div className="relative">
                   <input className={`${inputClass} pr-12`} type={showPassword ? 'text' : 'password'} value={form.password} onChange={updateField('password')} minLength={8} required />

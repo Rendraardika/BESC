@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { apiRequest, safeSetItem } from '../lib/api.js';
+import { MAX_UPLOAD_FILE_SIZE_LABEL, validateUploadFile } from '../lib/fileValidation.js';
+import { normalizePhotoSrc } from '../lib/photoUtils.js';
 import indonesiaWilayah from '../indonesia_wilayah.json';
 
 export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile, onRegister, onSaveProfile, onTryout, user }) {
@@ -60,7 +62,6 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
 
   const inputClass = 'h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-[#1c79c6] focus:ring-2 focus:ring-blue-100';
 
-
   const updateProfile = (field, value) => {
     setProfile((currentProfile) => ({ ...currentProfile, [field]: value }));
   };
@@ -108,8 +109,10 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
       setError('Foto profil harus berupa JPG, PNG, atau WEBP.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Ukuran foto profil maksimal 2 MB.');
+    const uploadError = validateUploadFile(file, 'Foto profil');
+    if (uploadError) {
+      event.target.value = '';
+      setError(uploadError);
       return;
     }
     const reader = new FileReader();
@@ -141,14 +144,14 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 sm:flex-row">
               <div className="grid h-24 w-24 shrink-0 place-items-center overflow-hidden rounded-full border-4 border-white bg-blue-100 text-2xl font-extrabold text-[#1c79c6] shadow">
-                {profile.photo ? <img src={profile.photo} alt="Foto profil" className="h-full w-full object-cover" /> : profile.fullName?.charAt(0).toUpperCase()}
+                {normalizePhotoSrc(profile.photo) ? <img src={normalizePhotoSrc(profile.photo)} alt="Foto profil" className="h-full w-full object-cover" /> : profile.fullName?.charAt(0).toUpperCase()}
               </div>
               <div className="text-center sm:text-left">
                 <label className="inline-flex cursor-pointer rounded-lg bg-[#0d9488] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#087f75]">
                   Pilih Foto Profil
                   <input className="hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhoto} />
                 </label>
-                <p className="mt-2 text-xs leading-5 text-slate-500">Wajib. Format JPG, PNG, atau WEBP dengan ukuran maksimal 2 MB.</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">Wajib. Format JPG, PNG, atau WEBP dengan ukuran maksimal {MAX_UPLOAD_FILE_SIZE_LABEL}.</p>
               </div>
             </div>
             <div>
@@ -158,103 +161,87 @@ export default function ProfilePage({ onLogin, onLogout, onOlimpiade, onProfile,
 
             <div>
               <label className="mb-1.5 block text-xs font-bold text-slate-700">Email</label>
-              <input className={`${inputClass} bg-slate-100 text-slate-500`} value={profile.email} disabled type="email" />
+              <input className={`${inputClass} bg-slate-100 text-slate-500`} disabled value={profile.email} type="email" />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Nomor WA Aktif</label>
-              <input className={inputClass} value={profile.whatsapp} onChange={(event) => updateProfile('whatsapp', event.target.value)} required type="tel" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Nomor WhatsApp</label>
+                <input className={inputClass} placeholder="Contoh: 08123456789" value={profile.whatsapp} onChange={(event) => updateProfile('whatsapp', event.target.value)} required type="tel" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Tanggal Lahir</label>
+                <input className={inputClass} value={profile.birthDate} onChange={(event) => updateProfile('birthDate', event.target.value)} required type="date" />
+              </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Tanggal Lahir</label>
-              <input className={inputClass} value={profile.birthDate} onChange={(event) => updateProfile('birthDate', event.target.value)} required type="date" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Instansi / Asal Sekolah</label>
+                <input className={inputClass} placeholder="Contoh: SMAN 1 Surabaya" value={profile.school} onChange={(event) => updateProfile('school', event.target.value)} required type="text" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Jenis Kelamin</label>
+                <select className={inputClass} value={profile.gender} onChange={(event) => updateProfile('gender', event.target.value)} required>
+                  <option value="">Pilih Jenis Kelamin</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Nama Sekolah</label>
-              <input className={inputClass} value={profile.school} onChange={(event) => updateProfile('school', event.target.value)} required type="text" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
+                <select className={inputClass} value={profile.province} onChange={(event) => { updateProfile('province', event.target.value); updateProfile('city', ''); }} required>
+                  <option value="">Pilih Provinsi</option>
+                  {provinceOptions.map((item) => (
+                    <option key={item.id} value={item.nama}>{item.nama}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-bold text-slate-700">Kota / Kabupaten</label>
+                <select className={inputClass} disabled={!profile.province} value={profile.city} onChange={(event) => updateProfile('city', event.target.value)} required>
+                  <option value="">{profile.province ? 'Pilih Kota / Kabupaten' : 'Pilih provinsi terlebih dahulu'}</option>
+                  {cityOptions.map((item) => (
+                    <option key={item.id} value={item.nama}>{item.nama}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Jenis Kelamin</label>
-              <select className={inputClass} value={profile.gender} onChange={(event) => updateProfile('gender', event.target.value)} required>
-                <option value="">Pilih Jenis Kelamin</option>
-                <option value="Laki-laki">Laki-laki</option>
-                <option value="Perempuan">Perempuan</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Provinsi Domisili</label>
-              <select className={inputClass} value={profile.province} onChange={(event) => setProfile((current) => ({ ...current, province: event.target.value, city: '' }))} required>
-                <option value="">Pilih Provinsi</option>
-                {indonesiaWilayah.provinsi.map((province) => <option key={province.id} value={province.nama}>{province.nama}</option>)}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Kota Domisili</label>
-              <select className={inputClass} value={profile.city} onChange={(event) => updateProfile('city', event.target.value)} required>
-                <option value="">Pilih Kota</option>
-                {cityOptions.map((city) => <option key={city.id} value={city.nama}>{city.nama}</option>)}
-              </select>
-            </div>
-
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <h4 className="mb-3 text-sm font-bold text-slate-800">Informasi Tim</h4>
-              <div className="grid gap-3 sm:grid-cols-2">
+            {/* Optional Team Data (can also be filled/edited here) */}
+            <div className="border-t border-slate-200 pt-5">
+              <h3 className="text-sm font-extrabold text-slate-800">Informasi Tim (Khusus Kategori Beregu)</h3>
+              <p className="mt-1 text-xs text-slate-500">Opsional — isi jika Anda ketua tim atau mendaftar kategori beregu (LKTI/Olimpiade Tim).</p>
+              <div className="mt-4 space-y-4">
                 <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Tim</label>
-                  <input className={inputClass} value={profile.teamName} onChange={(event) => updateProfile('teamName', event.target.value)} type="text" placeholder="Masukkan nama tim" />
+                  <label className="mb-1.5 block text-xs font-bold text-slate-700">Nama Tim</label>
+                  <input className={inputClass} placeholder="Contoh: Tim Biologi Hebat" value={profile.teamName} onChange={(event) => updateProfile('teamName', event.target.value)} type="text" />
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
-                  <input className={inputClass} value={profile.member1Name} onChange={(event) => updateProfile('member1Name', event.target.value)} type="text" placeholder="Nama anggota 1 (opsional)" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-bold text-slate-700">Nama Anggota 2</label>
-                  <input className={inputClass} value={profile.member2Name} onChange={(event) => updateProfile('member2Name', event.target.value)} type="text" placeholder="Nama anggota 2 (opsional)" />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-slate-700">Nama Anggota 1</label>
+                    <input className={inputClass} placeholder="Nama lengkap anggota 1" value={profile.member1Name} onChange={(event) => updateProfile('member1Name', event.target.value)} type="text" />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-slate-700">Nama Anggota 2 (opsional)</label>
+                    <input className={inputClass} placeholder="Nama lengkap anggota 2" value={profile.member2Name} onChange={(event) => updateProfile('member2Name', event.target.value)} type="text" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-bold text-slate-700">Upload Kartu Pelajar</label>
-              <input className={inputClass} type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (!file) return;
-                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                  setError('Kartu pelajar harus berupa JPG, PNG, atau WEBP.');
-                  return;
-                }
-                if (file.size > 2 * 1024 * 1024) {
-                  setError('Ukuran kartu pelajar maksimal 2 MB.');
-                  return;
-                }
-                const reader = new FileReader();
-                reader.onload = () => {
-                  updateProfile('cardPhoto', reader.result);
-                  setError('');
-                };
-                reader.readAsDataURL(file);
-              }} />
-              {profile.cardPhoto && (
-                <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Preview Kartu Pelajar</p>
-                  <img src={profile.cardPhoto} alt="Kartu Pelajar" className="h-36 w-full max-w-sm rounded-xl object-contain" />
-                </div>
-              )}
-              <p className="mt-2 text-xs leading-5 text-slate-500">Unggah kartu pelajar untuk mempermudah verifikasi pendaftaran.</p>
+            <div className="flex flex-col gap-3 pt-4 sm:flex-row sm:justify-end">
+              <button className="h-11 rounded-lg bg-[#1c79c6] px-6 text-sm font-extrabold text-white shadow-md shadow-blue-500/20 transition hover:bg-[#1565a6] disabled:opacity-60" disabled={isSaving} type="submit">
+                {isSaving ? 'Menyimpan...' : 'Simpan Profil'}
+              </button>
             </div>
-
-            <button type="submit" disabled={Boolean(success) || isSaving} className="rounded-lg bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-6 py-2.5 text-xs font-extrabold uppercase tracking-wide text-white transition hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60">
-              {isSaving ? 'Menyimpan...' : success ? 'Profil Tersimpan' : 'Simpan Profil'}
-            </button>
           </form>
         </section>
       </main>
-      <Footer />
+      <Footer onOlimpiade={onOlimpiade} />
     </>
   );
 }

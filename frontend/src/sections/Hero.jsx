@@ -1,15 +1,12 @@
-import heroImage from '../assets/images/tampilan utama besc.png';
+import heroImage from '../assets/images/tampilan utama besc.webp';
 
 export default function Hero({ onCompetitions, onTryoutPackage }) {
   return (
     <section
       id="home"
-      className="relative overflow-hidden px-6 py-17 md:px-8"
+      className="relative overflow-hidden bg-cover bg-[position:72%_center] bg-no-repeat px-6 py-17 md:bg-center md:px-8"
       style={{
         backgroundImage: `url(${heroImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
       }}
     >
       <div className="absolute inset-0 opacity-40 [background-image:radial-gradient(circle_at_20%_20%,rgba(34,197,94,0.22),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.12),transparent_24%)]"></div>

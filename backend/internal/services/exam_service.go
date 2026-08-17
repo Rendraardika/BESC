@@ -115,21 +115,25 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 	}
 
 	score := 0.0
+	correctCount := 0
+	wrongCount := 0
 	answers := make([]entities.Answer, 0, len(input.Answers))
-	seenAnswers := make(map[string]bool, len(input.Answers))
+	seenAnswers := make(map[string]string, len(input.Answers))
 	for _, answerInput := range input.Answers {
 		question, ok := questionMap[answerInput.QuestionID]
 		if !ok {
 			return nil, utils.ErrInvalidInput
 		}
-		if seenAnswers[answerInput.QuestionID] {
+		if _, exists := seenAnswers[answerInput.QuestionID]; exists {
 			return nil, utils.ErrInvalidInput
 		}
-		seenAnswers[answerInput.QuestionID] = true
+		seenAnswers[answerInput.QuestionID] = answerInput.Answer
 		if answerInput.Answer == question.CorrectAnswer {
 			score += question.Score
+			correctCount++
 		} else {
 			score -= question.WrongScore
+			wrongCount++
 		}
 		answers = append(answers, entities.Answer{
 			ID:           uuid.NewString(),
@@ -145,7 +149,44 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 	if err := s.submissions.Submit(submission.ID, answers, score); err != nil {
 		return nil, err
 	}
-	return &dto.SubmissionResult{SubmissionID: submission.ID, Score: score, Status: entities.SubmissionSubmitted}, nil
+
+	reviewItems := make([]dto.QuestionReviewItem, 0, len(questions))
+	for _, q := range questions {
+		userAns := seenAnswers[q.ID]
+		isCorrect := userAns != "" && userAns == q.CorrectAnswer
+		earned := 0.0
+		if userAns != "" {
+			if isCorrect {
+				earned = q.Score
+			} else {
+				earned = -q.WrongScore
+			}
+		}
+		reviewItems = append(reviewItems, dto.QuestionReviewItem{
+			QuestionID:    q.ID,
+			Question:      q.Question,
+			Image:         q.Image,
+			OptionA:       q.OptionA,
+			OptionB:       q.OptionB,
+			OptionC:       q.OptionC,
+			OptionD:       q.OptionD,
+			OptionE:       q.OptionE,
+			UserAnswer:    userAns,
+			CorrectAnswer: q.CorrectAnswer,
+			IsCorrect:     isCorrect,
+			ScoreEarned:   earned,
+		})
+	}
+
+	return &dto.SubmissionResult{
+		SubmissionID:   submission.ID,
+		Score:          score,
+		CorrectCount:   correctCount,
+		WrongCount:     wrongCount,
+		TotalQuestions: len(questions),
+		Status:         entities.SubmissionSubmitted,
+		Review:         reviewItems,
+	}, nil
 }
 
 func (s *examService) Monitor(page, limit int) ([]entities.SubmissionDetail, int, error) {

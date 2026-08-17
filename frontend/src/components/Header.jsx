@@ -1,11 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import Button from './Button.jsx';
+import { normalizePhotoSrc } from '../lib/photoUtils.js';
 
 export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade, onProfile, onRegister, onTryout, user }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+
+    const scrollY = window.scrollY;
+    const previousBodyStyles = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+    };
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.overflow = previousBodyStyles.overflow;
+      document.body.style.position = previousBodyStyles.position;
+      document.body.style.top = previousBodyStyles.top;
+      document.body.style.width = previousBodyStyles.width;
+      window.scrollTo(0, scrollY);
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setMobileOpen(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mobileOpen]);
 
   const openOlimpiade = () => {
     setMobileOpen(false);
@@ -56,7 +94,7 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
                   className="flex items-center gap-3 rounded-xl bg-blue-100 px-4 py-2 text-sm font-bold text-[#044b86] transition hover:bg-blue-200"
                 >
                   <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
-                    {user.photo ? <img src={user.photo} alt={user.name} className="h-full w-full object-cover" /> : userInitial}
+                    {user.photo ? <img src={normalizePhotoSrc(user.photo)} alt={user.name} className="h-full w-full object-cover" /> : userInitial}
                   </span>
                   <span>{user.name}</span>
                   <svg viewBox="0 0 24 24" className={`h-4 w-4 fill-none stroke-current stroke-2 transition ${profileOpen ? 'rotate-180' : ''}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -86,50 +124,127 @@ export default function Header({ isHome = false, onLogin, onLogout, onOlimpiade,
         </div>
       </nav>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[80] bg-black/50" onClick={() => setMobileOpen(false)}>
-          <div className="h-full w-[280px] bg-white p-6" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-8 flex items-center gap-2 font-['Plus_Jakarta_Sans'] text-xl font-extrabold text-[#1c79c6]">
-              <img src={bescLogo} alt="BESC" className="h-10 w-auto" />
+      {mobileOpen && createPortal(
+        <div className="fixed inset-0 z-[100] h-[100dvh] overflow-hidden">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+
+          <div
+            className="fixed left-0 top-0 z-[110] flex h-[100dvh] w-[280px] max-w-[85vw] flex-col bg-white p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-center justify-between pb-3 border-b border-slate-100">
+              <img src={bescLogo} alt="BESC" className="h-8 w-auto object-contain" />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+                aria-label="Tutup menu"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="flex flex-col gap-1">
-              <button type="button" onClick={openOlimpiade} className="rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Olimpiade Biologi</button>
-              <a href="#guidebook" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Unduh Panduan</a>
-              <a href="#materi" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Materi</a>
-              <a href="#jadwal" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Jadwal</a>
-              <a href="#tentang" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">Tentang</a>
-              <a href="#faq" className="rounded-lg px-3 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#1c79c6]">FAQ</a>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain py-4 pr-1">
+              <button
+                type="button"
+                onClick={openOlimpiade}
+                className="rounded-lg px-3 py-2.5 text-left text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                Olimpiade Biologi
+              </button>
+              <a
+                href="#guidebook"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                Unduh Panduan
+              </a>
+              <a
+                href="#materi"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                Materi
+              </a>
+              <a
+                href="#jadwal"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                Jadwal
+              </a>
+              <a
+                href="#tentang"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                Tentang
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-3 py-2.5 text-sm font-bold text-slate-800 hover:bg-blue-50 hover:text-[#1c79c6]"
+              >
+                FAQ
+              </a>
             </div>
-            <div className="mt-8 flex flex-col gap-3">
+
+            <div className="shrink-0 border-t border-slate-100 bg-white pt-3">
               {user ? (
-                <div className="rounded-2xl bg-blue-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-sm font-extrabold text-white">
+                <div className="rounded-xl bg-blue-50 p-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-8 w-8 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">
                       {user.photo ? <img src={user.photo} alt={user.name} className="h-full w-full object-cover" /> : userInitial}
                     </span>
-                    <div>
-                      <div className="text-sm font-extrabold text-slate-950">{user.name}</div>
-                      <div className="text-xs text-slate-500">Peserta BESC</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-extrabold text-slate-950">{user.name}</div>
+                      <div className="text-[10px] text-slate-500">Peserta BESC</div>
                     </div>
                   </div>
-                  <button type="button" onClick={onLogout} className="mt-4 w-full rounded-xl border border-red-200 px-4 py-2 text-sm font-bold text-red-600">
-                    Keluar
-                  </button>
-                  <button type="button" onClick={() => {
-                    setMobileOpen(false);
-                    onProfile();
-                  }} className="mt-3 w-full rounded-xl bg-blue-100 px-4 py-2 text-sm font-bold text-[#044b86]">
-                    Profil Saya
-                  </button>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        onProfile();
+                      }}
+                      className="flex-1 rounded-lg bg-blue-100 py-1.5 text-xs font-bold text-[#044b86] transition hover:bg-blue-200"
+                    >
+                      Profil
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false);
+                        onLogout();
+                      }}
+                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-600 transition hover:bg-red-50"
+                    >
+                      Keluar
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <>
-                  <Button variant="ghost" onClick={onLogin}>Login</Button>
-                </>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    onLogin();
+                  }}
+                  className="w-full rounded-full border-2 border-[#1c79c6] py-2 text-sm font-bold text-[#1c79c6] transition hover:bg-[#1c79c6] hover:text-white"
+                >
+                  Login
+                </button>
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

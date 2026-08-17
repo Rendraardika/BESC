@@ -279,3 +279,19 @@ func (r *googleAuthUserRepository) UpdateFullProfile(user *entities.User) error 
 func (r *googleAuthUserRepository) Delete(id string) error {
 	return nil
 }
+
+func (r *googleAuthUserRepository) CreatePasswordReset(email, token string, expiresAt interface{}) error {
+	return nil
+}
+
+func (r *googleAuthUserRepository) FindPasswordReset(token string) (string, interface{}, bool, error) {
+	return "", nil, false, nil
+}
+
+func (r *googleAuthUserRepository) MarkPasswordResetUsed(token string) error {
+	return nil
+}
+
+func (r *googleAuthUserRepository) UpdatePasswordByEmail(email, hashedPassword string) error {
+	return nil
+}

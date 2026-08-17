@@ -1,8 +1,53 @@
 import SectionHeader from '../components/SectionHeader.jsx';
 import { competitionToEvent } from '../lib/competitions.js';
-import heroImage from '../assets/images/TRY OUT.png';
+import heroImage from '../assets/images/TRY OUT.webp';
 
 const eventImages = [heroImage, heroImage, heroImage];
+
+const normalizeCategory = (value = '') => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw.includes('try out')) return 'try out';
+  if (raw.includes('lkti') || raw.includes('karya tulis')) return 'lkti';
+  if (raw.includes('olimpiade')) return 'olimpiade';
+  return raw;
+};
+
+const findCompetitionForRegistration = (reg, competitions = []) => {
+  if (!reg) return null;
+  return competitions.find((item) => {
+    const matchesId = item.id && reg.competition_id && String(item.id) === String(reg.competition_id);
+    const matchesSlug = item.slug && reg.competition_slug && String(item.slug) === String(reg.competition_slug);
+    const matchesTitle = item.title && reg.competition_title && String(item.title) === String(reg.competition_title);
+    return matchesId || matchesSlug || matchesTitle;
+  }) || null;
+};
+
+const getRegisteredCategories = (registrations = [], competitions = []) => {
+  const categorySet = new Set();
+  registrations.forEach((reg) => {
+    const comp = findCompetitionForRegistration(reg, competitions);
+    const normalizedCategory = normalizeCategory(comp?.category || '');
+    if (comp && normalizedCategory && normalizedCategory !== 'try out') {
+      categorySet.add(normalizedCategory);
+    }
+  });
+  return categorySet;
+};
+
+const canRegisterCompetition = (competition, registrations = [], competitions = []) => {
+  if (!competition) return false;
+  const normalizedCategory = normalizeCategory(competition.category);
+  if (normalizedCategory === 'try out') return true;
+  const registeredCategories = getRegisteredCategories(registrations, competitions);
+  if (registeredCategories.size === 0) return true;
+
+  if (normalizedCategory === 'olimpiade' && registeredCategories.has('olimpiade')) return true;
+  if (normalizedCategory === 'lkti' && registeredCategories.has('lkti')) return true;
+  if (registeredCategories.has('olimpiade') && normalizedCategory === 'lkti') return false;
+  if (registeredCategories.has('lkti') && normalizedCategory === 'olimpiade') return false;
+
+  return true;
+};
 
 function LoadingSkeleton() {
   return (
@@ -47,6 +92,7 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
               const competition = event.competition || competitions[index];
               const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
               const verified = registration?.status === 'verified';
+              const isBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
               const image = event.banner || eventImages[index % eventImages.length];
               return (
               <article key={event.id || event.title} className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-[#1c79c6] hover:shadow-2xl">
@@ -66,7 +112,7 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
                       {event.original && <span className="text-xs text-slate-400 line-through">{event.original}</span>}
                       {event.discount && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold text-red-600">{event.discount}</span>}
                     </div>
-                    <button type="button" onClick={() => verified ? onVerifiedCompetition(registration) : onCompetitionDetail(index)} className="rounded-full bg-blue-100 px-4 py-2 text-xs font-extrabold text-[#044b86] transition hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white">{verified ? 'Lihat Ketentuan' : registration ? 'Menunggu Verifikasi' : 'Daftar'}</button>
+                    <button type="button" onClick={() => verified ? onVerifiedCompetition(registration) : onCompetitionDetail(index)} disabled={isBlocked} className="rounded-full bg-blue-100 px-4 py-2 text-xs font-extrabold text-[#044b86] transition hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">{verified ? 'Lihat Ketentuan' : registration ? 'Menunggu Verifikasi' : isBlocked ? 'Tidak Tersedia' : 'Daftar'}</button>
                   </div>
                 </div>
               </article>

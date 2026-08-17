@@ -1,5 +1,5 @@
  import SectionHeader from '../components/SectionHeader.jsx';
-import timelineImage from '../assets/images/timeline besc 2026.png';
+import timelineImage from '../assets/images/timeline besc 2026.webp';
 
 export default function Timeline() {
   return (

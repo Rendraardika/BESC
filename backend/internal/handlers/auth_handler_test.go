@@ -80,7 +80,13 @@ func TestProductionLoginCookieIsSecure(t *testing.T) {
 	service := &authServiceFake{auth: authResponse(entities.RoleUser)}
 	app := authTestApp(service, config.Config{AppEnv: "production", JWTExpires: time.Hour})
 
-	resp, _ := authRequest(t, app, "/auth/login", `{"email":"user@example.com","password":"password"}`)
+	req := httptest.NewRequest(fiber.MethodPost, "/auth/login", bytes.NewBufferString(`{"email":"user@example.com","password":"password"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	resp, err := app.Test(req)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
 	defer resp.Body.Close()
 
 	if cookie := resp.Header.Get("Set-Cookie"); !strings.Contains(strings.ToLower(cookie), "secure") {
@@ -166,4 +172,12 @@ func (s *authServiceFake) CurrentUser(userID string) (*entities.User, error) {
 
 func (s *authServiceFake) UpdateProfile(userID string, input dto.UpdateProfileRequest) (*entities.User, error) {
 	return nil, nil
+}
+
+func (s *authServiceFake) ForgotPassword(email string) error {
+	return nil
+}
+
+func (s *authServiceFake) ResetPassword(token, password string) error {
+	return nil
 }

@@ -1,4 +1,4 @@
-  package services
+package services
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -49,12 +50,29 @@ func NewPaymentService(registrations repositories.RegistrationRepository, paymen
 	return &paymentService{registrations: registrations, payments: payments, cfg: cfg}
 }
 
+func normalizeCategory(category string) string {
+	c := strings.ToLower(strings.TrimSpace(category))
+	switch {
+	case strings.Contains(c, "try out"):
+		return "try out"
+	case strings.Contains(c, "lkti") || strings.Contains(c, "karya tulis"):
+		return "lkti"
+	case strings.Contains(c, "olimpiade"):
+		return "olimpiade"
+	default:
+		return c
+	}
+}
+
 func (s *registrationService) Register(userID, competitionID string) (*entities.Registration, error) {
 	competition, err := s.competitions.FindByID(competitionID)
 	if err != nil {
 		return nil, err
 	}
 	if competition.Status != entities.CompetitionPublished {
+		return nil, utils.ErrRegistrationClosed
+	}
+	if competition.RegistrationDeadline != nil && time.Now().After(*competition.RegistrationDeadline) {
 		return nil, utils.ErrRegistrationClosed
 	}
 	user, err := s.users.FindByID(userID)
@@ -67,6 +85,31 @@ func (s *registrationService) Register(userID, competitionID string) (*entities.
 	if existing, err := s.registrations.FindByUserAndCompetition(userID, competitionID); err == nil {
 		return existing, nil
 	}
+
+	// Check category restrictions: Olimpiade and LKTI are mutually exclusive.
+	// Different Olimpiade levels (SMA/SMP) remain allowed, but Try Out can be registered alongside anything.
+	competitionCategory := normalizeCategory(competition.Category)
+	if competitionCategory != "try out" {
+		userRegistrations, _, err := s.registrations.ListByUser(userID, 1, 100)
+		if err == nil {
+			for _, reg := range userRegistrations {
+				existingComp, err := s.competitions.FindBySlug(reg.CompetitionSlug)
+				if err == nil {
+					existingCategory := normalizeCategory(existingComp.Category)
+					if existingCategory == "try out" || competitionCategory == "try out" {
+						continue
+					}
+					if existingCategory == "olimpiade" && competitionCategory == "lkti" {
+						return nil, fmt.Errorf("Anda sudah mendaftar kategori %s. Anda tidak bisa mendaftar kategori %s secara bersamaan", existingComp.Category, competition.Category)
+					}
+					if existingCategory == "lkti" && competitionCategory == "olimpiade" {
+						return nil, fmt.Errorf("Anda sudah mendaftar kategori %s. Anda tidak bisa mendaftar kategori %s secara bersamaan", existingComp.Category, competition.Category)
+					}
+				}
+			}
+		}
+	}
+
 	registration := &entities.Registration{
 		ID:            uuid.NewString(),
 		UserID:        userID,

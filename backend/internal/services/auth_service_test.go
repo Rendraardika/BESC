@@ -76,3 +76,19 @@ func (r *recordingUserRepository) UpdateFullProfile(user *entities.User) error {
 func (r *recordingUserRepository) Delete(id string) error {
 	return nil
 }
+
+func (r *recordingUserRepository) CreatePasswordReset(email, token string, expiresAt interface{}) error {
+	return nil
+}
+
+func (r *recordingUserRepository) FindPasswordReset(token string) (string, interface{}, bool, error) {
+	return "", nil, false, nil
+}
+
+func (r *recordingUserRepository) MarkPasswordResetUsed(token string) error {
+	return nil
+}
+
+func (r *recordingUserRepository) UpdatePasswordByEmail(email, hashedPassword string) error {
+	return nil
+}

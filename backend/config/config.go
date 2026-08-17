@@ -32,7 +32,7 @@ type Config struct {
 }
 
 func Load() (Config, error) {
-	_ = godotenv.Load(".env", "backend/.env")
+	_ = godotenv.Load(".env", "backend/.env", "../backend/.env", "../.env")
 
 	expiresHours, err := strconv.Atoi(getEnv("JWT_EXPIRES_HOURS", "24"))
 	if err != nil || expiresHours <= 0 {

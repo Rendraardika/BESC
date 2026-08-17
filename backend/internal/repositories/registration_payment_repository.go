@@ -157,9 +157,10 @@ func (r *paymentRepository) UpdateStatus(paymentID, status, adminID string) erro
 	}
 
 	regStatus := entities.RegistrationPending
-	if status == entities.PaymentRejected {
+	switch status {
+	case entities.PaymentRejected:
 		regStatus = entities.RegistrationRejected
-	} else if status == entities.PaymentVerified {
+	case entities.PaymentVerified:
 		regStatus = entities.RegistrationVerified
 	}
 	if _, err := tx.Exec(`UPDATE registrations SET status = ? WHERE id = ?`, regStatus, registrationID); err != nil {

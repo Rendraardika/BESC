@@ -208,3 +208,19 @@ func (r *profileUserRepository) UpdateFullProfile(user *entities.User) error {
 func (r *profileUserRepository) Delete(id string) error {
 	return nil
 }
+
+func (r *profileUserRepository) CreatePasswordReset(email, token string, expiresAt interface{}) error {
+	return nil
+}
+
+func (r *profileUserRepository) FindPasswordReset(token string) (string, interface{}, bool, error) {
+	return "", nil, false, nil
+}
+
+func (r *profileUserRepository) MarkPasswordResetUsed(token string) error {
+	return nil
+}
+
+func (r *profileUserRepository) UpdatePasswordByEmail(email, hashedPassword string) error {
+	return nil
+}

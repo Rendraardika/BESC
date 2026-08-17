@@ -100,10 +100,29 @@ type AnswerRequest struct {
 	Answer     string `json:"answer" validate:"required,oneof=A B C D E"`
 }
 
+type QuestionReviewItem struct {
+	QuestionID    string  `json:"question_id"`
+	Question      string  `json:"question"`
+	Image         string  `json:"image,omitempty"`
+	OptionA       string  `json:"option_a"`
+	OptionB       string  `json:"option_b"`
+	OptionC       string  `json:"option_c"`
+	OptionD       string  `json:"option_d"`
+	OptionE       string  `json:"option_e"`
+	UserAnswer    string  `json:"user_answer"`
+	CorrectAnswer string  `json:"correct_answer"`
+	IsCorrect     bool    `json:"is_correct"`
+	ScoreEarned   float64 `json:"score_earned"`
+}
+
 type SubmissionResult struct {
-	SubmissionID string  `json:"submission_id"`
-	Score        float64 `json:"score"`
-	Status       string  `json:"status"`
+	SubmissionID   string               `json:"submission_id"`
+	Score          float64              `json:"score"`
+	CorrectCount   int                  `json:"correct_count"`
+	WrongCount     int                  `json:"wrong_count"`
+	TotalQuestions int                  `json:"total_questions"`
+	Status         string               `json:"status"`
+	Review         []QuestionReviewItem `json:"review,omitempty"`
 }
 
 type ProctoringEventRequest struct {

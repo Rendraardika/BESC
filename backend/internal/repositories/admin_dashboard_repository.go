@@ -125,7 +125,7 @@ func (r *adminDashboardRepository) Summary() (*entities.AdminDashboard, error) {
 		JOIN competitions c ON c.id = r.competition_id
 		LEFT JOIN payments p ON p.registration_id = r.id
 		ORDER BY COALESCE(p.created_at, r.created_at) DESC
-		LIMIT 50
+		LIMIT 10
 	`)
 	if err != nil {
 		return nil, err

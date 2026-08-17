@@ -34,7 +34,7 @@ export default function LoginPage({ onBack, onRegister, onLoginSuccess }) {
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <img src={bescLogo} alt="BESC Logo" className="h-20 w-auto object-contain md:h-24" loading="eager" fetchPriority="high" />
           {onBack && (
-            <button type="button" onClick={onBack} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
+            <button type="button" onClick={() => { if (window.history.length > 1) { window.history.back(); } else { onBack(); } }} className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50">
               ← Kembali
             </button>
           )}

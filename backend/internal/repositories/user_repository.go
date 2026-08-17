@@ -24,20 +24,14 @@ type UserRepository interface {
 }
 
 func (r *userRepository) UpdateProfile(id, name, phone, institution string) error {
-	result, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ? WHERE id = ?`, name, phone, institution, id)
-	if err != nil {
-		return err
-	}
-	return rowsAffected(result)
+	_, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ? WHERE id = ?`, name, phone, institution, id)
+	return err
 }
 
 func (r *userRepository) UpdateFullProfile(user *entities.User) error {
-	result, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ?, team_name = ?, member1_name = ?, member2_name = ?, photo = ?, birth_date = ?, gender = ?, province = ?, city = ? WHERE id = ?`,
+	_, err := r.db.Exec(`UPDATE users SET name = ?, phone = ?, institution = ?, team_name = ?, member1_name = ?, member2_name = ?, photo = ?, birth_date = ?, gender = ?, province = ?, city = ? WHERE id = ?`,
 		user.Name, user.Phone, user.Institution, user.TeamName, user.Member1Name, user.Member2Name, user.Photo, user.BirthDate, user.Gender, user.Province, user.City, user.ID)
-	if err != nil {
-		return err
-	}
-	return rowsAffected(result)
+	return err
 }
 
 func (r *userRepository) Delete(id string) error {

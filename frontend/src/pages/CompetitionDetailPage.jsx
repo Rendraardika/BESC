@@ -3,7 +3,7 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import { events } from '../data/events.js';
 import { competitionToEvent } from '../lib/competitions.js';
-import eventBannerFallback from '../assets/images/TRY OUT.png';
+import eventBannerFallback from '../assets/images/TRY OUT.webp';
 
 const eventImages = [eventBannerFallback, eventBannerFallback, eventBannerFallback];
 
@@ -34,6 +34,51 @@ const faqs = [
   ['Siapa yang bisa mengikuti kompetisi ini?', 'Peserta dapat mengikuti sesuai jenjang yang tercantum pada kategori lomba, seperti SMP atau SMA.'],
 ];
 
+const findCompetitionForRegistration = (reg, competitions = []) => {
+  if (!reg) return null;
+  return competitions.find((item) => {
+    const matchesId = item.id && reg.competition_id && String(item.id) === String(reg.competition_id);
+    const matchesSlug = item.slug && reg.competition_slug && String(item.slug) === String(reg.competition_slug);
+    const matchesTitle = item.title && reg.competition_title && String(item.title) === String(reg.competition_title);
+    return matchesId || matchesSlug || matchesTitle;
+  }) || null;
+};
+
+const normalizeCategory = (value = '') => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw.includes('try out')) return 'try out';
+  if (raw.includes('lkti') || raw.includes('karya tulis')) return 'lkti';
+  if (raw.includes('olimpiade')) return 'olimpiade';
+  return raw;
+};
+
+const getRegisteredCategories = (registrations = [], competitions = []) => {
+  const categorySet = new Set();
+  registrations.forEach((reg) => {
+    const comp = findCompetitionForRegistration(reg, competitions);
+    const normalizedCategory = normalizeCategory(comp?.category || '');
+    if (comp && normalizedCategory && normalizedCategory !== 'try out') {
+      categorySet.add(normalizedCategory);
+    }
+  });
+  return categorySet;
+};
+
+const canRegisterCompetition = (competition, registrations = [], competitions = []) => {
+  if (!competition) return false;
+  const normalizedCategory = normalizeCategory(competition.category);
+  if (normalizedCategory === 'try out') return true;
+  const registeredCategories = getRegisteredCategories(registrations, competitions);
+  if (registeredCategories.size === 0) return true;
+
+  if (normalizedCategory === 'olimpiade' && registeredCategories.has('olimpiade')) return true;
+  if (normalizedCategory === 'lkti' && registeredCategories.has('lkti')) return true;
+  if (registeredCategories.has('olimpiade') && normalizedCategory === 'lkti') return false;
+  if (registeredCategories.has('lkti') && normalizedCategory === 'olimpiade') return false;
+
+  return true;
+};
+
 const getRequirementLines = (competition) => {
   const source = competition?.participant_requirements || competition?.requirements || competition?.terms || '';
   return String(source)
@@ -50,6 +95,7 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
   const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
   const isVerified = registration?.status === 'verified';
   const isRejected = registration?.status === 'rejected' || registration?.payment_status === 'rejected';
+  const isCategoryBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
   const registrationDeadlineMs = competition?.registration_deadline ? new Date(competition.registration_deadline).getTime() : null;
   const registrationClosed = registrationDeadlineMs ? Date.now() > registrationDeadlineMs : false;
   const showBanner = Boolean(event.banner) && !bannerFailed;
@@ -64,24 +110,27 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
         : registrationClosed
           ? 'Pendaftaran Ditutup'
           : 'Pendaftaran Dibuka';
-  const actionLabel = isVerified ? 'Lihat Ketentuan Ujian' : isRejected ? 'Upload Ulang Bukti' : registration ? 'Menunggu Verifikasi' : registrationClosed ? 'Pendaftaran Ditutup' : 'Daftar Sekarang';
+  const actionLabel = isVerified ? 'Lihat Ketentuan Ujian' : isRejected ? 'Upload Ulang Bukti' : registration ? 'Menunggu Verifikasi' : isCategoryBlocked ? 'Kategori Sudah Terisi' : registrationClosed ? 'Pendaftaran Ditutup' : 'Daftar Sekarang';
   const actionHint = isVerified
     ? 'Pembayaran kamu sudah dikonfirmasi admin. Kamu bisa membuka ketentuan ujian.'
     : isRejected
       ? 'Bukti pembayaran belum diterima. Silakan upload ulang bukti yang benar.'
       : registration
         ? 'Bukti pembayaran sudah diterima dan sedang diperiksa admin.'
-        : registrationClosed
-          ? 'Maaf, batas waktu pendaftaran telah berlalu.'
-          : 'Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.';
+        : isCategoryBlocked
+          ? 'Anda sudah mendaftar kategori lain yang tidak bisa dipadukan. Silakan pilih kategori yang tersedia.'
+          : registrationClosed
+            ? 'Maaf, batas waktu pendaftaran telah berlalu.'
+            : 'Pastikan data profil sudah lengkap sebelum mengikuti kompetisi.';
 
   const handlePrimaryAction = () => {
+    if (isCategoryBlocked) return;
     if (isVerified && registration) {
       onVerifiedCompetition?.(registration);
       return;
     }
     if (!registration || isRejected) {
-      onEventRegistration();
+      onEventRegistration?.(isRejected);
     }
   };
 
@@ -144,7 +193,7 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <div className="text-sm font-semibold leading-6 text-slate-600">{actionHint}</div>
-                    <button type="button" onClick={handlePrimaryAction} disabled={Boolean(registration) && !isVerified && !isRejected || registrationClosed} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
+                    <button type="button" onClick={handlePrimaryAction} disabled={isCategoryBlocked || (Boolean(registration) && !isVerified && !isRejected) || registrationClosed} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
                       {actionLabel}
                     </button>
                   </div>

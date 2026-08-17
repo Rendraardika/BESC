@@ -1,11 +1,15 @@
 package services
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/smtp"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +54,9 @@ func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileReques
 	if input.Member2Name != "" {
 		user.Member2Name = input.Member2Name
 	}
-	user.Photo = input.Photo
+	if input.Photo != "" {
+		user.Photo = saveAvatarIfBase64(userID, input.Photo)
+	}
 	user.BirthDate = &birthDate
 	user.Gender = input.Gender
 	user.Province = input.Province
@@ -59,6 +65,45 @@ func (s *authService) UpdateProfile(userID string, input dto.UpdateProfileReques
 		return nil, err
 	}
 	return s.users.FindByID(userID)
+}
+
+func saveAvatarIfBase64(userID, photoData string) string {
+	if !strings.HasPrefix(photoData, "data:image") {
+		return photoData
+	}
+	if strings.Contains(photoData, "public/avatars/") {
+		return photoData
+	}
+	parts := strings.SplitN(photoData, ",", 2)
+	if len(parts) != 2 {
+		return photoData
+	}
+	ext := ".jpg"
+	if strings.Contains(parts[0], "image/png") {
+		ext = ".png"
+	} else if strings.Contains(parts[0], "image/webp") {
+		ext = ".webp"
+	}
+	decoded, err := base64.StdEncoding.DecodeString(parts[1])
+	if err != nil {
+		return photoData
+	}
+	avatarDir := filepath.Join("uploads", "public", "avatars")
+	_ = os.MkdirAll(avatarDir, 0755)
+
+	// Remove old avatar files for this user if any exist
+	if matches, err := filepath.Glob(filepath.Join(avatarDir, fmt.Sprintf("user_%s*", userID))); err == nil {
+		for _, oldFile := range matches {
+			_ = os.Remove(oldFile)
+		}
+	}
+
+	filename := fmt.Sprintf("user_%s_%d%s", userID, time.Now().Unix(), ext)
+	filePath := filepath.Join(avatarDir, filename)
+	if err := os.WriteFile(filePath, decoded, 0644); err != nil {
+		return photoData
+	}
+	return fmt.Sprintf("public/avatars/%s", filename)
 }
 
 type authService struct {
@@ -292,12 +337,21 @@ func (s *authService) ResetPassword(token, password string) error {
 }
 
 func sendResetPasswordEmail(cfg config.Config, recipient, token string) error {
-	if cfg.SMTPHost == "" || cfg.SMTPUser == "" || cfg.SMTPPass == "" {
-		return fmt.Errorf("smtp is not configured")
+	baseURL := "https://beschimbio.online"
+	if cfg.AppEnv == "development" {
+		baseURL = "http://localhost:5173"
 	}
 	subject := "Reset Password BESC"
-	resetURL := "https://beschimbio.online/#reset-password?token=" + token
+	resetURL := baseURL + "/#reset-password?token=" + token
 	message := "Halo,\n\nKamu telah meminta reset password untuk akun BESC kamu.\n\nKlik link berikut untuk reset password (berlaku 30 menit):\n" + resetURL + "\n\nJika kamu tidak meminta ini, abaikan email ini.\n\nTerima kasih,\nTim BESC"
+
+	if cfg.SMTPHost == "" || cfg.SMTPUser == "" || cfg.SMTPPass == "" {
+		if cfg.AppEnv == "development" {
+			log.Printf("[DEV EMAIL SIMULATOR] To: %s | Reset URL: %s", recipient, resetURL)
+			return nil
+		}
+		return fmt.Errorf("smtp is not configured")
+	}
 
 	from := cfg.MailFrom
 	if from == "" {
@@ -308,7 +362,8 @@ func sendResetPasswordEmail(cfg config.Config, recipient, token string) error {
 		"Subject: " + subject + "\r\n" +
 		"MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + message)
 
-	auth := smtp.PlainAuth("", cfg.SMTPUser, cfg.SMTPPass, cfg.SMTPHost)
+	cleanPass := strings.ReplaceAll(strings.TrimSpace(cfg.SMTPPass), " ", "")
+	auth := smtp.PlainAuth("", cfg.SMTPUser, cleanPass, cfg.SMTPHost)
 	return smtp.SendMail(cfg.SMTPHost+":"+cfg.SMTPPort, auth, cfg.SMTPUser, []string{recipient}, body)
 }
 

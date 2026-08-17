@@ -167,11 +167,23 @@ export default function App() {
       setRegistrations([]);
       return;
     }
-    if (!['home', 'olimpiade', 'competition-detail', 'event-registration', 'exam-rules'].includes(page)) return;
+    if (!['home', 'olimpiade', 'competition-detail', 'event-registration', 'event-registration-success', 'exam-rules'].includes(page)) return;
     apiRequest('/me/competitions?limit=100')
       .then(setRegistrations)
       .catch(() => setRegistrations([]));
   }, [user, page]);
+
+  useEffect(() => {
+    if (page === 'login' || page === 'admin-login') {
+      if (admin) {
+        window.location.replace('#admin-dashboard');
+        setPage('admin-dashboard');
+      } else if (user) {
+        window.location.replace('#home');
+        setPage('home');
+      }
+    }
+  }, [page, admin, user]);
 
   const openRegister = () => { window.location.hash = 'daftar'; window.scrollTo(0, 0); setPage('register'); };
   const openCompetitions = () => {
@@ -185,7 +197,12 @@ export default function App() {
   const openProfile = () => { localStorage.removeItem('besc_after_profile'); window.location.hash = 'profile'; window.scrollTo(0, 0); setPage('profile'); };
   const openOlimpiade = () => { window.location.hash = 'olimpiade'; window.scrollTo(0, 0); setPage('olimpiade'); };
   const openCompetitionDetail = (index = 0) => { safeSetItem('besc_competition_index', String(index)); setCompetitionIndex(index); window.location.hash = 'detail-kompetisi'; window.scrollTo(0, 0); setPage('competition-detail'); };
-  const openEventRegistration = () => {
+  const openEventRegistration = (resumeRejected = false) => {
+    if (resumeRejected) {
+      safeSetItem('besc_resume_rejected', '1');
+    } else {
+      localStorage.removeItem('besc_resume_rejected');
+    }
     if (!user) { safeSetItem('besc_after_login', 'event-registration'); window.location.hash = 'login'; window.scrollTo(0, 0); setPage('login'); return; }
     window.location.hash = 'pendaftaran-event'; window.scrollTo(0, 0); setPage('event-registration');
   };
@@ -195,22 +212,59 @@ export default function App() {
     saveAuthSession(auth); setUser(auth.user); setAuthChecked(true);
     const afterLogin = localStorage.getItem('besc_after_login'); localStorage.removeItem('besc_after_login');
     if (afterLogin === 'event-registration') {
-      if (isProfileComplete(auth.user)) { window.location.hash = 'pendaftaran-event'; window.scrollTo(0, 0); setPage('event-registration'); return; }
-      safeSetItem('besc_after_profile', 'event-registration'); window.location.hash = 'profile'; window.scrollTo(0, 0); setPage('profile'); return;
+      if (isProfileComplete(auth.user)) { window.location.replace('#pendaftaran-event'); window.scrollTo(0, 0); setPage('event-registration'); return; }
+      safeSetItem('besc_after_profile', 'event-registration'); window.location.replace('#profile'); window.scrollTo(0, 0); setPage('profile'); return;
     }
-    backHome();
+    window.location.replace('#home');
+    window.scrollTo(0, 0);
+    setPage('home');
   };
-  const handleRegisterSuccess = (auth) => { clearAuthSession(); setUser(null); localStorage.removeItem('besc_after_profile'); localStorage.removeItem('besc_after_login'); window.location.hash = 'login'; window.scrollTo(0, 0); setPage('login'); };
-  const handleRegistrationSuccess = (eventTitle) => { safeSetItem('besc_registered_event', eventTitle); setRegisteredEventTitle(eventTitle); window.location.hash = 'pendaftaran-berhasil'; window.scrollTo(0, 0); setPage('event-registration-success'); };
+  const handleRegisterSuccess = (auth) => { clearAuthSession(); setUser(null); localStorage.removeItem('besc_after_profile'); localStorage.removeItem('besc_after_login'); window.location.replace('#login'); window.scrollTo(0, 0); setPage('login'); };
+  const handleRegistrationSuccess = (eventTitle) => { 
+    safeSetItem('besc_registered_event', eventTitle); 
+    setRegisteredEventTitle(eventTitle); 
+    // Refresh registrations after successful registration
+    if (user) {
+      apiRequest('/me/competitions?limit=100')
+        .then(setRegistrations)
+        .catch(() => setRegistrations([]));
+    }
+    window.location.hash = 'pendaftaran-berhasil'; 
+    window.scrollTo(0, 0); 
+    setPage('event-registration-success'); 
+  };
   const openExamRules = (competition) => { safeSetItem('besc_exam_competition', JSON.stringify(competition)); setExamCompetition(competition); window.location.hash = 'ketentuan-ujian'; window.scrollTo(0, 0); setPage('exam-rules'); };
   const startExam = () => { window.location.hash = 'kerjakan-soal'; window.scrollTo(0, 0); setPage('exam'); };
-  const handleLogout = async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {}); removeProfileCache(user); clearAuthSession(); setUser(null); setAuthChecked(true); backHome(); };
-  const handleAdminLoginSuccess = (auth) => { localStorage.removeItem('besc_token'); localStorage.removeItem('besc_admin_token'); safeSetItem('besc_admin', JSON.stringify(auth.user)); localStorage.removeItem('besc_user'); setUser(null); setAdmin(auth.user); window.location.hash = 'admin-dashboard'; window.scrollTo(0, 0); setPage('admin-dashboard'); };
-  const handleAdminLogout = async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {}); localStorage.removeItem('besc_admin_token'); localStorage.removeItem('besc_admin'); setAdmin(null); window.location.hash = 'admin-login'; window.scrollTo(0, 0); setPage('admin-login'); };
+  const handleLogout = async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {}); removeProfileCache(user); clearAuthSession(); setUser(null); setAuthChecked(true); window.location.replace('#home'); setPage('home'); };
+  const handleAdminLoginSuccess = (auth) => { localStorage.removeItem('besc_token'); localStorage.removeItem('besc_admin_token'); safeSetItem('besc_admin', JSON.stringify(auth.user)); localStorage.removeItem('besc_user'); setUser(null); setAdmin(auth.user); window.location.replace('#admin-dashboard'); window.scrollTo(0, 0); setPage('admin-dashboard'); };
+  const handleAdminLogout = async () => { await apiRequest('/auth/logout', { method: 'POST' }).catch(() => {}); localStorage.removeItem('besc_admin_token'); localStorage.removeItem('besc_admin'); setAdmin(null); window.location.replace('#admin-login'); window.scrollTo(0, 0); setPage('admin-login'); };
   const handleSaveProfile = (profile) => {
-    const updatedUser = { ...user, ...profile.backendUser }; safeSetItem('besc_user', JSON.stringify(updatedUser)); setUser(updatedUser);
-    const afterProfile = localStorage.getItem('besc_after_profile'); localStorage.removeItem('besc_after_profile');
-    if (afterProfile === 'event-registration' && window.location.hash === '#pendaftaran-event') { window.location.hash = 'pendaftaran-event'; window.scrollTo(0, 0); setPage('event-registration'); }
+    const updatedUser = {
+      ...user,
+      ...profile.backendUser,
+      name: profile.fullName || user?.name,
+      photo: profile.backendUser?.photo || user?.photo,
+      phone: profile.whatsapp || user?.phone,
+      institution: profile.school || user?.institution,
+      birth_date: profile.birthDate || user?.birth_date,
+      gender: profile.gender || user?.gender,
+      province: profile.province || user?.province,
+      city: profile.city || user?.city,
+      student_card: profile.cardPhoto || user?.student_card,
+      team_name: profile.teamName || user?.team_name,
+      member1_name: profile.member1Name || user?.member1_name,
+      member2_name: profile.member2Name || user?.member2_name,
+    };
+    safeSetItem('besc_user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+
+    const afterProfile = localStorage.getItem('besc_after_profile');
+    localStorage.removeItem('besc_after_profile');
+    if (afterProfile === 'event-registration' && window.location.hash === '#pendaftaran-event') {
+      window.location.replace('#pendaftaran-event');
+      window.scrollTo(0, 0);
+      setPage('event-registration');
+    }
   };
 
   const openForgotPassword = () => { window.location.hash = 'forgot-password'; window.scrollTo(0, 0); setPage('forgot-password'); };
@@ -223,11 +277,11 @@ export default function App() {
   if (page === 'admin-login') return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>;
   if (page === 'admin-dashboard') { if (!authChecked) return <Loading />; if (!admin) return <Suspense fallback={<Loading />}><LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} /></Suspense>; return <Suspense fallback={<Loading />}><AdminDashboardPage admin={admin} onLogout={handleAdminLogout} /></Suspense>; }
   if (page === 'profile') { if (!authChecked) return null; if (!user) return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />; return <ProfilePage onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onSaveProfile={handleSaveProfile} user={user} />; }
-  if (page === 'olimpiade') return <OlimpiadePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onCompetitionDetail={openCompetitionDetail} user={user} />;
+  if (page === 'olimpiade') return <OlimpiadePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onCompetitionDetail={openCompetitionDetail} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
   if (page === 'competition-detail') return <CompetitionDetailPage competitionIndex={competitionIndex} competitions={apiCompetitions} onCompetitionDetail={openCompetitionDetail} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onEventRegistration={openEventRegistration} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
-  if (page === 'event-registration') { if (!authChecked) return null; if (!user) return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />; if (!isProfileComplete(user)) { safeSetItem('besc_after_profile', 'event-registration'); return <ProfilePage onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onSaveProfile={handleSaveProfile} user={user} />; } return <EventRegistrationPage competitionIndex={competitionIndex} competitions={apiCompetitions} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onRegistrationSuccess={handleRegistrationSuccess} user={user} />; }
+  if (page === 'event-registration') { if (!authChecked) return null; if (!user) return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />; if (!isProfileComplete(user)) { safeSetItem('besc_after_profile', 'event-registration'); return <ProfilePage onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onSaveProfile={handleSaveProfile} user={user} />; } return <EventRegistrationPage competitionIndex={competitionIndex} competitions={apiCompetitions} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onRegistrationSuccess={handleRegistrationSuccess} registrations={registrations} user={user} />; }
   if (page === 'event-registration-success') return <EventRegistrationSuccessPage eventTitle={registeredEventTitle} onHome={backHome} onOlimpiade={openOlimpiade} />;
   if (page === 'exam-rules') { if (!examCompetition) { window.location.hash = 'home'; return null; } return <ExamRulesPage competition={examCompetition} onBack={backHome} onStart={startExam} />; }
-  if (page === 'exam') { if (!examCompetition) { window.location.hash = 'home'; return null; } return <ExamPage competition={examCompetition} onFinish={(result) => { alert(`Ujian selesai. Skor: ${result.score}`); backHome(); }} />; }
+  if (page === 'exam') { if (!examCompetition) { window.location.hash = 'home'; return null; } return <ExamPage competition={examCompetition} onFinish={backHome} />; }
   return <HomePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
 }
