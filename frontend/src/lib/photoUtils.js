@@ -1,14 +1,17 @@
-import { API_URL } from './api.js';
 
 export const normalizePhotoSrc = (src) => {
   if (!src) return '';
   const value = String(src).trim();
   if (!value || value === 'null' || value === 'undefined') return '';
+  // Already a full URL or base64
   if (value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:image')) {
     return value;
   }
-  const cleanPath = value.replace(/^(?:\/?uploads\/)?(?:public\/)?/, '');
-  return `${API_URL}/uploads/${cleanPath}`;
+  // Backend returns paths like "public/avatars/user_xxx.jpg"
+  // Nginx serves /uploads/ → backend:8080/uploads/
+  // So the browser URL should be /uploads/public/avatars/user_xxx.jpg
+  const cleanPath = value.replace(/^\/?(uploads\/)?/, '');
+  return `/uploads/${cleanPath}`;
 };
 
 export const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.8) => {

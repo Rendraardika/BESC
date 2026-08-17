@@ -4,9 +4,13 @@ import bescLogo from '../assets/images/logo BESC biru tua FIX.png';
 import Button from './Button.jsx';
 import { normalizePhotoSrc } from '../lib/photoUtils.js';
 
-function HeaderAvatar({ photo, name, initial }) {
+function HeaderAvatar({ photo, initial }) {
   const [failed, setFailed] = useState(false);
   const src = normalizePhotoSrc(photo);
+
+  // Reset failed state when photo changes (e.g. after profile save)
+  useEffect(() => { setFailed(false); }, [photo]);
+
   if (src && !failed) {
     return (
       <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] text-xs font-extrabold text-white">

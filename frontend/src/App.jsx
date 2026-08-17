@@ -61,19 +61,19 @@ export class ErrorBoundary extends Component {
   }
 }
 
-const HomePage = lazyWithRetry(() => import('./pages/HomePage.jsx'));
-const RegisterPage = lazyWithRetry(() => import('./pages/RegisterPage.jsx'));
-const LoginPage = lazyWithRetry(() => import('./pages/LoginPage.jsx'));
-const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage.jsx'));
-const OlimpiadePage = lazyWithRetry(() => import('./pages/OlimpiadePage.jsx'));
-const CompetitionDetailPage = lazyWithRetry(() => import('./pages/CompetitionDetailPage.jsx'));
-const EventRegistrationPage = lazyWithRetry(() => import('./pages/EventRegistrationPage.jsx'));
-const EventRegistrationSuccessPage = lazyWithRetry(() => import('./pages/EventRegistrationSuccessPage.jsx'));
-const AdminDashboardPage = lazyWithRetry(() => import('./pages/AdminDashboardPage.jsx'));
-const ExamRulesPage = lazyWithRetry(() => import('./pages/ExamRulesPage.jsx'));
-const ExamPage = lazyWithRetry(() => import('./pages/ExamPage.jsx'));
-const ForgotPasswordPage = lazyWithRetry(() => import('./pages/ForgotPasswordPage.jsx'));
-const ResetPasswordPage = lazyWithRetry(() => import('./pages/ResetPasswordPage.jsx'));
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const OlimpiadePage = lazy(() => import('./pages/OlimpiadePage.jsx'));
+const CompetitionDetailPage = lazy(() => import('./pages/CompetitionDetailPage.jsx'));
+const EventRegistrationPage = lazy(() => import('./pages/EventRegistrationPage.jsx'));
+const EventRegistrationSuccessPage = lazy(() => import('./pages/EventRegistrationSuccessPage.jsx'));
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
+const ExamRulesPage = lazy(() => import('./pages/ExamRulesPage.jsx'));
+const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage.jsx'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.jsx'));
 
 const Loading = () => (
   <div className="grid min-h-screen place-items-center bg-slate-50">
@@ -113,6 +113,17 @@ const removeProfileCache = (currentUser) => {
 
 export default function App() {
   const [page, setPage] = useState(getPageFromHash);
+
+  // Preload common pages in the background after initial render so navigations are instant
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      import('./pages/HomePage.jsx');
+      import('./pages/LoginPage.jsx');
+      import('./pages/OlimpiadePage.jsx');
+      import('./pages/ProfilePage.jsx');
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('besc_user');
     return savedUser ? JSON.parse(savedUser) : null;
