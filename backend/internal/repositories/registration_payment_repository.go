@@ -107,6 +107,10 @@ func (r *paymentRepository) Upsert(payment *entities.Payment) error {
 		VALUES (?, ?, ?, ?)
 		ON DUPLICATE KEY UPDATE id = VALUES(id), proof_image = VALUES(proof_image), payment_status = VALUES(payment_status), validated_by = NULL, validated_at = NULL, proof_viewed_at = NULL, proof_viewed_by = NULL, created_at = CURRENT_TIMESTAMP`,
 		payment.ID, payment.RegistrationID, payment.ProofImage, payment.PaymentStatus)
+	if err != nil {
+		return err
+	}
+	_, err = r.db.Exec(`UPDATE registrations SET status = ? WHERE id = ?`, entities.RegistrationPending, payment.RegistrationID)
 	return err
 }
 
