@@ -98,7 +98,12 @@ export default function OlimpiadePage({ competitions = [], competitionsLoading =
             {!competitionsLoading && displayEvents.map((event, index) => {
               const competition = event.competition || competitions[index];
               const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
-              const verified = registration?.status === 'verified';
+              const isTryOut = normalizeCategory(competition?.category) === 'try out';
+              const verifiedOlimpiadeReg = registrations.find((r) => {
+                const c = findCompetitionForRegistration(r, competitions);
+                return c && normalizeCategory(c.category) === 'olimpiade' && r.status === 'verified';
+              });
+              const verified = registration?.status === 'verified' || (isTryOut && Boolean(verifiedOlimpiadeReg));
               const isBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
               return (
               <article key={event.id || event.title} className="group overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-2 hover:border-emerald-300 hover:shadow-[0_28px_75px_rgba(15,118,110,0.18)]">
@@ -139,7 +144,15 @@ export default function OlimpiadePage({ competitions = [], competitionsLoading =
                     </div>
                     <button
                       type="button"
-                      onClick={() => verified && onVerifiedCompetition ? onVerifiedCompetition(registration) : onCompetitionDetail(index)}
+                      onClick={() => {
+                        const activeRegistration = registration || {
+                          competition_id: competition?.id,
+                          competition_title: competition?.title,
+                          competition_slug: competition?.slug,
+                          status: 'verified'
+                        };
+                        return verified && onVerifiedCompetition ? onVerifiedCompetition(activeRegistration) : onCompetitionDetail(index);
+                      }}
                       disabled={isBlocked}
                       className="rounded-full bg-[linear-gradient(180deg,#1c79c6,#044b86)] px-5 py-2.5 text-xs font-extrabold text-white shadow-lg shadow-blue-700/20 transition hover:-translate-y-0.5 hover:brightness-110 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                     >

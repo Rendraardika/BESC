@@ -353,6 +353,10 @@ func (r *fakeRegistrationRepository) UpdateStatusTx(tx *sql.Tx, registrationID, 
 	return nil
 }
 
+func (r *fakeRegistrationRepository) HasVerifiedOlimpiade(userID string) (bool, error) {
+	return false, nil
+}
+
 type fakeQuestionRepository struct {
 	questions []entities.Question
 	err       error

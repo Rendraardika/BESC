@@ -15,6 +15,7 @@ type RegistrationRepository interface {
 	FindByID(id string) (*entities.Registration, error)
 	ListByUser(userID string, page, limit int) ([]entities.RegistrationDetail, int, error)
 	UpdateStatusTx(tx *sql.Tx, registrationID, status string) error
+	HasVerifiedOlimpiade(userID string) (bool, error)
 }
 
 type PaymentRepository interface {
@@ -99,6 +100,20 @@ func (r *registrationRepository) UpdateStatusTx(tx *sql.Tx, registrationID, stat
 		return err
 	}
 	return rowsAffected(result)
+}
+
+func (r *registrationRepository) HasVerifiedOlimpiade(userID string) (bool, error) {
+	var count int
+	err := r.db.QueryRow(`
+		SELECT COUNT(*)
+		FROM registrations r
+		JOIN competitions c ON c.id = r.competition_id
+		WHERE r.user_id = ? AND r.status = ? AND LOWER(c.category) NOT LIKE '%try out%'
+	`, userID, entities.RegistrationVerified).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func (r *paymentRepository) Upsert(payment *entities.Payment) error {

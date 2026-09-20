@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -194,6 +195,22 @@ func (s *examService) Monitor(page, limit int) ([]entities.SubmissionDetail, int
 }
 
 func (s *examService) ensureVerified(userID, competitionID string) error {
+	competition, err := s.competitions.FindByID(competitionID)
+	if err != nil {
+		return err
+	}
+
+	isTryOut := strings.Contains(strings.ToLower(competition.Category), "try out")
+	if isTryOut {
+		hasVerified, err := s.registrations.HasVerifiedOlimpiade(userID)
+		if err != nil {
+			return err
+		}
+		if hasVerified {
+			return nil
+		}
+	}
+
 	registration, err := s.registrations.FindByUserAndCompetition(userID, competitionID)
 	if err != nil {
 		return err

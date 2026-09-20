@@ -22,26 +22,14 @@ const calculateExamRemainingSeconds = (comp, sub) => {
   const durationMinutes = Number(comp?.duration_minutes || 60);
   const totalSeconds = durationMinutes * 60;
 
-  // 1. Potong waktu otomatis jika peserta terlambat masuk dari jadwal resmi start_time
-  let elapsedSchedule = 0;
-  if (comp?.start_time) {
-    const scheduledStartMs = new Date(comp.start_time).getTime();
-    if (!isNaN(scheduledStartMs) && now > scheduledStartMs) {
-      elapsedSchedule = Math.floor((now - scheduledStartMs) / 1000);
-    }
-  }
-
-  // 2. Waktu yang sudah berjalan sejak peserta pertama kali klik mulai (submission.started_at)
-  let elapsedSubmission = 0;
+  // Waktu yang sudah berjalan sejak peserta pertama kali klik mulai (submission.started_at)
+  let elapsed = 0;
   if (sub?.started_at) {
     const subStartMs = new Date(sub.started_at).getTime();
     if (!isNaN(subStartMs)) {
-      elapsedSubmission = Math.max(0, Math.floor((now - subStartMs) / 1000));
+      elapsed = Math.max(0, Math.floor((now - subStartMs) / 1000));
     }
   }
-
-  // Ambil waktu terpakai terbesar (keterlambatan dari jadwal resmi atau waktu yang sudah berjalan sejak mulai)
-  const elapsed = Math.max(elapsedSchedule, elapsedSubmission);
   let remaining = Math.max(0, totalSeconds - elapsed);
 
   // 3. Batasi waktu agar tidak melebihi jadwal akhir kompetisi (end_time)

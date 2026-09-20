@@ -93,7 +93,12 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
   const event = displayEvents[competitionIndex] ?? displayEvents[0] ?? events[0];
   const competition = event.competition || competitions[competitionIndex];
   const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
-  const isVerified = registration?.status === 'verified';
+  const isTryOut = normalizeCategory(competition?.category) === 'try out';
+  const verifiedOlimpiadeReg = registrations.find((r) => {
+    const c = findCompetitionForRegistration(r, competitions);
+    return c && normalizeCategory(c.category) === 'olimpiade' && r.status === 'verified';
+  });
+  const isVerified = registration?.status === 'verified' || (isTryOut && Boolean(verifiedOlimpiadeReg));
   const isRejected = registration?.status === 'rejected' || registration?.payment_status === 'rejected';
   const isCategoryBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
   const registrationDeadlineMs = competition?.registration_deadline ? new Date(competition.registration_deadline).getTime() : null;
@@ -125,8 +130,14 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
 
   const handlePrimaryAction = () => {
     if (isCategoryBlocked) return;
-    if (isVerified && registration) {
-      onVerifiedCompetition?.(registration);
+    if (isVerified) {
+      const activeRegistration = registration || {
+        competition_id: competition?.id,
+        competition_title: competition?.title,
+        competition_slug: competition?.slug,
+        status: 'verified'
+      };
+      onVerifiedCompetition?.(activeRegistration);
       return;
     }
     if (!registration || isRejected) {
@@ -193,7 +204,7 @@ export default function CompetitionDetailPage({ competitionIndex = 0, competitio
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <div className="text-sm font-semibold leading-6 text-slate-600">{actionHint}</div>
-                    <button type="button" onClick={handlePrimaryAction} disabled={isCategoryBlocked || (Boolean(registration) && !isVerified && !isRejected) || registrationClosed} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
+                    <button type="button" onClick={handlePrimaryAction} disabled={isCategoryBlocked || (Boolean(registration) && !isVerified && !isRejected) || (registrationClosed && !isVerified)} className="mt-5 w-full rounded-xl bg-[#044b86] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-[#033b68] disabled:cursor-not-allowed disabled:bg-slate-300">
                       {actionLabel}
                     </button>
                   </div>

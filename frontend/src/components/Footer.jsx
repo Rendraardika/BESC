@@ -5,7 +5,6 @@ export default function Footer() {
         <div className="grid gap-10 border-b border-slate-800 pb-12 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <div>
             <div className="mb-3 font-['Plus_Jakarta_Sans'] text-2xl font-extrabold text-[#1c79c6]">🌿 BESC</div>
-            <p className="mb-5 text-sm leading-7">BESC memiliki ekosistem lengkap penunjang belajar siswa Indonesia mulai dari kompetisi biologi, latihan soal, bimbingan olimpiade, dan wadah komunitas prestasi seluruh Indonesia.</p>
             <div className="flex gap-3">
               {['📷', '💬', '▶️', 'in'].map((item) => <a key={item} href="#home" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-700 bg-slate-800 transition hover:border-[#1c79c6] hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white">{item}</a>)}
             </div>

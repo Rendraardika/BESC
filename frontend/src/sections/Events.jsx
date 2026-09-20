@@ -91,7 +91,12 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
             {displayEvents.map((event, index) => {
               const competition = event.competition || competitions[index];
               const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
-              const verified = registration?.status === 'verified';
+              const isTryOut = normalizeCategory(competition?.category) === 'try out';
+              const verifiedOlimpiadeReg = registrations.find((r) => {
+                const c = findCompetitionForRegistration(r, competitions);
+                return c && normalizeCategory(c.category) === 'olimpiade' && r.status === 'verified';
+              });
+              const verified = registration?.status === 'verified' || (isTryOut && Boolean(verifiedOlimpiadeReg));
               const isBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
               const image = event.banner || eventImages[index % eventImages.length];
               return (
@@ -112,7 +117,15 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
                       {event.original && <span className="text-xs text-slate-400 line-through">{event.original}</span>}
                       {event.discount && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold text-red-600">{event.discount}</span>}
                     </div>
-                    <button type="button" onClick={() => verified ? onVerifiedCompetition(registration) : onCompetitionDetail(index)} disabled={isBlocked} className="rounded-full bg-blue-100 px-4 py-2 text-xs font-extrabold text-[#044b86] transition hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">{verified ? 'Lihat Ketentuan' : registration ? 'Menunggu Verifikasi' : isBlocked ? 'Tidak Tersedia' : 'Daftar'}</button>
+                    <button type="button" onClick={() => {
+                      const activeRegistration = registration || {
+                        competition_id: competition?.id,
+                        competition_title: competition?.title,
+                        competition_slug: competition?.slug,
+                        status: 'verified'
+                      };
+                      return verified ? onVerifiedCompetition(activeRegistration) : onCompetitionDetail(index);
+                    }} disabled={isBlocked} className="rounded-full bg-blue-100 px-4 py-2 text-xs font-extrabold text-[#044b86] transition hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">{verified ? 'Lihat Ketentuan' : registration ? 'Menunggu Verifikasi' : isBlocked ? 'Tidak Tersedia' : 'Daftar'}</button>
                   </div>
                 </div>
               </article>

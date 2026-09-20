@@ -146,6 +146,10 @@ func (r *profileRegistrationRepository) UpdateStatusTx(tx *sql.Tx, registrationI
 	return nil
 }
 
+func (r *profileRegistrationRepository) HasVerifiedOlimpiade(userID string) (bool, error) {
+	return false, nil
+}
+
 type profileCompetitionRepository struct {
 	competition *entities.Competition
 }

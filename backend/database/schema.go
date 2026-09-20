@@ -6,6 +6,22 @@ import (
 )
 
 func EnsureLatestSchema(db *sql.DB, schemaName string) error {
+	if err := ensureTable(db, schemaName, "registration_documents", `
+		CREATE TABLE registration_documents (
+			id CHAR(36) PRIMARY KEY,
+			registration_id CHAR(36) NOT NULL,
+			doc_type VARCHAR(100) NOT NULL,
+			file_path TEXT NOT NULL,
+			original_name VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			INDEX idx_registration_documents_registration_id (registration_id),
+			CONSTRAINT fk_registration_documents_registration
+				FOREIGN KEY (registration_id) REFERENCES registrations(id)
+				ON DELETE CASCADE
+		)
+	`); err != nil {
+		return err
+	}
 	if err := ensureColumn(db, schemaName, "competitions", "participant_requirements", "ALTER TABLE competitions ADD COLUMN participant_requirements TEXT NULL AFTER description"); err != nil {
 		return err
 	}
@@ -20,6 +36,24 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	}
 	if err := ensureForeignKey(db, schemaName, "payments", "fk_payments_proof_viewer", "ALTER TABLE payments ADD CONSTRAINT fk_payments_proof_viewer FOREIGN KEY (proof_viewed_by) REFERENCES users(id) ON DELETE SET NULL"); err != nil {
 		return err
+	}
+	return nil
+}
+
+func ensureTable(db *sql.DB, schemaName, tableName, createSQL string) error {
+	var count int
+	if err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM information_schema.TABLES
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+	`, schemaName, tableName).Scan(&count); err != nil {
+		return fmt.Errorf("check table %s: %w", tableName, err)
+	}
+	if count > 0 {
+		return nil
+	}
+	if _, err := db.Exec(createSQL); err != nil {
+		return fmt.Errorf("create table %s: %w", tableName, err)
 	}
 	return nil
 }

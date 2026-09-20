@@ -63,6 +63,7 @@ func (h *DocumentHandler) UploadDocuments(c *fiber.Ctx) error {
 			uuid.NewString(), registrationID, docType, storageKey, file.Filename,
 		)
 		if err != nil {
+			_ = os.Remove(diskPath)
 			return handleError(c, err)
 		}
 	}

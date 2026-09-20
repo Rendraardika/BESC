@@ -1,8 +1,30 @@
-export const materi = [
-  ['🧫', 'Biologi Sel & Molekuler', 'Struktur sel, organel, siklus sel, ekspresi gen, replikasi DNA, transkripsi, dan translasi protein.'],
-  ['🦠', 'Mikrobiologi', 'Bakteri, virus, fungi, dan protista. Patogenesis, antibiotik, serta peran dalam bioteknologi.'],
-  ['🌱', 'Botani', 'Anatomi dan fisiologi tumbuhan, fotosintesis, hormon, reproduksi, dan adaptasi ekologis.'],
-  ['🐾', 'Zoologi', 'Klasifikasi hewan, sistem organ, perilaku, fisiologi komparatif, dan embriologi vertebrata.'],
-  ['🧬', 'Genetika & Evolusi', 'Hukum Mendel, genetika populasi, mutasi, seleksi alam, dan filogenetika molekuler.'],
-  ['🌍', 'Ekologi', 'Ekosistem, rantai makanan, siklus biogeokimia, keanekaragaman hayati, dan perubahan iklim.'],
+export const materiByLevel = [
+  {
+    level: 'SMP/MTs sederajat',
+    note: 'Materi yang diperlombakan untuk kompetisi tingkat SMP/MTs/sederajat.',
+    items: [
+      'Makhluk Hidup dan Lingkungannya',
+      'Keanekaragaman dan Pengelompokan Makhluk Hidup',
+      'Organisasi Kehidupan',
+      'Ekologi',
+      'Struktur dan Fungsi Tumbuhan',
+      'Sistem pada Manusia dan Hewan',
+      'Pewarisan Sifat',
+      'Bioteknologi',
+      'Forensik',
+    ],
+  },
+  {
+    level: 'SMA/MA sederajat',
+    note: 'Materi yang diujikan untuk kompetisi tingkat SMA/MA/sederajat.',
+    items: [
+      'Biologi Sel dan Molekuler',
+      'Anatomi dan Fisiologi Tumbuhan',
+      'Anatomi dan Fisiologi Hewan',
+      'Etologi',
+      'Genetika dan Evolusi',
+      'Ekologi',
+      'Biosistematika',
+    ],
+  },
 ];

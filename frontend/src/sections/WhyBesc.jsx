@@ -9,8 +9,8 @@ export default function WhyBesc() {
           <div className="space-y-5">
             {[
               ['🔬', 'Soal Berkualitas Tinggi', 'Soal disusun oleh tim ahli biologi dari perguruan tinggi terkemuka di Indonesia.'],
-              ['🏆', 'Hadiah & Beasiswa Bergengsi', 'Total hadiah Rp 19 juta.'],
-              ['📜', 'Sertifikat Resmi Bersertifikasi', 'Sertifikat keikutsertaan dan penghargaan yang diakui secara nasional.'],
+              ['🏆', 'Total Hadiah Rp 19 Juta', 'Penghargaan diberikan kepada pemenang kompetisi.'],
+              ['📜', 'Sertifikat Resmi Bersertifikasi', 'Sertifikat keikutsertaan dan penghargaan.'],
               ['🌿', 'Komunitas Ilmuwan Muda', 'Bergabung dengan ribuan pelajar berprestasi se-Indonesia dalam ekosistem belajar yang positif.'],
             ].map(([icon, title, desc]) => (
               <div key={title} className="flex gap-4 rounded-2xl border border-slate-200 p-5 transition hover:translate-x-1 hover:border-[#1c79c6] hover:bg-blue-50">
@@ -39,3 +39,4 @@ export default function WhyBesc() {
     </section>
   );
 }
+
