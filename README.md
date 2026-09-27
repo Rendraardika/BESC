@@ -5,6 +5,8 @@ BESC adalah platform kompetisi online yang terdiri dari:
 - `backend`: REST API Go Fiber dengan database MySQL.
 - `frontend`: React + Vite untuk tampilan web.
 
+Platform mendukung ujian dua ronde (`preliminary` dan `semifinal`), penilaian otomatis, pemantauan proctoring, serta pengelolaan hasil seleksi dari dashboard admin.
+
 Dokumen ini dibuat untuk teman yang baru clone repository dan ingin menjalankan project di laptop lokal.
 
 ## Cara Paling Cepat
@@ -105,7 +107,7 @@ CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 EXIT;
 ```
 
-Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `018_create_password_resets.sql`.
+Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `019_add_exam_rounds.sql`.
 
 ```bash
 cd backend
@@ -270,6 +272,16 @@ cd backend
 go test ./...
 ```
 
+## Alur Kompetisi dan Ujian
+
+- Peserta yang pembayarannya berstatus `verified` dapat mengerjakan ronde penyisihan (`preliminary`).
+- Admin memilih peserta yang lolos dengan mengubah status registrasi menjadi `semifinalist`.
+- Peserta berstatus `semifinalist` atau `finalist` dapat mengerjakan ronde semifinal (`semifinal`).
+- Soal dan submission disimpan per ronde, sehingga satu peserta dapat memiliki satu submission penyisihan dan satu submission semifinal pada kompetisi yang sama.
+- Dashboard admin dapat menampilkan detail hasil, jawaban peserta, jawaban benar, skor, dan aktivitas proctoring setiap submission.
+
+Status seleksi lanjutan yang tersedia adalah `semifinalist`, `finalist`, `eliminated`, `not_finalist`, `not_winner`, `winner_1`, `winner_2`, dan `winner_3`.
+
 ## Troubleshooting
 
 Backend gagal connect database:
@@ -318,7 +330,7 @@ Sebelum deploy production:
 - Batasi `CORS_ALLOW_ORIGINS` hanya ke domain frontend.
 - Isi `GOOGLE_CLIENT_ID` backend dan frontend jika memakai Google Login.
 - Pastikan `backend/uploads` disimpan di persistent volume dan dibackup.
-- Jalankan semua migration sampai file terbaru di `backend/database/migrations`.
+- Jalankan semua migration sampai `019_add_exam_rounds.sql` atau file terbaru di `backend/database/migrations`.
 - Jangan gunakan akun demo dari seed untuk production.
 
 Script deploy yang tersedia:

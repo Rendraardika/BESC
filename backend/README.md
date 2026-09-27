@@ -8,9 +8,9 @@ Production-ready REST API scaffold for an online competition/exam platform built
 - Role-based access for `user` and `admin`.
 - Competition CRUD, listing, detail by UUID or slug, and pagination.
 - Competition registration, payment proof upload, payment status, and admin verification/rejection.
-- Verified-user exam access, start exam, submit answers, and automatic scoring.
+- Preliminary and semifinal exam rounds with round-specific questions, submissions, access control, and automatic scoring.
 - Proctoring endpoints for tab/leave/camera/copy events and periodic camera snapshots.
-- Admin question CRUD and submission monitoring.
+- Admin question CRUD, participant selection statuses, submission monitoring, and answer review details.
 - Raw SQL repositories using `database/sql`, no ORM.
 - MySQL migrations, seed data, `.env.example`, and Swagger YAML.
 
@@ -57,6 +57,13 @@ mysql -uroot -p competition_platform < database/migrations/009_add_question_imag
 mysql -uroot -p competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
 mysql -uroot -p competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
 mysql -uroot -p competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
+mysql -uroot -p competition_platform < database/migrations/013_registration_documents.sql
+mysql -uroot -p competition_platform < database/migrations/014_create_teams.sql
+mysql -uroot -p competition_platform < database/migrations/015_alter_teams_add_fields.sql
+mysql -uroot -p competition_platform < database/migrations/016_alter_teams_add_ig_tiktok.sql
+mysql -uroot -p competition_platform < database/migrations/017_cleanup_orphaned_data.sql
+mysql -uroot -p competition_platform < database/migrations/018_create_password_resets.sql
+mysql -uroot -p competition_platform < database/migrations/019_add_exam_rounds.sql
 mysql -uroot -p competition_platform < database/seeds/001_seed_data.sql
 go run ./cmd/api
 ```
@@ -91,6 +98,13 @@ mysql -uroot -proot competition_platform < database/migrations/009_add_question_
 mysql -uroot -proot competition_platform < database/migrations/010_add_option_e_and_negative_scoring.sql
 mysql -uroot -proot competition_platform < database/migrations/011_prevent_duplicate_submissions.sql
 mysql -uroot -proot competition_platform < database/migrations/012_add_requirements_and_payment_proof_view.sql
+mysql -uroot -proot competition_platform < database/migrations/013_registration_documents.sql
+mysql -uroot -proot competition_platform < database/migrations/014_create_teams.sql
+mysql -uroot -proot competition_platform < database/migrations/015_alter_teams_add_fields.sql
+mysql -uroot -proot competition_platform < database/migrations/016_alter_teams_add_ig_tiktok.sql
+mysql -uroot -proot competition_platform < database/migrations/017_cleanup_orphaned_data.sql
+mysql -uroot -proot competition_platform < database/migrations/018_create_password_resets.sql
+mysql -uroot -proot competition_platform < database/migrations/019_add_exam_rounds.sql
 mysql -uroot -proot competition_platform < database/seeds/001_seed_data.sql
 go run ./cmd/api
 ```
@@ -120,9 +134,9 @@ Authenticated user:
 - `GET /api/v1/me/competitions`
 - `POST /api/v1/registrations/:registration_id/payment-proof` with multipart field `proof`
 - `GET /api/v1/registrations/:registration_id/payment`
-- `POST /api/v1/competitions/:competition_id/exam/start`
-- `GET /api/v1/competitions/:competition_id/exam/questions`
-- `POST /api/v1/competitions/:competition_id/exam/submit`
+- `POST /api/v1/competitions/:competition_id/exam/start?round=preliminary`
+- `GET /api/v1/competitions/:competition_id/exam/questions?round=preliminary`
+- `POST /api/v1/competitions/:competition_id/exam/submit?round=preliminary`
 - `POST /api/v1/proctoring/events`
 - `POST /api/v1/submissions/:submission_id/proctoring/snapshots` with multipart field `snapshot`
 
@@ -132,7 +146,9 @@ Admin:
 - `PUT /api/v1/admin/competitions/:id`
 - `DELETE /api/v1/admin/competitions/:id`
 - `POST /api/v1/admin/payments/:payment_id/verify`
+- `PUT /api/v1/admin/registrations/:registration_id/status`
 - `GET /api/v1/admin/submissions`
+- `GET /api/v1/admin/submissions/:submission_id/review`
 - `GET /api/v1/admin/competitions/:competition_id/questions`
 - `POST /api/v1/admin/competitions/:competition_id/questions`
 - `PUT /api/v1/admin/questions/:id`
@@ -172,11 +188,24 @@ curl -X POST http://localhost:8080/api/v1/admin/competitions \
 Submit exam:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/competitions/<competition_id>/exam/submit \
+curl -X POST "http://localhost:8080/api/v1/competitions/<competition_id>/exam/submit?round=preliminary" \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"answers":[{"question_id":"<question_id>","answer":"A"}]}'
 ```
+
+The `round` query parameter accepts `preliminary` or `semifinal` and defaults to `preliminary`. Semifinal access requires the registration status `semifinalist` or `finalist`.
+
+Update a participant's selection status:
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/admin/registrations/<registration_id>/status \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"status":"semifinalist"}'
+```
+
+Accepted registration statuses are `pending`, `verified`, `rejected`, `semifinalist`, `finalist`, `eliminated`, `not_finalist`, `not_winner`, `winner_1`, `winner_2`, and `winner_3`.
 
 Log proctoring event from frontend:
 
@@ -212,4 +241,4 @@ copy_attempt, right_click, screenshot_attempt, devtools_attempt
 - Payment verification runs inside a transaction and updates registration status atomically.
 - Exam submission locks the submission row, inserts answers, calculates score in the service, and marks the submission as submitted atomically.
 - Proctoring cannot fully prevent OS-level screenshots in a normal browser. The backend stores violation logs and camera snapshots so admins can review suspicious sessions.
-- For production, run migrations through `012`, replace `JWT_SECRET`, restrict CORS, keep `UPLOAD_DIR` on persistent storage with backups, and add a migration runner such as Goose or Atlas.
+- For production, run migrations through `019`, replace `JWT_SECRET`, restrict CORS, keep `UPLOAD_DIR` on persistent storage with backups, and add a migration runner such as Goose or Atlas.
