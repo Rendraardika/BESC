@@ -15,9 +15,13 @@ import (
 
 type ExamService interface {
 	Questions(userID, competitionID string) ([]entities.Question, error)
+	QuestionsRound(userID, competitionID, round string) ([]entities.Question, error)
 	Start(userID, competitionID string) (*entities.Submission, error)
+	StartRound(userID, competitionID, round string) (*entities.Submission, error)
 	Submit(userID, competitionID string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error)
+	SubmitRound(userID, competitionID, round string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error)
 	Monitor(page, limit int) ([]entities.SubmissionDetail, int, error)
+	ReviewDetail(submissionID string) (*dto.SubmissionReviewDetail, error)
 }
 
 type examService struct {
@@ -32,13 +36,21 @@ func NewExamService(registrations repositories.RegistrationRepository, competiti
 }
 
 func (s *examService) Questions(userID, competitionID string) ([]entities.Question, error) {
+	return s.QuestionsRound(userID, competitionID, entities.ExamRoundPreliminary)
+}
+
+func (s *examService) QuestionsRound(userID, competitionID, round string) ([]entities.Question, error) {
+	round = normalizeExamRound(round)
 	if err := s.ensureVerified(userID, competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
 	if err := s.ensureExamWindow(competitionID); err != nil {
 		return nil, err
 	}
-	questions, err := s.questions.ListByCompetition(competitionID, false)
+	questions, err := s.questions.ListByCompetitionRound(competitionID, round, false)
 	if err != nil {
 		return nil, err
 	}
@@ -49,16 +61,24 @@ func (s *examService) Questions(userID, competitionID string) ([]entities.Questi
 }
 
 func (s *examService) Start(userID, competitionID string) (*entities.Submission, error) {
+	return s.StartRound(userID, competitionID, entities.ExamRoundPreliminary)
+}
+
+func (s *examService) StartRound(userID, competitionID, round string) (*entities.Submission, error) {
+	round = normalizeExamRound(round)
 	if err := s.ensureVerified(userID, competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
 	if err := s.ensureExamWindow(competitionID); err != nil {
 		return nil, err
 	}
-	if err := s.ensureQuestionsAvailable(competitionID); err != nil {
+	if err := s.ensureQuestionsAvailable(competitionID, round); err != nil {
 		return nil, err
 	}
-	if existing, err := s.submissions.FindActive(userID, competitionID); err == nil {
+	if existing, err := s.submissions.FindActiveRound(userID, competitionID, round); err == nil {
 		if existing.Status == entities.SubmissionSubmitted {
 			return nil, utils.ErrExamSubmitted
 		}
@@ -68,13 +88,14 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 		ID:            uuid.NewString(),
 		UserID:        userID,
 		CompetitionID: competitionID,
+		Round:         round,
 		StartedAt:     time.Now().UTC(),
 		Score:         0,
 		Status:        entities.SubmissionStarted,
 	}
 	if err := s.submissions.Start(submission); err != nil {
 		if errors.Is(err, utils.ErrConflict) {
-			existing, findErr := s.submissions.FindActive(userID, competitionID)
+			existing, findErr := s.submissions.FindActiveRound(userID, competitionID, round)
 			if findErr != nil {
 				return nil, findErr
 			}
@@ -89,15 +110,23 @@ func (s *examService) Start(userID, competitionID string) (*entities.Submission,
 }
 
 func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error) {
+	return s.SubmitRound(userID, competitionID, entities.ExamRoundPreliminary, input)
+}
+
+func (s *examService) SubmitRound(userID, competitionID, round string, input dto.SubmitExamRequest) (*dto.SubmissionResult, error) {
+	round = normalizeExamRound(round)
 	if err := s.ensureVerified(userID, competitionID); err != nil {
+		return nil, err
+	}
+	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
 	if err := s.ensureExamWindow(competitionID); err != nil {
 		return nil, err
 	}
-	submission, err := s.submissions.FindActive(userID, competitionID)
+	submission, err := s.submissions.FindActiveRound(userID, competitionID, round)
 	if err != nil {
-		submission, err = s.Start(userID, competitionID)
+		submission, err = s.StartRound(userID, competitionID, round)
 		if err != nil {
 			return nil, err
 		}
@@ -106,7 +135,7 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 		return nil, utils.ErrExamSubmitted
 	}
 
-	questions, err := s.questions.ListByCompetition(competitionID, true)
+	questions, err := s.questions.ListByCompetitionRound(competitionID, round, true)
 	if err != nil {
 		return nil, err
 	}
@@ -165,6 +194,7 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 		}
 		reviewItems = append(reviewItems, dto.QuestionReviewItem{
 			QuestionID:    q.ID,
+			Round:         q.Round,
 			Question:      q.Question,
 			Image:         q.Image,
 			OptionA:       q.OptionA,
@@ -181,6 +211,7 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 
 	return &dto.SubmissionResult{
 		SubmissionID:   submission.ID,
+		Round:          round,
 		Score:          score,
 		CorrectCount:   correctCount,
 		WrongCount:     wrongCount,
@@ -192,6 +223,10 @@ func (s *examService) Submit(userID, competitionID string, input dto.SubmitExamR
 
 func (s *examService) Monitor(page, limit int) ([]entities.SubmissionDetail, int, error) {
 	return s.submissions.ListDetails(page, limit)
+}
+
+func (s *examService) ReviewDetail(submissionID string) (*dto.SubmissionReviewDetail, error) {
+	return s.submissions.ReviewDetail(submissionID)
 }
 
 func (s *examService) ensureVerified(userID, competitionID string) error {
@@ -221,13 +256,27 @@ func (s *examService) ensureVerified(userID, competitionID string) error {
 	return nil
 }
 
-func (s *examService) ensureQuestionsAvailable(competitionID string) error {
-	questions, err := s.questions.ListByCompetition(competitionID, false)
+func (s *examService) ensureQuestionsAvailable(competitionID, round string) error {
+	questions, err := s.questions.ListByCompetitionRound(competitionID, round, false)
 	if err != nil {
 		return err
 	}
 	if len(questions) == 0 {
 		return utils.ErrNoQuestions
+	}
+	return nil
+}
+
+func (s *examService) ensureRoundAccess(userID, competitionID, round string) error {
+	if round != entities.ExamRoundSemifinal {
+		return nil
+	}
+	registration, err := s.registrations.FindByUserAndCompetition(userID, competitionID)
+	if err != nil {
+		return err
+	}
+	if registration.Status != entities.SelectionSemifinalist && registration.Status != entities.SelectionFinalist {
+		return utils.ErrForbidden
 	}
 	return nil
 }

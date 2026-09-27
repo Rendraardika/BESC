@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/services"
 	"online-competition-platform/pkg/response"
 )
@@ -52,4 +53,15 @@ func (h *AdminDashboardHandler) Payments(c *fiber.Ctx) error {
 		return handleError(c, err)
 	}
 	return response.JSON(c, fiber.StatusOK, "payments", payments)
+}
+
+func (h *AdminDashboardHandler) UpdateRegistrationStatus(c *fiber.Ctx) error {
+	var input dto.UpdateRegistrationStatusRequest
+	if err := bindAndValidate(c, &input); err != nil {
+		return err
+	}
+	if err := h.service.UpdateRegistrationStatus(c.Params("registration_id"), input.Status); err != nil {
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusOK, "registration status updated", nil)
 }

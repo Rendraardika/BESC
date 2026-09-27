@@ -144,6 +144,10 @@ func (r *proctoringSubmissionRepository) FindActive(userID, competitionID string
 	return nil, utils.ErrNotFound
 }
 
+func (r *proctoringSubmissionRepository) FindActiveRound(userID, competitionID, round string) (*entities.Submission, error) {
+	return nil, utils.ErrNotFound
+}
+
 func (r *proctoringSubmissionRepository) Submit(submissionID string, answers []entities.Answer, score float64) error {
 	return nil
 }
@@ -154,6 +158,10 @@ func (r *proctoringSubmissionRepository) List(page, limit int) ([]entities.Submi
 
 func (r *proctoringSubmissionRepository) ListDetails(page, limit int) ([]entities.SubmissionDetail, int, error) {
 	return nil, 0, nil
+}
+
+func (r *proctoringSubmissionRepository) ReviewDetail(submissionID string) (*dto.SubmissionReviewDetail, error) {
+	return nil, nil
 }
 
 type proctoringRepositoryFake struct {

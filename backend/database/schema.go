@@ -31,11 +31,44 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	if err := ensureColumn(db, schemaName, "payments", "proof_viewed_by", "ALTER TABLE payments ADD COLUMN proof_viewed_by CHAR(36) NULL AFTER proof_viewed_at"); err != nil {
 		return err
 	}
+	if err := ensureColumn(db, schemaName, "questions", "round", "ALTER TABLE questions ADD COLUMN round VARCHAR(30) NOT NULL DEFAULT 'preliminary' AFTER competition_id"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, schemaName, "submissions", "round", "ALTER TABLE submissions ADD COLUMN round VARCHAR(30) NOT NULL DEFAULT 'preliminary' AFTER competition_id"); err != nil {
+		return err
+	}
+	if err := dropIndexIfExists(db, schemaName, "submissions", "uq_submissions_user_competition", "ALTER TABLE submissions DROP INDEX uq_submissions_user_competition"); err != nil {
+		return err
+	}
+	if err := ensureIndex(db, schemaName, "questions", "idx_questions_competition_round", "ALTER TABLE questions ADD INDEX idx_questions_competition_round (competition_id, round)"); err != nil {
+		return err
+	}
+	if err := ensureIndex(db, schemaName, "submissions", "uq_submissions_user_competition_round", "ALTER TABLE submissions ADD UNIQUE KEY uq_submissions_user_competition_round (user_id, competition_id, round)"); err != nil {
+		return err
+	}
 	if err := ensureIndex(db, schemaName, "payments", "idx_payments_proof_viewed_by", "ALTER TABLE payments ADD INDEX idx_payments_proof_viewed_by (proof_viewed_by)"); err != nil {
 		return err
 	}
 	if err := ensureForeignKey(db, schemaName, "payments", "fk_payments_proof_viewer", "ALTER TABLE payments ADD CONSTRAINT fk_payments_proof_viewer FOREIGN KEY (proof_viewed_by) REFERENCES users(id) ON DELETE SET NULL"); err != nil {
 		return err
+	}
+	return nil
+}
+
+func dropIndexIfExists(db *sql.DB, schemaName, tableName, indexName, alterSQL string) error {
+	var count int
+	if err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM information_schema.STATISTICS
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ?
+	`, schemaName, tableName, indexName).Scan(&count); err != nil {
+		return fmt.Errorf("check index %s.%s: %w", tableName, indexName, err)
+	}
+	if count == 0 {
+		return nil
+	}
+	if _, err := db.Exec(alterSQL); err != nil {
+		return fmt.Errorf("drop index %s.%s: %w", tableName, indexName, err)
 	}
 	return nil
 }

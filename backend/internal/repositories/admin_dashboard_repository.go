@@ -12,6 +12,7 @@ type AdminDashboardRepository interface {
 	Participant(id string) (*entities.User, error)
 	DeleteParticipant(id string) error
 	Payments() ([]entities.AdminDashboardActivity, error)
+	UpdateRegistrationStatus(registrationID, status string) error
 }
 
 func (r *adminDashboardRepository) Participant(id string) (*entities.User, error) {
@@ -85,6 +86,14 @@ func (r *adminDashboardRepository) Payments() ([]entities.AdminDashboardActivity
 		items = append(items, activity)
 	}
 	return items, rows.Err()
+}
+
+func (r *adminDashboardRepository) UpdateRegistrationStatus(registrationID, status string) error {
+	result, err := r.db.Exec(`UPDATE registrations SET status = ? WHERE id = ?`, status, registrationID)
+	if err != nil {
+		return err
+	}
+	return rowsAffected(result)
 }
 
 func NewAdminDashboardRepository(db *sql.DB) AdminDashboardRepository {

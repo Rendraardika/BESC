@@ -25,7 +25,7 @@ func NewQuestionHandler(service services.QuestionService) *QuestionHandler {
 }
 
 func (h *ExamHandler) Questions(c *fiber.Ctx) error {
-	items, err := h.service.Questions(userID(c), c.Params("competition_id"))
+	items, err := h.service.QuestionsRound(userID(c), c.Params("competition_id"), c.Query("round"))
 	if err != nil {
 		return handleError(c, err)
 	}
@@ -33,7 +33,7 @@ func (h *ExamHandler) Questions(c *fiber.Ctx) error {
 }
 
 func (h *ExamHandler) Start(c *fiber.Ctx) error {
-	item, err := h.service.Start(userID(c), c.Params("competition_id"))
+	item, err := h.service.StartRound(userID(c), c.Params("competition_id"), c.Query("round"))
 	if err != nil {
 		return handleError(c, err)
 	}
@@ -45,7 +45,7 @@ func (h *ExamHandler) Submit(c *fiber.Ctx) error {
 	if err := bindAndValidate(c, &input); err != nil {
 		return err
 	}
-	result, err := h.service.Submit(userID(c), c.Params("competition_id"), input)
+	result, err := h.service.SubmitRound(userID(c), c.Params("competition_id"), c.Query("round"), input)
 	if err != nil {
 		return handleError(c, err)
 	}
@@ -59,6 +59,14 @@ func (h *ExamHandler) Monitor(c *fiber.Ctx) error {
 		return handleError(c, err)
 	}
 	return response.Paginated(c, "submissions", items, response.Meta{Page: page, Limit: limit, Total: total})
+}
+
+func (h *ExamHandler) ReviewDetail(c *fiber.Ctx) error {
+	item, err := h.service.ReviewDetail(c.Params("submission_id"))
+	if err != nil {
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusOK, "submission review detail", item)
 }
 
 func (h *QuestionHandler) Create(c *fiber.Ctx) error {

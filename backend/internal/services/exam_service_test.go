@@ -8,8 +8,8 @@ import (
 
 	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/entities"
+	"online-competition-platform/internal/repositories"
 	"online-competition-platform/internal/utils"
-    "online-competition-platform/internal/repositories"
 )
 
 func TestExamStartReturnsExistingSubmissionWhenInsertHitsUniqueConflict(t *testing.T) {
@@ -391,6 +391,10 @@ func (r *fakeQuestionRepository) ListByCompetition(competitionID string, include
 	return r.questions, nil
 }
 
+func (r *fakeQuestionRepository) ListByCompetitionRound(competitionID, round string, includeAnswer bool) ([]entities.Question, error) {
+	return r.ListByCompetition(competitionID, includeAnswer)
+}
+
 type submissionResult struct {
 	submission *entities.Submission
 	err        error
@@ -413,6 +417,10 @@ func (r *fakeSubmissionRepository) FindByID(id string) (*entities.Submission, er
 }
 
 func (r *fakeSubmissionRepository) FindActive(userID, competitionID string) (*entities.Submission, error) {
+	return r.FindActiveRound(userID, competitionID, entities.ExamRoundPreliminary)
+}
+
+func (r *fakeSubmissionRepository) FindActiveRound(userID, competitionID, round string) (*entities.Submission, error) {
 	if len(r.findActiveResults) == 0 {
 		return nil, utils.ErrNotFound
 	}
@@ -437,6 +445,10 @@ func (r *fakeSubmissionRepository) ListDetails(page, limit int) ([]entities.Subm
 	return nil, 0, nil
 }
 
+func (r *fakeSubmissionRepository) ReviewDetail(submissionID string) (*dto.SubmissionReviewDetail, error) {
+	return nil, nil
+}
+
 type fakeCompetitionRepository struct {
 	competition *entities.Competition
 	err         error
@@ -444,11 +456,19 @@ type fakeCompetitionRepository struct {
 
 func (r *fakeCompetitionRepository) Create(item *entities.Competition) error { return nil }
 func (r *fakeCompetitionRepository) Update(item *entities.Competition) error { return nil }
-func (r *fakeCompetitionRepository) Delete(id string) error { return nil }
+func (r *fakeCompetitionRepository) Delete(id string) error                  { return nil }
 func (r *fakeCompetitionRepository) FindByID(id string) (*entities.Competition, error) {
-	if r.err != nil { return nil, r.err }
-	if r.competition == nil { return nil, utils.ErrNotFound }
+	if r.err != nil {
+		return nil, r.err
+	}
+	if r.competition == nil {
+		return nil, utils.ErrNotFound
+	}
 	return r.competition, nil
 }
-func (r *fakeCompetitionRepository) FindBySlug(slug string) (*entities.Competition, error) { return r.FindByID("") }
-func (r *fakeCompetitionRepository) List(page, limit int) ([]entities.Competition, int, error) { return nil, 0, nil }
+func (r *fakeCompetitionRepository) FindBySlug(slug string) (*entities.Competition, error) {
+	return r.FindByID("")
+}
+func (r *fakeCompetitionRepository) List(page, limit int) ([]entities.Competition, int, error) {
+	return nil, 0, nil
+}

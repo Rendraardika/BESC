@@ -66,6 +66,7 @@ type CompetitionRequest struct {
 }
 
 type QuestionRequest struct {
+	Round         string  `json:"round" validate:"omitempty,oneof=preliminary semifinal"`
 	Question      string  `json:"question" validate:"required"`
 	Image         string  `json:"image" validate:"omitempty"`
 	OptionA       string  `json:"option_a" validate:"required"`
@@ -80,6 +81,10 @@ type QuestionRequest struct {
 
 type VerifyPaymentRequest struct {
 	Status string `json:"status" validate:"required,oneof=pending verified rejected"`
+}
+
+type UpdateRegistrationStatusRequest struct {
+	Status string `json:"status" validate:"required,oneof=pending verified rejected semifinalist finalist eliminated not_finalist not_winner winner_1 winner_2 winner_3"`
 }
 
 type ForgotPasswordRequest struct {
@@ -102,6 +107,7 @@ type AnswerRequest struct {
 
 type QuestionReviewItem struct {
 	QuestionID    string  `json:"question_id"`
+	Round         string  `json:"round"`
 	Question      string  `json:"question"`
 	Image         string  `json:"image,omitempty"`
 	OptionA       string  `json:"option_a"`
@@ -117,12 +123,28 @@ type QuestionReviewItem struct {
 
 type SubmissionResult struct {
 	SubmissionID   string               `json:"submission_id"`
+	Round          string               `json:"round"`
 	Score          float64              `json:"score"`
 	CorrectCount   int                  `json:"correct_count"`
 	WrongCount     int                  `json:"wrong_count"`
 	TotalQuestions int                  `json:"total_questions"`
 	Status         string               `json:"status"`
 	Review         []QuestionReviewItem `json:"review,omitempty"`
+}
+
+type SubmissionReviewDetail struct {
+	SubmissionID        string               `json:"submission_id"`
+	Round               string               `json:"round"`
+	UserName            string               `json:"user_name"`
+	UserEmail           string               `json:"user_email"`
+	CompetitionTitle    string               `json:"competition_title"`
+	Score               float64              `json:"score"`
+	CorrectCount        int                  `json:"correct_count"`
+	WrongCount          int                  `json:"wrong_count"`
+	AnsweredQuestions   int                  `json:"answered_questions"`
+	UnansweredQuestions int                  `json:"unanswered_questions"`
+	TotalQuestions      int                  `json:"total_questions"`
+	Review              []QuestionReviewItem `json:"review"`
 }
 
 type ProctoringEventRequest struct {

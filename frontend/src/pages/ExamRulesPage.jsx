@@ -13,14 +13,15 @@ export default function ExamRulesPage({ competition, onBack, onStart }) {
   const [agreed, setAgreed] = useState(false);
   const [summary, setSummary] = useState({ questions: 0, points: 0, penalties: 0 });
   const [error, setError] = useState('');
+  const roundQuery = competition.round ? `?round=${encodeURIComponent(competition.round)}` : '';
 
   useEffect(() => {
-    apiRequest(`/competitions/${competition.competition_id}/exam/questions`).then((questions) => setSummary({
+    apiRequest(`/competitions/${competition.competition_id}/exam/questions${roundQuery}`).then((questions) => setSummary({
       questions: questions.length,
       points: questions.reduce((total, item) => total + Number(item.score || 0), 0),
       penalties: questions.reduce((total, item) => total + Number(item.wrong_score || 0), 0),
     })).catch((err) => setError(err.message));
-  }, [competition.competition_id]);
+  }, [competition.competition_id, roundQuery]);
 
   const stats = [
     ['Soal', summary.questions || '-', 'Jumlah soal ujian'],

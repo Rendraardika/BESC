@@ -67,6 +67,7 @@ export default function ExamPage({ competition, onFinish }) {
   const submittingRef = useRef(false);
   const lockedRef = useRef(false);
   const tabSwitchLimitRef = useRef(Number(competition.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT));
+  const roundQuery = competition.round ? `?round=${encodeURIComponent(competition.round)}` : '';
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
 
@@ -124,7 +125,7 @@ export default function ExamPage({ competition, onFinish }) {
       lockedRef.current = true;
     }
     try {
-      const result = await apiRequest(`/competitions/${competition.competition_id}/exam/submit`, {
+      const result = await apiRequest(`/competitions/${competition.competition_id}/exam/submit${roundQuery}`, {
         method: 'POST',
         body: JSON.stringify({
           answers: questionsRef.current
@@ -152,7 +153,7 @@ export default function ExamPage({ competition, onFinish }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const submission = await apiRequest(`/competitions/${competition.competition_id}/exam/start`, {
+        const submission = await apiRequest(`/competitions/${competition.competition_id}/exam/start${roundQuery}`, {
           method: 'POST',
         });
         setSubmissionID(submission.id);
@@ -185,7 +186,7 @@ export default function ExamPage({ competition, onFinish }) {
           return;
         }
 
-        const examQuestions = await apiRequest(`/competitions/${competition.competition_id}/exam/questions`);
+        const examQuestions = await apiRequest(`/competitions/${competition.competition_id}/exam/questions${roundQuery}`);
         setQuestions(examQuestions);
       } catch (err) {
         setError(err.message);
@@ -193,7 +194,7 @@ export default function ExamPage({ competition, onFinish }) {
       }
     };
     load();
-  }, [competition.competition_id]);
+  }, [competition.competition_id, roundQuery]);
 
   useEffect(() => {
     if (!submissionID || locked || examResult) return undefined;

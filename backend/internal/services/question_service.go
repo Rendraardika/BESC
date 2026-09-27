@@ -1,6 +1,8 @@
 package services
 
 import (
+	"strings"
+
 	"github.com/google/uuid"
 
 	"online-competition-platform/internal/dto"
@@ -24,9 +26,11 @@ func NewQuestionService(questions repositories.QuestionRepository) QuestionServi
 }
 
 func (s *questionService) Create(competitionID string, input dto.QuestionRequest) (*entities.Question, error) {
+	round := normalizeExamRound(input.Round)
 	question := &entities.Question{
 		ID:            uuid.NewString(),
 		CompetitionID: competitionID,
+		Round:         round,
 		Question:      input.Question,
 		Image:         input.Image,
 		OptionA:       input.OptionA,
@@ -47,6 +51,7 @@ func (s *questionService) Update(id string, input dto.QuestionRequest) (*entitie
 		return nil, err
 	}
 	existing.Question = input.Question
+	existing.Round = normalizeExamRound(input.Round)
 	existing.Image = input.Image
 	existing.OptionA = input.OptionA
 	existing.OptionB = input.OptionB
@@ -65,4 +70,13 @@ func (s *questionService) Delete(id string) error {
 
 func (s *questionService) List(competitionID string) ([]entities.Question, error) {
 	return s.questions.ListByCompetition(competitionID, true)
+}
+
+func normalizeExamRound(round string) string {
+	switch strings.ToLower(strings.TrimSpace(round)) {
+	case entities.ExamRoundSemifinal:
+		return entities.ExamRoundSemifinal
+	default:
+		return entities.ExamRoundPreliminary
+	}
 }

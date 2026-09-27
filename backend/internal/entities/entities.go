@@ -23,6 +23,12 @@ const (
 
 	SubmissionStarted   = "started"
 	SubmissionSubmitted = "submitted"
+
+	ExamRoundPreliminary = "preliminary"
+	ExamRoundSemifinal   = "semifinal"
+
+	SelectionSemifinalist = "semifinalist"
+	SelectionFinalist     = "finalist"
 )
 
 type User struct {
@@ -110,6 +116,7 @@ type Payment struct {
 type Question struct {
 	ID            string  `json:"id"`
 	CompetitionID string  `json:"competition_id"`
+	Round         string  `json:"round"`
 	Question      string  `json:"question"`
 	Image         string  `json:"image,omitempty"`
 	OptionA       string  `json:"option_a"`
@@ -126,6 +133,7 @@ type Submission struct {
 	ID             string     `json:"id"`
 	UserID         string     `json:"user_id"`
 	CompetitionID  string     `json:"competition_id"`
+	Round          string     `json:"round"`
 	StartedAt      time.Time  `json:"started_at"`
 	SubmittedAt    *time.Time `json:"submitted_at,omitempty"`
 	Score          float64    `json:"score"`
@@ -204,38 +212,38 @@ type AdminDashboard struct {
 }
 
 type Team struct {
-	ID             string     `json:"id"`
-	UserID         string     `json:"user_id,omitempty"`
-	Name           string     `json:"name"`
-	LeaderName     string     `json:"leader_name"`
-	LeaderEmail    string     `json:"leader_email"`
-	LeaderPhone    string     `json:"leader_phone"`
-	LeaderNISN     string     `json:"leader_nisn,omitempty"`
-	LeaderKelas    string     `json:"leader_kelas,omitempty"`
-	LeaderIG       string     `json:"leader_ig,omitempty"`
-	LeaderTikTok   string     `json:"leader_tiktok,omitempty"`
-	Member1Name    string     `json:"member1_name"`
-	Member1Email   string     `json:"member1_email"`
-	Member1NISN    string     `json:"member1_nisn,omitempty"`
-	Member1Kelas   string     `json:"member1_kelas,omitempty"`
-	Member1IG      string     `json:"member1_ig,omitempty"`
-	Member1TikTok  string     `json:"member1_tiktok,omitempty"`
-	Member2Name    string     `json:"member2_name"`
-	Member2Email   string     `json:"member2_email"`
-	Member2NISN    string     `json:"member2_nisn,omitempty"`
-	Member2Kelas   string     `json:"member2_kelas,omitempty"`
-	Member2IG      string     `json:"member2_ig,omitempty"`
-	Member2TikTok  string     `json:"member2_tiktok,omitempty"`
-	Institution    string     `json:"institution"`
-	Province       string     `json:"province,omitempty"`
-	City           string     `json:"city,omitempty"`
-	Address        string     `json:"address,omitempty"`
-	GuardianName   string     `json:"guardian_name,omitempty"`
-	GuardianHP     string     `json:"guardian_hp,omitempty"`
-	GuardianEmail  string     `json:"guardian_email,omitempty"`
-	Category       string     `json:"category"`
-	Status         string     `json:"status"`
-	Notes          string     `json:"notes,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+	ID            string    `json:"id"`
+	UserID        string    `json:"user_id,omitempty"`
+	Name          string    `json:"name"`
+	LeaderName    string    `json:"leader_name"`
+	LeaderEmail   string    `json:"leader_email"`
+	LeaderPhone   string    `json:"leader_phone"`
+	LeaderNISN    string    `json:"leader_nisn,omitempty"`
+	LeaderKelas   string    `json:"leader_kelas,omitempty"`
+	LeaderIG      string    `json:"leader_ig,omitempty"`
+	LeaderTikTok  string    `json:"leader_tiktok,omitempty"`
+	Member1Name   string    `json:"member1_name"`
+	Member1Email  string    `json:"member1_email"`
+	Member1NISN   string    `json:"member1_nisn,omitempty"`
+	Member1Kelas  string    `json:"member1_kelas,omitempty"`
+	Member1IG     string    `json:"member1_ig,omitempty"`
+	Member1TikTok string    `json:"member1_tiktok,omitempty"`
+	Member2Name   string    `json:"member2_name"`
+	Member2Email  string    `json:"member2_email"`
+	Member2NISN   string    `json:"member2_nisn,omitempty"`
+	Member2Kelas  string    `json:"member2_kelas,omitempty"`
+	Member2IG     string    `json:"member2_ig,omitempty"`
+	Member2TikTok string    `json:"member2_tiktok,omitempty"`
+	Institution   string    `json:"institution"`
+	Province      string    `json:"province,omitempty"`
+	City          string    `json:"city,omitempty"`
+	Address       string    `json:"address,omitempty"`
+	GuardianName  string    `json:"guardian_name,omitempty"`
+	GuardianHP    string    `json:"guardian_hp,omitempty"`
+	GuardianEmail string    `json:"guardian_email,omitempty"`
+	Category      string    `json:"category"`
+	Status        string    `json:"status"`
+	Notes         string    `json:"notes,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
