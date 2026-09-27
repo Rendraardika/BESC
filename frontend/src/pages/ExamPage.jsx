@@ -393,7 +393,7 @@ export default function ExamPage({ competition, onFinish }) {
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150">
             <div className="flex items-start gap-4">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-teal-50 text-2xl text-teal-700">
-                📝
+                OK
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
@@ -436,24 +436,13 @@ export default function ExamPage({ competition, onFinish }) {
 }
 
 function ExamResultReview({ result, competition, onBack }) {
-  const [filter, setFilter] = useState('all');
-  const reviewItems = result.review || [];
-  const unansweredCount = Math.max(0, result.total_questions - result.correct_count - result.wrong_count);
-
-  const filteredItems = reviewItems.filter((item) => {
-    if (filter === 'correct') return item.is_correct;
-    if (filter === 'wrong') return item.user_answer && !item.is_correct;
-    if (filter === 'unanswered') return !item.user_answer;
-    return true;
-  });
-
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-800 pb-16">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-800">
       {/* Top Header */}
       <header className="border-b border-slate-200 bg-white px-6 py-4 shadow-sm sticky top-0 z-30">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-600">Hasil & Pembahasan</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-600">Ujian Selesai</span>
             <h1 className="text-lg sm:text-xl font-extrabold text-slate-900">{competition.competition_title || 'Ujian BESC'}</h1>
           </div>
           <button
@@ -466,189 +455,24 @@ function ExamResultReview({ result, competition, onBack }) {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-8 space-y-6">
-        {/* Score & Summary Banner */}
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-6 md:grid-cols-[220px_1fr] items-center">
-            <div className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-teal-500 to-[#073b4c] p-6 text-white text-center shadow-md">
-              <span className="text-xs font-extrabold uppercase tracking-wider text-teal-100">Nilai Akhir</span>
-              <div className="mt-2 text-5xl font-black">{Math.round(result.score)}</div>
-              <span className="mt-1 text-xs text-teal-100/90 font-semibold">Skor Perolehan</span>
+      <main className="mx-auto flex min-h-[calc(100vh-73px)] max-w-4xl flex-col items-center justify-center px-4 py-10 sm:px-6">
+        <section className="w-full border border-slate-200 bg-white p-6 text-center shadow-sm sm:p-8">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-600">Jawaban Terkirim</span>
+          <h2 className="mt-3 text-2xl font-extrabold text-slate-950 sm:text-3xl">Terima kasih, ujian Anda sudah selesai.</h2>
+
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            <div className="border border-emerald-100 bg-emerald-50/70 p-6">
+              <div className="text-5xl font-black text-emerald-700">{result.correct_count}</div>
+              <div className="mt-2 text-xs font-extrabold uppercase tracking-wide text-emerald-800">Jumlah Benar</div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-center">
-                <span className="text-2xl">✅</span>
-                <div className="mt-1 text-2xl font-black text-emerald-700">{result.correct_count}</div>
-                <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">Benar</div>
-              </div>
-
-              <div className="rounded-xl border border-red-100 bg-red-50/70 p-4 text-center">
-                <span className="text-2xl">❌</span>
-                <div className="mt-1 text-2xl font-black text-red-600">{result.wrong_count}</div>
-                <div className="text-[11px] font-bold text-red-800 uppercase tracking-wide">Salah</div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center">
-                <span className="text-2xl">⚪</span>
-                <div className="mt-1 text-2xl font-black text-slate-700">{unansweredCount}</div>
-                <div className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Kosong</div>
-              </div>
+            <div className="border border-red-100 bg-red-50/70 p-6">
+              <div className="text-5xl font-black text-red-600">{result.wrong_count}</div>
+              <div className="mt-2 text-xs font-extrabold uppercase tracking-wide text-red-800">Jumlah Salah</div>
             </div>
           </div>
-        </section>
 
-        {/* Filter Navigation */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <h2 className="text-base font-extrabold text-slate-900">Pembahasan Setiap Soal</h2>
-          <div className="flex flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setFilter('all')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${filter === 'all' ? 'bg-[#073b4c] text-white' : 'text-slate-600 hover:bg-slate-100'}`}
-            >
-              Semua ({reviewItems.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter('correct')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${filter === 'correct' ? 'bg-emerald-600 text-white' : 'text-emerald-700 hover:bg-emerald-50'}`}
-            >
-              Benar ({result.correct_count})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilter('wrong')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${filter === 'wrong' ? 'bg-red-600 text-white' : 'text-red-700 hover:bg-red-50'}`}
-            >
-              Salah ({result.wrong_count})
-            </button>
-            {unansweredCount > 0 && (
-              <button
-                type="button"
-                onClick={() => setFilter('unanswered')}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${filter === 'unanswered' ? 'bg-slate-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
-              >
-                Kosong ({unansweredCount})
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Questions Review List */}
-        <div className="space-y-4">
-          {filteredItems.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm font-semibold text-slate-500">
-              Tidak ada soal pada kategori ini.
-            </div>
-          ) : (
-            filteredItems.map((item, index) => {
-              const itemNumber = reviewItems.findIndex((q) => q.question_id === item.question_id) + 1;
-              const optionKeys = [
-                ['A', item.option_a],
-                ['B', item.option_b],
-                ['C', item.option_c],
-                ['D', item.option_d],
-                ['E', item.option_e],
-              ];
-
-              return (
-                <article
-                  key={item.question_id}
-                  className={`rounded-2xl border bg-white p-5 sm:p-6 shadow-sm transition ${
-                    item.is_correct
-                      ? 'border-emerald-200'
-                      : item.user_answer
-                      ? 'border-red-200'
-                      : 'border-slate-200'
-                  }`}
-                >
-                  {/* Status Banner */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                    <span className="rounded-lg bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-800">
-                      Soal No. {itemNumber}
-                    </span>
-                    {item.is_correct ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-3 py-1 text-xs font-extrabold text-emerald-800">
-                        ✅ Benar (+{item.score_earned})
-                      </span>
-                    ) : item.user_answer ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-3 py-1 text-xs font-extrabold text-red-800">
-                        ❌ Salah ({item.score_earned})
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-extrabold text-slate-600">
-                        ⚪ Tidak Dijawab (0)
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Question Content */}
-                  <div className="mt-4">
-                    <p className="text-sm sm:text-base font-semibold leading-relaxed text-slate-900">
-                      {item.question}
-                    </p>
-                    {item.image && (
-                      <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-2">
-                        <img src={item.image} alt="Gambar soal" className="max-h-60 max-w-full object-contain" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Options List */}
-                  <div className="mt-4 space-y-2">
-                    {optionKeys.map(([key, text]) => {
-                      if (!text) return null;
-                      const isUserChoice = item.user_answer === key;
-                      const isCorrectKey = item.correct_answer === key;
-
-                      let style = 'border-slate-200 bg-slate-50/50 text-slate-700';
-                      let badge = null;
-
-                      if (isCorrectKey) {
-                        style = 'border-emerald-400 bg-emerald-50 text-emerald-950 font-bold ring-1 ring-emerald-400';
-                        badge = (
-                          <span className="ml-auto rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
-                            Kunci Jawaban
-                          </span>
-                        );
-                      }
-                      if (isUserChoice && !item.is_correct) {
-                        style = 'border-red-400 bg-red-50 text-red-950 font-bold ring-1 ring-red-400';
-                        badge = (
-                          <span className="ml-auto rounded-md bg-red-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
-                            Jawaban Anda
-                          </span>
-                        );
-                      } else if (isUserChoice && item.is_correct) {
-                        badge = (
-                          <span className="ml-auto rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white">
-                            Jawaban Anda (Benar)
-                          </span>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={key}
-                          className={`flex items-center gap-3 rounded-xl border p-3 text-xs sm:text-sm ${style}`}
-                        >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-current font-bold text-xs">
-                            {key}
-                          </span>
-                          <span className="flex-1">{text}</span>
-                          {badge}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </article>
-              );
-            })
-          )}
-        </div>
-
-        <div className="pt-4 flex justify-center">
+          <div className="mt-8 flex justify-center">
           <button
             type="button"
             onClick={onBack}
@@ -656,7 +480,8 @@ function ExamResultReview({ result, competition, onBack }) {
           >
             Selesai & Kembali ke Beranda
           </button>
-        </div>
+          </div>
+        </section>
       </main>
     </div>
   );
