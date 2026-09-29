@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS competitions (
   price DECIMAL(12,2) NOT NULL DEFAULT 0,
   start_time DATETIME NOT NULL,
   end_time DATETIME NOT NULL,
+  semifinal_start_time DATETIME NULL,
+  semifinal_end_time DATETIME NULL,
   status ENUM('draft', 'published', 'closed') NOT NULL DEFAULT 'draft',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_competitions_status (status),

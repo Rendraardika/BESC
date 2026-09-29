@@ -276,7 +276,11 @@ go test ./...
 
 - Peserta yang pembayarannya berstatus `verified` dapat mengerjakan ronde penyisihan (`preliminary`).
 - Admin memilih peserta yang lolos dengan mengubah status registrasi menjadi `semifinalist`.
-- Peserta berstatus `semifinalist` atau `finalist` dapat mengerjakan ronde semifinal (`semifinal`).
+- Jadwal penyisihan diatur melalui **Mulai Penyisihan** dan **Selesai Penyisihan** pada form kompetisi.
+- Jadwal semifinal diatur terpisah melalui **Mulai Semifinal** dan **Selesai Semifinal**. Jika belum diisi, akses semifinal tetap terkunci.
+- Peserta berstatus `semifinalist` atau `finalist` hanya dapat mengerjakan ronde semifinal (`semifinal`) selama jadwal semifinal aktif.
+- Dari hasil semifinal, admin menetapkan `finalist` (Lolos Final) atau `not_finalist` (Tidak Lolos Final). Keduanya mengirim email hasil seleksi.
+- Tahap final dilaksanakan offline, sehingga status `finalist` tidak membuka ronde ujian baru di website.
 - Soal dan submission disimpan per ronde, sehingga satu peserta dapat memiliki satu submission penyisihan dan satu submission semifinal pada kompetisi yang sama.
 - Dashboard admin dapat menampilkan detail hasil, jawaban peserta, jawaban benar, skor, dan aktivitas proctoring setiap submission.
 
@@ -333,8 +337,19 @@ Sebelum deploy production:
 - Jalankan semua migration sampai `019_add_exam_rounds.sql` atau file terbaru di `backend/database/migrations`.
 - Jangan gunakan akun demo dari seed untuk production.
 
-Script deploy yang tersedia:
+Deployment dilakukan langsung dari VPS agar kredensial tidak tersimpan di repository:
 
-- `deploy-vps.sh`: setup awal di VPS.
-- `update.sh`: pull update dan rebuild container di VPS.
-- `enable-https.sh`: setup HTTPS.
+```bash
+ssh <user>@<server>
+cd /opt/BESC
+git pull origin main
+docker compose --env-file .env up -d --build
+docker compose ps
+docker compose logs backend --tail=50
+```
+
+Simpan `.env` hanya di VPS dan isi minimal `MYSQL_ROOT_PASSWORD`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ALLOW_ORIGINS`, kredensial SMTP, dan Google Client ID. Jangan menulis password atau secret langsung di script yang masuk Git.
+
+HTTPS dikelola oleh Traefik melalui label pada `docker-compose.yml`. Pastikan network eksternal `traefik-proxy` dan certificate resolver `letsencrypt` sudah tersedia di server sebelum container dijalankan.
+
+`restore-uploads.sh` hanya digunakan ketika perlu memulihkan file upload dari komputer lokal ke persistent directory VPS. Periksa alamat server dan lokasi tujuan di script sebelum menjalankannya.

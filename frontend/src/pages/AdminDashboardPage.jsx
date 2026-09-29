@@ -75,6 +75,24 @@ const formatWorkDuration = (startedAt, submittedAt, durationSeconds) => {
   return `${minutes}m ${seconds}d`;
 };
 
+const examRoundLabel = (round) =>
+  round === "semifinal" ? "Semifinal" : "Penyisihan";
+
+const selectionStatusLabel = (status) => {
+  const labels = {
+    verified: "Peserta Penyisihan",
+    semifinalist: "Lolos Semifinal",
+    finalist: "Lolos Final",
+    eliminated: "Tidak Lolos",
+    not_finalist: "Tidak Lolos Final",
+    not_winner: "Finalis",
+    winner_1: "Juara 1",
+    winner_2: "Juara 2",
+    winner_3: "Juara 3",
+  };
+  return labels[status] || status || "Pending";
+};
+
 const defaultCompetitionForm = {
   title: "",
   slug: "",
@@ -91,6 +109,8 @@ const defaultCompetitionForm = {
   tab_switch_limit: 3,
   start_time: "",
   end_time: "",
+  semifinal_start_time: "",
+  semifinal_end_time: "",
   registration_deadline: "",
   status: "draft",
 };
@@ -116,6 +136,8 @@ const competitionToForm = (competition) => ({
     competition?.tab_switch_limit ?? defaultCompetitionForm.tab_switch_limit,
   start_time: formatDateTimeLocal(competition?.start_time),
   end_time: formatDateTimeLocal(competition?.end_time),
+  semifinal_start_time: formatDateTimeLocal(competition?.semifinal_start_time),
+  semifinal_end_time: formatDateTimeLocal(competition?.semifinal_end_time),
   registration_deadline: formatDateTimeLocal(
     competition?.registration_deadline,
   ),
@@ -183,6 +205,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [questionCompetition, setQuestionCompetition] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const [resultLevel, setResultLevel] = useState("SMP");
+  const [resultRound, setResultRound] = useState("preliminary");
+  const [selectionConfirmation, setSelectionConfirmation] = useState(null);
   const [submissionReview, setSubmissionReview] = useState(null);
   const [reviewLoadingID, setReviewLoadingID] = useState("");
   const [proofActivity, setProofActivity] = useState(null);
@@ -273,7 +298,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
       } catch (err) {
         console.error("Failed to refresh page data:", err);
       }
-    }, 20000);
+    }, activePage === "Hasil Ujian" ? 5000 : 20000);
 
     return () => clearInterval(interval);
   }, [activePage]);
@@ -324,12 +349,60 @@ export default function AdminDashboardPage({ admin, onLogout }) {
 
   const rankedSubmissions = useMemo(() => {
     const ranksByCompetition = new Map();
-    return submissions.map((item) => {
-      const nextRank = (ranksByCompetition.get(item.competition_id) || 0) + 1;
-      ranksByCompetition.set(item.competition_id, nextRank);
-      return { ...item, rank: nextRank };
-    });
-  }, [submissions]);
+    return submissions
+      .filter(
+        (item) =>
+          item.competition_category?.toLowerCase() === "olimpiade" &&
+          item.competition_level?.toUpperCase() === resultLevel &&
+          (item.round || "preliminary") === resultRound,
+      )
+      .map((item) => {
+        const rankGroup = `${item.competition_id}:${item.round || "preliminary"}`;
+        const nextRank = (ranksByCompetition.get(rankGroup) || 0) + 1;
+        ranksByCompetition.set(rankGroup, nextRank);
+        return { ...item, rank: nextRank };
+      });
+  }, [submissions, resultLevel, resultRound]);
+
+  const resultCounts = useMemo(
+    () =>
+      submissions.reduce(
+        (counts, item) => {
+          if (item.competition_category?.toLowerCase() !== "olimpiade") {
+            return counts;
+          }
+          const level = item.competition_level?.toUpperCase();
+          if (
+            (level === "SMP" || level === "SMA") &&
+            (item.round || "preliminary") === resultRound
+          ) {
+            counts[level] += 1;
+          }
+          return counts;
+        },
+        { SMP: 0, SMA: 0 },
+      ),
+    [submissions, resultRound],
+  );
+
+  const roundCounts = useMemo(
+    () =>
+      submissions.reduce(
+        (counts, item) => {
+          if (
+            item.competition_category?.toLowerCase() !== "olimpiade" ||
+            item.competition_level?.toUpperCase() !== resultLevel
+          ) {
+            return counts;
+          }
+          const round = item.round === "semifinal" ? "semifinal" : "preliminary";
+          counts[round] += 1;
+          return counts;
+        },
+        { preliminary: 0, semifinal: 0 },
+      ),
+    [submissions, resultLevel],
+  );
 
   const openSubmissionReview = async (submission) => {
     setError("");
@@ -373,7 +446,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   };
 
   const updateRegistrationStatus = async (registrationID, status) => {
-    if (!registrationID) return;
+    if (!registrationID) return false;
     setUpdatingRegistration(registrationID);
     setError("");
     try {
@@ -386,12 +459,35 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           item.id === registrationID ? { ...item, status } : item,
         ),
       );
+      setSubmissions((current) =>
+        current.map((item) =>
+          item.registration_id === registrationID
+            ? { ...item, registration_status: status }
+            : item,
+        ),
+      );
       await refreshDashboard();
+      return true;
     } catch (err) {
       setError(err.message);
+      return false;
     } finally {
       setUpdatingRegistration("");
     }
+  };
+
+  const confirmResultSelection = (submission, status) => {
+    setSelectionConfirmation({ submission, status });
+  };
+
+  const applyResultSelection = async () => {
+    if (!selectionConfirmation) return;
+    const { submission, status } = selectionConfirmation;
+    const updated = await updateRegistrationStatus(
+      submission.registration_id,
+      status,
+    );
+    if (updated) setSelectionConfirmation(null);
   };
 
   const reviewProof = (activity) => {
@@ -1056,7 +1152,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                 "Waktu Daftar",
                 "Bukti",
                 "Status Bayar",
-                "Status Seleksi",
               ]}
               rows={(payments.length > 0
                 ? payments
@@ -1121,27 +1216,6 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                       <option value="verified">Verified</option>
                       <option value="rejected">Rejected</option>
                     </select>,
-                    <select
-                      key={`${item.id}-selection`}
-                      value={item.status || "pending"}
-                      disabled={updatingRegistration === item.id}
-                      onChange={(event) =>
-                        updateRegistrationStatus(item.id, event.target.value)
-                      }
-                      title="Ubah status seleksi peserta"
-                      className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600 outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="verified">Verified</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="semifinalist">Lolos Semifinal</option>
-                      <option value="not_finalist">Tidak Lolos Final</option>
-                      <option value="finalist">Lolos Final</option>
-                      <option value="not_winner">Finalis/Tidak Juara</option>
-                      <option value="winner_1">Juara 1</option>
-                      <option value="winner_2">Juara 2</option>
-                      <option value="winner_3">Juara 3</option>
-                    </select>,
                   ];
                 })}
             />
@@ -1188,12 +1262,49 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           {activePage === "Hasil Ujian" && (
             <DataTable
               title="Hasil Ujian Otomatis"
-              subtitle="Klik detail untuk melihat jawaban peserta, kunci jawaban, dan soal yang salah."
+              subtitle={`Peringkat Olim ${resultLevel} tahap ${examRoundLabel(resultRound).toLowerCase()}.`}
               searchPlaceholder="Cari peserta, email, kompetisi, status..."
+              action={
+                <div className="flex flex-wrap gap-2">
+                  <div className="inline-flex h-10 shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs font-extrabold">
+                    {["SMP", "SMA"].map((level) => (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setResultLevel(level)}
+                        className={`rounded-md px-3 transition ${
+                          resultLevel === level
+                            ? "bg-[#0d9488] text-white shadow-sm"
+                            : "text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        Olim {level} ({resultCounts[level]})
+                      </button>
+                    ))}
+                  </div>
+                  <div className="inline-flex h-10 shrink-0 rounded-lg border border-slate-200 bg-slate-50 p-1 text-xs font-extrabold">
+                    {["preliminary", "semifinal"].map((round) => (
+                      <button
+                        key={round}
+                        type="button"
+                        onClick={() => setResultRound(round)}
+                        className={`rounded-md px-3 transition ${
+                          resultRound === round
+                            ? "bg-[#17324d] text-white shadow-sm"
+                            : "text-slate-600 hover:bg-white"
+                        }`}
+                      >
+                        {examRoundLabel(round)} ({roundCounts[round]})
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              }
               headers={[
                 "Peringkat",
                 "Peserta",
                 "Kompetisi",
+                "Tahap",
                 "Benar",
                 "Salah",
                 "Terjawab",
@@ -1218,6 +1329,10 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                   </div>
                 </div>,
                 item.competition_title,
+                <Status
+                  key={`${item.id}-round`}
+                  value={examRoundLabel(item.round)}
+                />,
                 item.correct_count,
                 item.wrong_count,
                 item.answered_questions,
@@ -1234,16 +1349,94 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                     item.duration_seconds,
                   )}
                 </span>,
-                <Status key={item.id} value={item.status} />,
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => openSubmissionReview(item)}
-                  disabled={reviewLoadingID === item.id}
-                  className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {reviewLoadingID === item.id ? "Memuat..." : "Detail Jawaban"}
-                </button>,
+                <Status
+                  key={`${item.id}-selection`}
+                  value={selectionStatusLabel(item.registration_status)}
+                />,
+                <div key={item.id} className="flex min-w-max flex-wrap gap-2">
+                  {resultRound === "preliminary" &&
+                    ["verified", "semifinalist", "eliminated"].includes(
+                      item.registration_status,
+                    ) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmResultSelection(item, "semifinalist")
+                          }
+                          disabled={
+                            updatingRegistration === item.registration_id ||
+                            item.registration_status === "semifinalist"
+                          }
+                          className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {item.registration_status === "semifinalist"
+                            ? "Sudah Lolos"
+                            : "Loloskan"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmResultSelection(item, "eliminated")
+                          }
+                          disabled={
+                            updatingRegistration === item.registration_id ||
+                            item.registration_status === "eliminated"
+                          }
+                          className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {item.registration_status === "eliminated"
+                            ? "Tidak Lolos"
+                            : "Tidak Lolos"}
+                        </button>
+                      </>
+                    )}
+                  {resultRound === "semifinal" &&
+                    ["semifinalist", "finalist", "not_finalist"].includes(
+                      item.registration_status,
+                    ) && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmResultSelection(item, "finalist")
+                          }
+                          disabled={
+                            updatingRegistration === item.registration_id ||
+                            item.registration_status === "finalist"
+                          }
+                          className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {item.registration_status === "finalist"
+                            ? "Sudah Lolos Final"
+                            : "Lolos Final"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            confirmResultSelection(item, "not_finalist")
+                          }
+                          disabled={
+                            updatingRegistration === item.registration_id ||
+                            item.registration_status === "not_finalist"
+                          }
+                          className="rounded-lg bg-red-50 px-3 py-2 text-xs font-extrabold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Tidak Lolos Final
+                        </button>
+                      </>
+                    )}
+                  <button
+                    type="button"
+                    onClick={() => openSubmissionReview(item)}
+                    disabled={reviewLoadingID === item.id}
+                    className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {reviewLoadingID === item.id
+                      ? "Memuat..."
+                      : "Detail Jawaban"}
+                  </button>
+                </div>,
               ])}
             />
           )}
@@ -1301,6 +1494,17 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           onClose={() => setDeleteTarget(null)}
           onConfirm={confirmDelete}
           isDeleting={isDeleting}
+        />
+      )}
+      {selectionConfirmation && (
+        <SelectionConfirmationModal
+          selection={selectionConfirmation}
+          isUpdating={
+            updatingRegistration ===
+            selectionConfirmation.submission.registration_id
+          }
+          onClose={() => setSelectionConfirmation(null)}
+          onConfirm={applyResultSelection}
         />
       )}
     </main>
@@ -1578,6 +1782,22 @@ function CompetitionForm({ initialData, onClose, onSubmit }) {
           "Waktu selesai tidak boleh lebih awal dari waktu mulai.",
         );
       }
+      if (Boolean(form.semifinal_start_time) !== Boolean(form.semifinal_end_time)) {
+        throw new Error(
+          "Waktu mulai dan selesai semifinal harus diisi bersamaan.",
+        );
+      }
+      const semifinalStartTime = form.semifinal_start_time
+        ? new Date(form.semifinal_start_time)
+        : null;
+      const semifinalEndTime = form.semifinal_end_time
+        ? new Date(form.semifinal_end_time)
+        : null;
+      if (semifinalStartTime && semifinalEndTime <= semifinalStartTime) {
+        throw new Error(
+          "Waktu selesai semifinal harus setelah waktu mulai semifinal.",
+        );
+      }
       await onSubmit({
         ...form,
         badges: Array.isArray(form.badges)
@@ -1594,6 +1814,8 @@ function CompetitionForm({ initialData, onClose, onSubmit }) {
         tab_switch_limit: Number(form.tab_switch_limit),
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
+        semifinal_start_time: semifinalStartTime?.toISOString() || null,
+        semifinal_end_time: semifinalEndTime?.toISOString() || null,
         registration_deadline: form.registration_deadline
           ? new Date(form.registration_deadline).toISOString()
           : null,
@@ -1734,7 +1956,7 @@ function CompetitionForm({ initialData, onClose, onSubmit }) {
                 required
               />
             </FormField>
-            <FormField label="Mulai Kompetisi">
+            <FormField label="Mulai Penyisihan">
               <input
                 className={input}
                 type="datetime-local"
@@ -1743,13 +1965,29 @@ function CompetitionForm({ initialData, onClose, onSubmit }) {
                 required
               />
             </FormField>
-            <FormField label="Selesai Kompetisi">
+            <FormField label="Selesai Penyisihan">
               <input
                 className={input}
                 type="datetime-local"
                 value={form.end_time}
                 onChange={(e) => update("end_time", e.target.value)}
                 required
+              />
+            </FormField>
+            <FormField label="Mulai Semifinal">
+              <input
+                className={input}
+                type="datetime-local"
+                value={form.semifinal_start_time}
+                onChange={(e) => update("semifinal_start_time", e.target.value)}
+              />
+            </FormField>
+            <FormField label="Selesai Semifinal">
+              <input
+                className={input}
+                type="datetime-local"
+                value={form.semifinal_end_time}
+                onChange={(e) => update("semifinal_end_time", e.target.value)}
               />
             </FormField>
             <FormField label="Deadline Pendaftaran">
@@ -2740,6 +2978,125 @@ function SubmissionReviewPage({ detail, onBack }) {
         </div>
       </main>
     </section>
+  );
+}
+
+function SelectionConfirmationModal({
+  selection,
+  isUpdating,
+  onClose,
+  onConfirm,
+}) {
+  const isFinalSelection = selection.submission.round === "semifinal";
+  const isPassing = ["semifinalist", "finalist"].includes(selection.status);
+  const participant = selection.submission;
+  const targetStage = isFinalSelection ? "Final" : "Semifinal";
+
+  useEffect(() => {
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && !isUpdating) onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isUpdating, onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      onClick={isUpdating ? undefined : onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="selection-confirmation-title"
+        className="w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div
+          className={`border-b px-6 py-5 ${
+            isPassing
+              ? "border-emerald-100 bg-emerald-50"
+              : "border-red-100 bg-red-50"
+          }`}
+        >
+          <div className="flex items-center gap-4">
+            <div
+              className={`grid h-11 w-11 shrink-0 place-items-center rounded-lg text-xl font-black ${
+                isPassing
+                  ? "bg-emerald-600 text-white"
+                  : "bg-red-600 text-white"
+              }`}
+            >
+              {isPassing ? "✓" : "!"}
+            </div>
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                Konfirmasi Hasil {isFinalSelection ? "Semifinal" : "Penyisihan"}
+              </p>
+              <h2
+                id="selection-confirmation-title"
+                className="mt-1 text-lg font-extrabold text-[#17324d]"
+              >
+                {isPassing
+                  ? `Loloskan ke ${targetStage}?`
+                  : `Tetapkan Tidak Lolos ${targetStage}?`}
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-5">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="font-extrabold text-[#17324d]">
+              {participant.user_name}
+            </div>
+            <div className="mt-1 text-xs text-slate-500">
+              {participant.user_email}
+            </div>
+            <div className="mt-2 text-xs font-bold text-slate-600">
+              {participant.competition_title} · Skor {participant.score}
+            </div>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">
+            {isFinalSelection
+              ? isPassing
+                ? "Peserta akan menerima email kelolosan final offline. Tidak ada akses ujian final yang dibuka di website."
+                : "Peserta akan menerima email pemberitahuan bahwa belum lolos ke final."
+              : isPassing
+                ? "Peserta akan mendapat akses tahap semifinal sesuai jadwal dan email pemberitahuan kelolosan."
+                : "Peserta tidak mendapat akses semifinal dan akan menerima email pemberitahuan hasil seleksi."}
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isUpdating}
+            className="h-10 rounded-lg border border-slate-300 bg-white px-4 text-sm font-extrabold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isUpdating}
+            className={`h-10 rounded-lg px-4 text-sm font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+              isPassing
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-red-600 hover:bg-red-700"
+            }`}
+          >
+            {isUpdating
+              ? "Menyimpan..."
+              : isPassing
+                ? `Ya, Lolos ${targetStage}`
+                : `Ya, Tidak Lolos ${targetStage}`}
+          </button>
+        </div>
+      </section>
+    </div>,
+    document.body,
   );
 }
 

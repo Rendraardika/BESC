@@ -13,6 +13,7 @@ type AdminDashboardRepository interface {
 	DeleteParticipant(id string) error
 	Payments() ([]entities.AdminDashboardActivity, error)
 	UpdateRegistrationStatus(registrationID, status string) error
+	RegistrationNotificationDetails(registrationID string) (string, string, string, error)
 }
 
 func (r *adminDashboardRepository) Participant(id string) (*entities.User, error) {
@@ -94,6 +95,18 @@ func (r *adminDashboardRepository) UpdateRegistrationStatus(registrationID, stat
 		return err
 	}
 	return rowsAffected(result)
+}
+
+func (r *adminDashboardRepository) RegistrationNotificationDetails(registrationID string) (string, string, string, error) {
+	var email, participantName, competitionTitle string
+	err := r.db.QueryRow(`
+		SELECT u.email, u.name, c.title
+		FROM registrations r
+		JOIN users u ON u.id = r.user_id
+		JOIN competitions c ON c.id = r.competition_id
+		WHERE r.id = ?
+	`, registrationID).Scan(&email, &participantName, &competitionTitle)
+	return email, participantName, competitionTitle, err
 }
 
 func NewAdminDashboardRepository(db *sql.DB) AdminDashboardRepository {

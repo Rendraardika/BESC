@@ -3,9 +3,13 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 func EnsureLatestSchema(db *sql.DB, schemaName string) error {
+	if err := ensureRegistrationStatusValues(db, schemaName); err != nil {
+		return err
+	}
 	if err := ensureTable(db, schemaName, "registration_documents", `
 		CREATE TABLE registration_documents (
 			id CHAR(36) PRIMARY KEY,
@@ -23,6 +27,12 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 		return err
 	}
 	if err := ensureColumn(db, schemaName, "competitions", "participant_requirements", "ALTER TABLE competitions ADD COLUMN participant_requirements TEXT NULL AFTER description"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, schemaName, "competitions", "semifinal_start_time", "ALTER TABLE competitions ADD COLUMN semifinal_start_time DATETIME NULL AFTER end_time"); err != nil {
+		return err
+	}
+	if err := ensureColumn(db, schemaName, "competitions", "semifinal_end_time", "ALTER TABLE competitions ADD COLUMN semifinal_end_time DATETIME NULL AFTER semifinal_start_time"); err != nil {
 		return err
 	}
 	if err := ensureColumn(db, schemaName, "payments", "proof_viewed_at", "ALTER TABLE payments ADD COLUMN proof_viewed_at DATETIME NULL AFTER validated_at"); err != nil {
@@ -51,6 +61,32 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	}
 	if err := ensureForeignKey(db, schemaName, "payments", "fk_payments_proof_viewer", "ALTER TABLE payments ADD CONSTRAINT fk_payments_proof_viewer FOREIGN KEY (proof_viewed_by) REFERENCES users(id) ON DELETE SET NULL"); err != nil {
 		return err
+	}
+	return nil
+}
+
+func ensureRegistrationStatusValues(db *sql.DB, schemaName string) error {
+	var columnType string
+	if err := db.QueryRow(`
+		SELECT COLUMN_TYPE
+		FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'registrations' AND COLUMN_NAME = 'status'
+	`, schemaName).Scan(&columnType); err != nil {
+		return fmt.Errorf("check registrations.status: %w", err)
+	}
+
+	required := []string{
+		"pending", "verified", "rejected", "semifinalist", "finalist",
+		"eliminated", "not_finalist", "not_winner", "winner_1", "winner_2", "winner_3",
+	}
+	for _, status := range required {
+		if !strings.Contains(columnType, "'"+status+"'") {
+			_, err := db.Exec(`ALTER TABLE registrations MODIFY COLUMN status ENUM('pending', 'verified', 'rejected', 'semifinalist', 'finalist', 'eliminated', 'not_finalist', 'not_winner', 'winner_1', 'winner_2', 'winner_3') NOT NULL DEFAULT 'pending'`)
+			if err != nil {
+				return fmt.Errorf("expand registrations.status values: %w", err)
+			}
+			return nil
+		}
 	}
 	return nil
 }

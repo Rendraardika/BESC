@@ -15,6 +15,7 @@ var (
 	ErrPaymentPending        = errors.New("payment is not verified")
 	ErrPaymentProofNotViewed = errors.New("payment proof must be viewed before verification")
 	ErrExamNotStarted        = errors.New("exam has not started")
+	ErrExamScheduleMissing   = errors.New("exam schedule is not configured")
 	ErrExamClosed            = errors.New("exam is closed")
 	ErrExamSubmitted         = errors.New("exam already submitted")
 	ErrNoQuestions           = errors.New("exam questions are not available")

@@ -71,7 +71,18 @@ func (r *registrationRepository) ListByUser(userID string, page, limit int) ([]e
 		return nil, 0, err
 	}
 	rows, err := r.db.Query(`
-		SELECT r.id, r.user_id, r.competition_id, r.status, r.created_at, c.title, c.slug, COALESCE(p.payment_status, ''), COALESCE(p.proof_image, '')
+		SELECT r.id, r.user_id, r.competition_id, r.status, r.created_at, c.title, c.slug,
+			COALESCE(p.payment_status, ''), COALESCE(p.proof_image, ''),
+			EXISTS(
+				SELECT 1 FROM submissions s
+				WHERE s.user_id = r.user_id AND s.competition_id = r.competition_id
+					AND COALESCE(s.round, 'preliminary') = 'preliminary' AND s.status = 'submitted'
+			),
+			EXISTS(
+				SELECT 1 FROM submissions s
+				WHERE s.user_id = r.user_id AND s.competition_id = r.competition_id
+					AND COALESCE(s.round, 'preliminary') = 'semifinal' AND s.status = 'submitted'
+			)
 		FROM registrations r
 		JOIN competitions c ON c.id = r.competition_id
 		LEFT JOIN payments p ON p.registration_id = r.id
@@ -86,7 +97,7 @@ func (r *registrationRepository) ListByUser(userID string, page, limit int) ([]e
 	items := []entities.RegistrationDetail{}
 	for rows.Next() {
 		var item entities.RegistrationDetail
-		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.Status, &item.CreatedAt, &item.CompetitionTitle, &item.CompetitionSlug, &item.PaymentStatus, &item.ProofImage); err != nil {
+		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.Status, &item.CreatedAt, &item.CompetitionTitle, &item.CompetitionSlug, &item.PaymentStatus, &item.ProofImage, &item.PreliminaryExamCompleted, &item.SemifinalExamCompleted); err != nil {
 			return nil, 0, err
 		}
 		items = append(items, item)

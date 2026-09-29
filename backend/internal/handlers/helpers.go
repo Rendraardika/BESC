@@ -58,6 +58,8 @@ func handleError(c *fiber.Ctx, err error) error {
 		return response.Error(c, fiber.StatusConflict, "Bukti pembayaran harus dilihat sebelum verifikasi", nil)
 	case errors.Is(err, utils.ErrExamNotStarted):
 		return response.Error(c, fiber.StatusForbidden, "ujian belum dimulai", nil)
+	case errors.Is(err, utils.ErrExamScheduleMissing):
+		return response.Error(c, fiber.StatusForbidden, "jadwal semifinal belum ditentukan", nil)
 	case errors.Is(err, utils.ErrExamClosed):
 		return response.Error(c, fiber.StatusForbidden, "waktu pengerjaan ujian sudah ditutup", nil)
 	case errors.Is(err, utils.ErrExamSubmitted):

@@ -9,6 +9,7 @@ import (
 	"online-competition-platform/internal/dto"
 	"online-competition-platform/internal/entities"
 	"online-competition-platform/internal/repositories"
+	"online-competition-platform/internal/utils"
 )
 
 type CompetitionService interface {
@@ -28,6 +29,9 @@ func NewCompetitionService(competitions repositories.CompetitionRepository) Comp
 }
 
 func (s *competitionService) Create(input dto.CompetitionRequest) (*entities.Competition, error) {
+	if err := validateCompetitionSchedule(input); err != nil {
+		return nil, err
+	}
 	item := &entities.Competition{
 		ID:                      uuid.NewString(),
 		Title:                   input.Title,
@@ -38,15 +42,26 @@ func (s *competitionService) Create(input dto.CompetitionRequest) (*entities.Com
 		Price:                   input.Price,
 		StartTime:               input.StartTime.UTC(),
 		EndTime:                 input.EndTime.UTC(),
+		SemifinalStartTime:      utcTimePointer(input.SemifinalStartTime),
+		SemifinalEndTime:        utcTimePointer(input.SemifinalEndTime),
 		Status:                  input.Status,
 		Category:                input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
-		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time { if input.RegistrationDeadline == nil { return nil }; t := input.RegistrationDeadline.UTC(); return &t }(),
+		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time {
+			if input.RegistrationDeadline == nil {
+				return nil
+			}
+			t := input.RegistrationDeadline.UTC()
+			return &t
+		}(),
 		DurationMinutes: input.DurationMinutes, TabSwitchLimit: input.TabSwitchLimit,
 	}
 	return item, s.competitions.Create(item)
 }
 
 func (s *competitionService) Update(id string, input dto.CompetitionRequest) (*entities.Competition, error) {
+	if err := validateCompetitionSchedule(input); err != nil {
+		return nil, err
+	}
 	item := &entities.Competition{
 		ID:                      id,
 		Title:                   input.Title,
@@ -57,9 +72,17 @@ func (s *competitionService) Update(id string, input dto.CompetitionRequest) (*e
 		Price:                   input.Price,
 		StartTime:               input.StartTime.UTC(),
 		EndTime:                 input.EndTime.UTC(),
+		SemifinalStartTime:      utcTimePointer(input.SemifinalStartTime),
+		SemifinalEndTime:        utcTimePointer(input.SemifinalEndTime),
 		Status:                  input.Status,
 		Category:                input.Category, Level: input.Level, Badges: input.Badges, Quota: input.Quota,
-		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time { if input.RegistrationDeadline == nil { return nil }; t := input.RegistrationDeadline.UTC(); return &t }(),
+		OriginalPrice: input.OriginalPrice, RegistrationDeadline: func() *time.Time {
+			if input.RegistrationDeadline == nil {
+				return nil
+			}
+			t := input.RegistrationDeadline.UTC()
+			return &t
+		}(),
 		DurationMinutes: input.DurationMinutes, TabSwitchLimit: input.TabSwitchLimit,
 	}
 	return item, s.competitions.Update(item)
@@ -78,4 +101,25 @@ func (s *competitionService) Get(idOrSlug string) (*entities.Competition, error)
 
 func (s *competitionService) List(page, limit int) ([]entities.Competition, int, error) {
 	return s.competitions.List(page, limit)
+}
+
+func validateCompetitionSchedule(input dto.CompetitionRequest) error {
+	if !input.EndTime.After(input.StartTime) {
+		return utils.ErrInvalidInput
+	}
+	if (input.SemifinalStartTime == nil) != (input.SemifinalEndTime == nil) {
+		return utils.ErrInvalidInput
+	}
+	if input.SemifinalStartTime != nil && !input.SemifinalEndTime.After(*input.SemifinalStartTime) {
+		return utils.ErrInvalidInput
+	}
+	return nil
+}
+
+func utcTimePointer(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	utc := value.UTC()
+	return &utc
 }

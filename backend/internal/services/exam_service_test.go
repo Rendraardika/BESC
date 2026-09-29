@@ -67,6 +67,80 @@ func TestExamStartCreatesSubmissionForVerifiedRegistrationWithQuestions(t *testi
 	}
 }
 
+func TestExamStartSemifinalAllowsSemifinalist(t *testing.T) {
+	registration := verifiedRegistration()
+	registration.Status = entities.SelectionSemifinalist
+	submissions := &fakeSubmissionRepository{
+		findActiveResults: []submissionResult{{err: utils.ErrNotFound}},
+	}
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: registration},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		submissions,
+	)
+
+	result, err := service.StartRound("user-1", "competition-1", entities.ExamRoundSemifinal)
+	if err != nil {
+		t.Fatalf("expected semifinalist to start semifinal, got %v", err)
+	}
+	if result.Round != entities.ExamRoundSemifinal {
+		t.Fatalf("expected semifinal round, got %s", result.Round)
+	}
+}
+
+func TestExamStartSemifinalRejectsVerifiedParticipant(t *testing.T) {
+	service := newTestExamService(
+		&fakeRegistrationRepository{registration: verifiedRegistration()},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.StartRound("user-1", "competition-1", entities.ExamRoundSemifinal)
+	if !errors.Is(err, utils.ErrForbidden) {
+		t.Fatalf("expected ErrForbidden, got %v", err)
+	}
+}
+
+func TestExamStartSemifinalRejectsMissingSchedule(t *testing.T) {
+	registration := verifiedRegistration()
+	registration.Status = entities.SelectionSemifinalist
+	competition := competitionWindow(time.Now().Add(-time.Hour), time.Now().Add(time.Hour))
+	competition.SemifinalStartTime = nil
+	competition.SemifinalEndTime = nil
+	service := newTestExamServiceWithCompetition(
+		&fakeRegistrationRepository{registration: registration},
+		&fakeCompetitionRepository{competition: competition},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.StartRound("user-1", "competition-1", entities.ExamRoundSemifinal)
+	if !errors.Is(err, utils.ErrExamScheduleMissing) {
+		t.Fatalf("expected ErrExamScheduleMissing, got %v", err)
+	}
+}
+
+func TestExamStartSemifinalRejectsBeforeSemifinalStart(t *testing.T) {
+	registration := verifiedRegistration()
+	registration.Status = entities.SelectionSemifinalist
+	competition := competitionWindow(time.Now().Add(-time.Hour), time.Now().Add(time.Hour))
+	semifinalStart := time.Now().Add(time.Hour)
+	semifinalEnd := semifinalStart.Add(time.Hour)
+	competition.SemifinalStartTime = &semifinalStart
+	competition.SemifinalEndTime = &semifinalEnd
+	service := newTestExamServiceWithCompetition(
+		&fakeRegistrationRepository{registration: registration},
+		&fakeCompetitionRepository{competition: competition},
+		&fakeQuestionRepository{questions: []entities.Question{{ID: "question-1"}}},
+		&fakeSubmissionRepository{},
+	)
+
+	_, err := service.StartRound("user-1", "competition-1", entities.ExamRoundSemifinal)
+	if !errors.Is(err, utils.ErrExamNotStarted) {
+		t.Fatalf("expected ErrExamNotStarted, got %v", err)
+	}
+}
+
 func TestExamStartRejectsPendingPayment(t *testing.T) {
 	registration := verifiedRegistration()
 	registration.Status = entities.RegistrationPending
@@ -318,10 +392,12 @@ func newTestExamServiceWithCompetition(registrations repositories.RegistrationRe
 
 func competitionWindow(start, end time.Time) *entities.Competition {
 	return &entities.Competition{
-		ID:        "competition-1",
-		Status:    entities.CompetitionPublished,
-		StartTime: start,
-		EndTime:   end,
+		ID:                 "competition-1",
+		Status:             entities.CompetitionPublished,
+		StartTime:          start,
+		EndTime:            end,
+		SemifinalStartTime: &start,
+		SemifinalEndTime:   &end,
 	}
 }
 

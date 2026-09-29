@@ -29,6 +29,8 @@ const (
 
 	SelectionSemifinalist = "semifinalist"
 	SelectionFinalist     = "finalist"
+	SelectionEliminated   = "eliminated"
+	SelectionNotFinalist  = "not_finalist"
 )
 
 type User struct {
@@ -73,6 +75,8 @@ type Competition struct {
 	Price                   float64    `json:"price"`
 	StartTime               time.Time  `json:"start_time"`
 	EndTime                 time.Time  `json:"end_time"`
+	SemifinalStartTime      *time.Time `json:"semifinal_start_time"`
+	SemifinalEndTime        *time.Time `json:"semifinal_end_time"`
 	Status                  string     `json:"status"`
 	Category                string     `json:"category"`
 	Level                   string     `json:"level"`
@@ -95,10 +99,12 @@ type Registration struct {
 
 type RegistrationDetail struct {
 	Registration
-	CompetitionTitle string `json:"competition_title"`
-	CompetitionSlug  string `json:"competition_slug"`
-	PaymentStatus    string `json:"payment_status,omitempty"`
-	ProofImage       string `json:"proof_image,omitempty"`
+	CompetitionTitle         string `json:"competition_title"`
+	CompetitionSlug          string `json:"competition_slug"`
+	PaymentStatus            string `json:"payment_status,omitempty"`
+	ProofImage               string `json:"proof_image,omitempty"`
+	PreliminaryExamCompleted bool   `json:"preliminary_exam_completed"`
+	SemifinalExamCompleted   bool   `json:"semifinal_exam_completed"`
 }
 
 type Payment struct {
@@ -146,6 +152,10 @@ type SubmissionDetail struct {
 	UserName            string `json:"user_name"`
 	UserEmail           string `json:"user_email"`
 	CompetitionTitle    string `json:"competition_title"`
+	CompetitionCategory string `json:"competition_category"`
+	CompetitionLevel    string `json:"competition_level"`
+	RegistrationID      string `json:"registration_id"`
+	RegistrationStatus  string `json:"registration_status"`
 	CorrectCount        int    `json:"correct_count"`
 	WrongCount          int    `json:"wrong_count"`
 	AnsweredQuestions   int    `json:"answered_questions"`

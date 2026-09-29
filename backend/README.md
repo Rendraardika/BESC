@@ -181,6 +181,8 @@ curl -X POST http://localhost:8080/api/v1/admin/competitions \
     "price":100000,
     "start_time":"2026-06-10T09:00:00Z",
     "end_time":"2026-06-10T11:00:00Z",
+    "semifinal_start_time":"2026-06-17T09:00:00Z",
+    "semifinal_end_time":"2026-06-17T11:00:00Z",
     "status":"published"
   }'
 ```
@@ -194,7 +196,7 @@ curl -X POST "http://localhost:8080/api/v1/competitions/<competition_id>/exam/su
   -d '{"answers":[{"question_id":"<question_id>","answer":"A"}]}'
 ```
 
-The `round` query parameter accepts `preliminary` or `semifinal` and defaults to `preliminary`. Semifinal access requires the registration status `semifinalist` or `finalist`.
+The `round` query parameter accepts `preliminary` or `semifinal` and defaults to `preliminary`. Semifinal access requires the registration status `semifinalist` or `finalist` and an active `semifinal_start_time`/`semifinal_end_time` window. When those fields are null, semifinal access remains locked.
 
 Update a participant's selection status:
 
@@ -206,6 +208,8 @@ curl -X PUT http://localhost:8080/api/v1/admin/registrations/<registration_id>/s
 ```
 
 Accepted registration statuses are `pending`, `verified`, `rejected`, `semifinalist`, `finalist`, `eliminated`, `not_finalist`, `not_winner`, `winner_1`, `winner_2`, and `winner_3`.
+
+Setting a semifinal result to `finalist` or `not_finalist` sends the participant an email notification. The final stage is offline, so `finalist` does not grant access to another online exam round.
 
 Log proctoring event from frontend:
 

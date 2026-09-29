@@ -63,7 +63,7 @@ func main() {
 	examService := services.NewExamService(registrationRepo, competitionRepo, questionRepo, submissionRepo)
 	questionService := services.NewQuestionService(questionRepo)
 	proctoringService := services.NewProctoringService(submissionRepo, proctoringRepo)
-	adminDashboardService := services.NewAdminDashboardService(adminDashboardRepo)
+	adminDashboardService := services.NewAdminDashboardService(adminDashboardRepo, cfg)
 	userTeamHandler := handlers.NewUserTeamHandler(db)
 
 	app := fiber.New(fiber.Config{

@@ -32,9 +32,11 @@ const calculateExamRemainingSeconds = (comp, sub) => {
   }
   let remaining = Math.max(0, totalSeconds - elapsed);
 
-  // 3. Batasi waktu agar tidak melebihi jadwal akhir kompetisi (end_time)
-  if (comp?.end_time) {
-    const endMs = new Date(comp.end_time).getTime();
+  const scheduleEnd = comp?.round === 'semifinal'
+    ? comp?.semifinal_end_time
+    : comp?.end_time;
+  if (scheduleEnd) {
+    const endMs = new Date(scheduleEnd).getTime();
     if (!isNaN(endMs)) {
       const remainingTillEnd = Math.max(0, Math.floor((endMs - now) / 1000));
       remaining = Math.min(remaining, remainingTillEnd);
@@ -171,7 +173,7 @@ export default function ExamPage({ competition, onFinish }) {
 
         // Fetch fresh competition details for accurate start_time, end_time, duration & limits
         const compDetail = await apiRequest(`/competitions/${competition.competition_id}`).catch(() => null);
-        const mergedComp = { ...competition, ...compDetail };
+        const mergedComp = { ...competition, ...compDetail, round: competition.round };
 
         const limit = Number(mergedComp.tab_switch_limit || DEFAULT_TAB_SWITCH_LIMIT);
         setTabSwitchLimit(limit);

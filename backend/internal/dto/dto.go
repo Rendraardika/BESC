@@ -54,6 +54,8 @@ type CompetitionRequest struct {
 	Price                   float64    `json:"price" validate:"gte=0"`
 	StartTime               time.Time  `json:"start_time" validate:"required"`
 	EndTime                 time.Time  `json:"end_time" validate:"required"`
+	SemifinalStartTime      *time.Time `json:"semifinal_start_time"`
+	SemifinalEndTime        *time.Time `json:"semifinal_end_time"`
 	Status                  string     `json:"status" validate:"required,oneof=draft published closed"`
 	Category                string     `json:"category" validate:"required,max=100"`
 	Level                   string     `json:"level" validate:"required,max=50"`

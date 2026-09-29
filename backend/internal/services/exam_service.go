@@ -47,7 +47,7 @@ func (s *examService) QuestionsRound(userID, competitionID, round string) ([]ent
 	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
-	if err := s.ensureExamWindow(competitionID); err != nil {
+	if err := s.ensureExamWindow(competitionID, round); err != nil {
 		return nil, err
 	}
 	questions, err := s.questions.ListByCompetitionRound(competitionID, round, false)
@@ -72,7 +72,7 @@ func (s *examService) StartRound(userID, competitionID, round string) (*entities
 	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
-	if err := s.ensureExamWindow(competitionID); err != nil {
+	if err := s.ensureExamWindow(competitionID, round); err != nil {
 		return nil, err
 	}
 	if err := s.ensureQuestionsAvailable(competitionID, round); err != nil {
@@ -121,7 +121,7 @@ func (s *examService) SubmitRound(userID, competitionID, round string, input dto
 	if err := s.ensureRoundAccess(userID, competitionID, round); err != nil {
 		return nil, err
 	}
-	if err := s.ensureExamWindow(competitionID); err != nil {
+	if err := s.ensureExamWindow(competitionID, round); err != nil {
 		return nil, err
 	}
 	submission, err := s.submissions.FindActiveRound(userID, competitionID, round)
@@ -250,7 +250,9 @@ func (s *examService) ensureVerified(userID, competitionID string) error {
 	if err != nil {
 		return err
 	}
-	if registration.Status != entities.RegistrationVerified {
+	if registration.Status != entities.RegistrationVerified &&
+		registration.Status != entities.SelectionSemifinalist &&
+		registration.Status != entities.SelectionFinalist {
 		return utils.ErrPaymentPending
 	}
 	return nil
@@ -281,16 +283,25 @@ func (s *examService) ensureRoundAccess(userID, competitionID, round string) err
 	return nil
 }
 
-func (s *examService) ensureExamWindow(competitionID string) error {
+func (s *examService) ensureExamWindow(competitionID, round string) error {
 	competition, err := s.competitions.FindByID(competitionID)
 	if err != nil {
 		return err
 	}
+	startTime := competition.StartTime
+	endTime := competition.EndTime
+	if round == entities.ExamRoundSemifinal {
+		if competition.SemifinalStartTime == nil || competition.SemifinalEndTime == nil {
+			return utils.ErrExamScheduleMissing
+		}
+		startTime = *competition.SemifinalStartTime
+		endTime = *competition.SemifinalEndTime
+	}
 	now := time.Now().UTC()
-	if now.Before(competition.StartTime.UTC()) {
+	if now.Before(startTime.UTC()) {
 		return utils.ErrExamNotStarted
 	}
-	if !now.Before(competition.EndTime.UTC()) {
+	if !now.Before(endTime.UTC()) {
 		return utils.ErrExamClosed
 	}
 	return nil

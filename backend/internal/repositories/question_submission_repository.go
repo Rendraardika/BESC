@@ -41,6 +41,8 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 	rows, err := r.db.Query(`
 		SELECT s.id, s.user_id, s.competition_id, s.started_at, s.submitted_at, s.score, s.status, s.violation_count,
 			COALESCE(s.round, ?), u.name, u.email, c.title,
+			COALESCE(c.category, ''), COALESCE(c.level, ''),
+			r.id, r.status,
 			TIMESTAMPDIFF(SECOND, s.started_at, s.submitted_at),
 			COALESCE(answer_stats.correct_count, 0),
 			COALESCE(answer_stats.wrong_count, 0),
@@ -50,11 +52,12 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 		FROM submissions s
 		JOIN users u ON u.id = s.user_id
 		JOIN competitions c ON c.id = s.competition_id
+		JOIN registrations r ON r.user_id = s.user_id AND r.competition_id = s.competition_id
 		LEFT JOIN (
-			SELECT competition_id, COALESCE(round, ?) AS round, COUNT(*) AS total_questions
+			SELECT competition_id, COALESCE(round, 'preliminary') AS round, COUNT(*) AS total_questions
 			FROM questions
-			GROUP BY competition_id, COALESCE(round, ?)
-		) question_stats ON question_stats.competition_id = s.competition_id AND question_stats.round = COALESCE(s.round, ?)
+			GROUP BY competition_id, COALESCE(round, 'preliminary')
+		) question_stats ON question_stats.competition_id = s.competition_id AND question_stats.round = COALESCE(s.round, 'preliminary')
 		LEFT JOIN (
 			SELECT a.submission_id,
 				COUNT(*) AS answered_questions,
@@ -65,8 +68,8 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 			GROUP BY a.submission_id
 		) answer_stats ON answer_stats.submission_id = s.id
 		WHERE s.status = ?
-		ORDER BY c.id ASC, s.score DESC, TIMESTAMPDIFF(SECOND, s.started_at, s.submitted_at) ASC, s.submitted_at ASC, s.id ASC
-		LIMIT ? OFFSET ?`, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, entities.SubmissionSubmitted, limit, offset)
+		ORDER BY c.level ASC, c.id ASC, COALESCE(s.round, ?) ASC, s.score DESC, TIMESTAMPDIFF(SECOND, s.started_at, s.submitted_at) ASC, s.submitted_at ASC, s.id ASC
+		LIMIT ? OFFSET ?`, entities.ExamRoundPreliminary, entities.SubmissionSubmitted, entities.ExamRoundPreliminary, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -74,7 +77,7 @@ func (r *submissionRepository) ListDetails(page, limit int) ([]entities.Submissi
 	items := []entities.SubmissionDetail{}
 	for rows.Next() {
 		var item entities.SubmissionDetail
-		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.Round, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.DurationSeconds, &item.CorrectCount, &item.WrongCount, &item.AnsweredQuestions, &item.UnansweredQuestions, &item.TotalQuestions); err != nil {
+		if err := rows.Scan(&item.ID, &item.UserID, &item.CompetitionID, &item.StartedAt, &item.SubmittedAt, &item.Score, &item.Status, &item.ViolationCount, &item.Round, &item.UserName, &item.UserEmail, &item.CompetitionTitle, &item.CompetitionCategory, &item.CompetitionLevel, &item.RegistrationID, &item.RegistrationStatus, &item.DurationSeconds, &item.CorrectCount, &item.WrongCount, &item.AnsweredQuestions, &item.UnansweredQuestions, &item.TotalQuestions); err != nil {
 			return nil, 0, err
 		}
 		items = append(items, item)
@@ -95,10 +98,10 @@ func (r *submissionRepository) ReviewDetail(submissionID string) (*dto.Submissio
 		JOIN users u ON u.id = s.user_id
 		JOIN competitions c ON c.id = s.competition_id
 		LEFT JOIN (
-			SELECT competition_id, COALESCE(round, ?) AS round, COUNT(*) AS total_questions
+			SELECT competition_id, COALESCE(round, 'preliminary') AS round, COUNT(*) AS total_questions
 			FROM questions
-			GROUP BY competition_id, COALESCE(round, ?)
-		) question_stats ON question_stats.competition_id = s.competition_id AND question_stats.round = COALESCE(s.round, ?)
+			GROUP BY competition_id, COALESCE(round, 'preliminary')
+		) question_stats ON question_stats.competition_id = s.competition_id AND question_stats.round = COALESCE(s.round, 'preliminary')
 		LEFT JOIN (
 			SELECT a.submission_id,
 				COUNT(*) AS answered_questions,
@@ -109,7 +112,7 @@ func (r *submissionRepository) ReviewDetail(submissionID string) (*dto.Submissio
 			GROUP BY a.submission_id
 		) answer_stats ON answer_stats.submission_id = s.id
 		WHERE s.id = ? AND s.status = ?
-	`, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, entities.ExamRoundPreliminary, submissionID, entities.SubmissionSubmitted).Scan(&result.SubmissionID, &result.Round, &result.UserName, &result.UserEmail, &result.CompetitionTitle, &result.Score, &result.CorrectCount, &result.WrongCount, &result.AnsweredQuestions, &result.UnansweredQuestions, &result.TotalQuestions); err != nil {
+	`, entities.ExamRoundPreliminary, submissionID, entities.SubmissionSubmitted).Scan(&result.SubmissionID, &result.Round, &result.UserName, &result.UserEmail, &result.CompetitionTitle, &result.Score, &result.CorrectCount, &result.WrongCount, &result.AnsweredQuestions, &result.UnansweredQuestions, &result.TotalQuestions); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, utils.ErrNotFound
 		}

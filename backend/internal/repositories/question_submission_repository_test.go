@@ -75,6 +75,12 @@ func TestSubmissionListDetailsRanking(t *testing.T) {
 		execSQL(t, db, `INSERT INTO users (id, name, email) VALUES (?, ?, ?)`, userID, userID, userID+"@example.com")
 	}
 	execSQL(t, db, `INSERT INTO competitions (id, title) VALUES ('comp-rank', 'Ranking Test'), ('comp-other', 'Other Competition')`)
+	execSQL(t, db, `INSERT INTO registrations (id, user_id, competition_id) VALUES
+		('reg-a', 'user-a', 'comp-rank'),
+		('reg-b', 'user-b', 'comp-rank'),
+		('reg-c', 'user-c', 'comp-rank'),
+		('reg-d-rank', 'user-d', 'comp-rank'),
+		('reg-d-other', 'user-d', 'comp-other')`)
 	execSQL(t, db, `INSERT INTO submissions (id, user_id, competition_id, started_at, submitted_at, score, status) VALUES
 		('sub-a', 'user-a', 'comp-rank', '2026-01-01 10:00:00', '2026-01-01 10:50:00', 90, 'submitted'),
 		('sub-b', 'user-b', 'comp-rank', '2026-01-01 10:00:00', '2026-01-01 10:40:00', 90, 'submitted'),
@@ -103,6 +109,12 @@ func TestSubmissionListDetailsRanking(t *testing.T) {
 	}
 	if items[0].ID != "sub-other" || items[0].DurationSeconds != 600 {
 		t.Fatalf("expected first competition group item sub-other with 600 seconds, got %s %d", items[0].ID, items[0].DurationSeconds)
+	}
+	if items[0].CompetitionCategory != "Olimpiade" || items[0].CompetitionLevel != "SMP" {
+		t.Fatalf("expected competition metadata Olimpiade/SMP, got %s/%s", items[0].CompetitionCategory, items[0].CompetitionLevel)
+	}
+	if items[0].RegistrationID == "" || items[0].RegistrationStatus != "verified" {
+		t.Fatalf("expected verified registration metadata, got %s/%s", items[0].RegistrationID, items[0].RegistrationStatus)
 	}
 }
 
@@ -141,21 +153,32 @@ func createSubmissionDetailStatsSchema(t *testing.T, db *sql.DB) {
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		`CREATE TABLE competitions (
 			id CHAR(36) PRIMARY KEY,
-			title VARCHAR(255) NOT NULL
+			title VARCHAR(255) NOT NULL,
+			category VARCHAR(100) NOT NULL DEFAULT 'Olimpiade',
+			level VARCHAR(50) NOT NULL DEFAULT 'SMP'
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		`CREATE TABLE submissions (
 			id CHAR(36) PRIMARY KEY,
 			user_id CHAR(36) NOT NULL,
 			competition_id CHAR(36) NOT NULL,
+			round VARCHAR(30) NOT NULL DEFAULT 'preliminary',
 			started_at DATETIME NOT NULL,
 			submitted_at DATETIME NULL,
 			score DECIMAL(8,2) NOT NULL DEFAULT 0,
 			status ENUM('started', 'submitted') NOT NULL DEFAULT 'started',
 			violation_count INT NOT NULL DEFAULT 0
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		`CREATE TABLE registrations (
+			id CHAR(36) PRIMARY KEY,
+			user_id CHAR(36) NOT NULL,
+			competition_id CHAR(36) NOT NULL,
+			status VARCHAR(30) NOT NULL DEFAULT 'verified',
+			UNIQUE KEY uq_registration_user_competition (user_id, competition_id)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		`CREATE TABLE questions (
 			id CHAR(36) PRIMARY KEY,
 			competition_id CHAR(36) NOT NULL,
+			round VARCHAR(30) NOT NULL DEFAULT 'preliminary',
 			correct_answer ENUM('A', 'B', 'C', 'D', 'E') NOT NULL
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		`CREATE TABLE answers (
@@ -176,6 +199,7 @@ func seedSubmissionDetailStats(t *testing.T, db *sql.DB) {
 	execSQL(t, db, `INSERT INTO users (id, name, email) VALUES ('user-1', 'Test User', 'user@example.com')`)
 	for _, competitionID := range []string{"comp-zero", "comp-partial", "comp-full"} {
 		execSQL(t, db, `INSERT INTO competitions (id, title) VALUES (?, ?)`, competitionID, competitionID)
+		execSQL(t, db, `INSERT INTO registrations (id, user_id, competition_id) VALUES (?, 'user-1', ?)`, "reg-"+competitionID, competitionID)
 	}
 	execSQL(t, db, `INSERT INTO submissions (id, user_id, competition_id, started_at, submitted_at, score, status) VALUES
 		('sub-zero', 'user-1', 'comp-zero', '2026-01-01 10:00:00', '2026-01-01 10:30:00', 0, 'submitted'),
