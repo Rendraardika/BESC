@@ -31,10 +31,10 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 			id CHAR(36) PRIMARY KEY,
 			registration_id CHAR(36) NOT NULL,
 			team_id CHAR(36) NULL,
-			abstract_title VARCHAR(255) NOT NULL,
+			abstract_title TEXT NOT NULL,
 			subtheme VARCHAR(150) NOT NULL,
 			status VARCHAR(40) NOT NULL DEFAULT 'abstract_submitted',
-			work_title VARCHAR(255) NULL,
+			work_title TEXT NULL,
 			work_type VARCHAR(40) NULL,
 			abstract_submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			reviewed_by CHAR(36) NULL,
@@ -55,11 +55,25 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	if err := alignTableCollation(db, schemaName, "lkti_submissions", "registrations", "id"); err != nil {
 		return err
 	}
+	if err := ensureColumnDataType(db, schemaName, "lkti_submissions", "abstract_title", "text", "ALTER TABLE lkti_submissions MODIFY COLUMN abstract_title TEXT NOT NULL"); err != nil {
+		return err
+	}
+	if err := ensureColumnDataType(db, schemaName, "lkti_submissions", "work_title", "text", "ALTER TABLE lkti_submissions MODIFY COLUMN work_title TEXT NULL"); err != nil {
+		return err
+	}
 	if _, err := db.Exec(`
 		INSERT INTO lkti_submissions (id, registration_id, team_id, abstract_title, subtheme)
 		SELECT UUID(), r.id, t.id,
-			COALESCE(NULLIF(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(t.notes, 'Judul:', -1), '|', 1)), ''), 'Pengajuan LKTI'),
-			COALESCE(NULLIF(TRIM(SUBSTRING_INDEX(t.notes, 'Subtema:', -1)), ''), 'Belum ditentukan')
+			CASE
+				WHEN LOCATE('Judul:', COALESCE(t.notes, '')) > 0
+				THEN COALESCE(NULLIF(TRIM(SUBSTRING_INDEX(SUBSTRING_INDEX(t.notes, 'Judul:', -1), '|', 1)), ''), 'Pengajuan LKTI')
+				ELSE 'Pengajuan LKTI'
+			END,
+			LEFT(CASE
+				WHEN LOCATE('Subtema:', COALESCE(t.notes, '')) > 0
+				THEN COALESCE(NULLIF(TRIM(SUBSTRING_INDEX(t.notes, 'Subtema:', -1)), ''), 'Belum ditentukan')
+				ELSE 'Belum ditentukan'
+			END, 150)
 		FROM registrations r
 		JOIN competitions c ON c.id = r.competition_id
 		LEFT JOIN teams t ON t.id = (
@@ -106,6 +120,23 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	}
 	if err := ensureForeignKey(db, schemaName, "payments", "fk_payments_proof_viewer", "ALTER TABLE payments ADD CONSTRAINT fk_payments_proof_viewer FOREIGN KEY (proof_viewed_by) REFERENCES users(id) ON DELETE SET NULL"); err != nil {
 		return err
+	}
+	return nil
+}
+
+func ensureColumnDataType(db *sql.DB, schemaName, tableName, columnName, expectedType, alterSQL string) error {
+	var dataType string
+	if err := db.QueryRow(`
+		SELECT DATA_TYPE FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+	`, schemaName, tableName, columnName).Scan(&dataType); err != nil {
+		return fmt.Errorf("check column type %s.%s: %w", tableName, columnName, err)
+	}
+	if strings.EqualFold(dataType, expectedType) {
+		return nil
+	}
+	if _, err := db.Exec(alterSQL); err != nil {
+		return fmt.Errorf("update column type %s.%s: %w", tableName, columnName, err)
 	}
 	return nil
 }
