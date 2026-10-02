@@ -74,7 +74,7 @@ function LoadingSkeleton() {
   );
 }
 
-export default function Events({ competitions, competitionsLoading, onCompetitionDetail, onVerifiedCompetition, registrations }) {
+export default function Events({ competitions, competitionsLoading, onCompetitionDetail, onLKTI, onVerifiedCompetition, registrations }) {
   const displayEvents = competitions?.length
     ? competitions.map(competitionToEvent)
     : [];
@@ -93,13 +93,16 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
               const competition = event.competition || competitions[index];
               const registration = competition ? registrations.find((item) => item.competition_id === competition.id) : null;
               const isTryOut = normalizeCategory(competition?.category) === 'try out';
+              const isLKTI = normalizeCategory(competition?.category) === 'lkti';
               const verifiedOlimpiadeReg = registrations.find((r) => {
                 const c = findCompetitionForRegistration(r, competitions);
                 return c && normalizeCategory(c.category) === 'olimpiade' && r.status === 'verified';
               });
               const verified = registration?.status === 'verified' || (isTryOut && Boolean(verifiedOlimpiadeReg));
               const isBlocked = !registration && !canRegisterCompetition(competition, registrations, competitions);
-              const action = competitionAction({ registration, competition, fallbackVerified: verified, blocked: isBlocked });
+              const action = isLKTI && registration && registration.status !== 'rejected'
+                ? { disabled: false, label: 'Status Karya' }
+                : competitionAction({ registration, competition, fallbackVerified: verified, blocked: isBlocked });
               const image = event.banner || eventImages[index % eventImages.length];
               return (
               <article key={event.id || event.title} className="overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-[#1c79c6] hover:shadow-2xl">
@@ -120,6 +123,7 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
                       {event.discount && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-extrabold text-red-600">{event.discount}</span>}
                     </div>
                     <button type="button" onClick={() => {
+                      if (isLKTI && registration && registration.status !== 'rejected') return onLKTI();
                       if (action.label === 'Daftar' || action.label === 'Upload Ulang Bukti') return onCompetitionDetail(index);
                       return onVerifiedCompetition(buildExamRegistration(registration, competition, action.round));
                     }} disabled={action.disabled} className="rounded-full bg-blue-100 px-4 py-2 text-xs font-extrabold text-[#044b86] transition hover:bg-[linear-gradient(180deg,#1c79c6,#044b86)] hover:text-white disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500">{action.label}</button>

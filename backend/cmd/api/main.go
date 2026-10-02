@@ -100,6 +100,7 @@ func main() {
 		Document:       handlers.NewDocumentHandler(db, cfg),
 		Team:           handlers.NewTeamHandler(db),
 		UserTeam:       userTeamHandler,
+		LKTI:           handlers.NewLKTIHandler(db, cfg),
 	}, cfg)
 
 	log.Fatal(app.Listen(":" + cfg.AppPort))

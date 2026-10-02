@@ -45,7 +45,7 @@ export default function TeamDetailModal({ team, onClose }) {
   const downloadDoc = async (doc, e) => {
     if (e) e.stopPropagation();
     try {
-      const res = await fetch(API_URL + '/docs/view/' + doc.id, { credentials: 'include' });
+      const res = await fetch(API_URL + '/admin/documents/' + doc.id + '/view', { credentials: 'include' });
       if (!res.ok) throw new Error('Gagal mengunduh berkas');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -57,7 +57,7 @@ export default function TeamDetailModal({ team, onClose }) {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      window.open(API_URL + '/docs/view/' + doc.id, '_blank');
+      window.open(API_URL + '/admin/documents/' + doc.id + '/view', '_blank');
     }
   };
 
@@ -82,7 +82,7 @@ export default function TeamDetailModal({ team, onClose }) {
         </div>
         <div className="mt-2.5 flex items-center justify-center gap-1.5 border-t border-slate-100 pt-2">
           <a
-            href={API_URL + '/docs/view/' + doc.id}
+            href={API_URL + '/admin/documents/' + doc.id + '/view'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 rounded-lg bg-teal-50 px-2 py-1 text-[10px] font-bold text-teal-700 hover:bg-teal-100 transition"

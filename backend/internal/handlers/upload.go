@@ -17,6 +17,7 @@ import (
 )
 
 const maxSensitiveImageUploadSize int64 = 5 * 1024 * 1024
+const maxPDFUploadSize int64 = 10 * 1024 * 1024
 
 var allowedImageMIMEs = map[string]string{
 	".jpg":  "image/jpeg",
@@ -68,6 +69,28 @@ func validateSensitiveImageUpload(file *multipart.FileHeader) (string, error) {
 	}
 
 	return ext, nil
+}
+
+func validatePDFUpload(file *multipart.FileHeader) (string, error) {
+	if file == nil || file.Size <= 0 {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "file PDF wajib diunggah"}
+	}
+	if file.Size > maxPDFUploadSize {
+		return "", uploadValidationError{status: fiber.StatusRequestEntityTooLarge, message: "ukuran PDF maksimal 10 MB"}
+	}
+	if strings.ToLower(filepath.Ext(file.Filename)) != ".pdf" {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "berkas harus berformat PDF"}
+	}
+	src, err := file.Open()
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+	header := make([]byte, 5)
+	if _, err := io.ReadFull(src, header); err != nil || string(header) != "%PDF-" {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "isi berkas bukan PDF yang valid"}
+	}
+	return ".pdf", nil
 }
 
 func uploadValidationResponse(c *fiber.Ctx, err error) error {

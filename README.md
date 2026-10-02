@@ -107,7 +107,7 @@ CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 EXIT;
 ```
 
-Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `019_add_exam_rounds.sql`.
+Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `019_create_lkti_submissions.sql`.
 
 ```bash
 cd backend
@@ -286,6 +286,29 @@ go test ./...
 
 Status seleksi lanjutan yang tersedia adalah `semifinalist`, `finalist`, `eliminated`, `not_finalist`, `not_winner`, `winner_1`, `winner_2`, dan `winner_3`.
 
+### Pemetaan Soal Production
+
+Data soal tersimpan di MySQL production, bukan di Git. Karena itu, `git pull` tidak menghapus, memindahkan, atau menggandakan soal. Saat backend terbaru pertama kali dijalankan, kolom `questions.round` ditambahkan otomatis dengan nilai awal `preliminary` untuk seluruh soal lama.
+
+| Kompetisi di production | Jumlah | Digunakan sebagai |
+| --- | ---: | --- |
+| Olimpiade Biologi BESC 2026 SMA | 75 | Penyisihan SMA |
+| Olimpiade Biologi BESC 2026 SMP | 100 | Penyisihan SMP |
+| PENYISIHAN OLIMPIADE SMP BESC 2026 | 50 | Try Out SMP (kompetisi salah diberi nama) |
+| Seleksi KTI | 0 | Tidak memakai ujian Olimpiade |
+| LKTI BESC 2026 | 0 | Menggunakan seleksi abstrak dan full paper |
+
+Jangan menyalin 50 soal dari kompetisi `PENYISIHAN OLIMPIADE SMP BESC 2026` ke Olimpiade SMP. Ubah nama dan kategori kompetisi tersebut menjadi Try Out SMP agar 50 soal tetap terhubung pada data aslinya. Soal semifinal Olimpiade ditambahkan atau dipilih terpisah dengan ronde `semifinal` melalui Bank Soal.
+
+## Alur Karya LKTI
+
+- LKTI memakai satu kompetisi `LKTI BESC 2026`; tidak memakai Bank Soal atau Hasil Ujian Olimpiade.
+- Saat mendaftar, tim mengisi data tim, judul abstrak, subtema, lalu mengunggah abstrak dan lembar orisinalitas PDF.
+- Admin menilai abstrak melalui menu **Karya LKTI**. Abstrak hanya dapat diloloskan setelah pembayaran terverifikasi.
+- Keputusan lolos atau tidak lolos dikirim ke email peserta.
+- Tim yang lolos membuka **Status Karya** dari kartu LKTI, kemudian mengisi judul KTI, subtema, jenis karya, konfirmasi, dan mengunggah full paper PDF maksimal 10 MB.
+- Data peserta lama yang sudah mempunyai dokumen abstrak otomatis dimasukkan ke alur seleksi ketika backend terbaru dijalankan.
+
 ## Troubleshooting
 
 Backend gagal connect database:
@@ -334,18 +357,28 @@ Sebelum deploy production:
 - Batasi `CORS_ALLOW_ORIGINS` hanya ke domain frontend.
 - Isi `GOOGLE_CLIENT_ID` backend dan frontend jika memakai Google Login.
 - Pastikan `backend/uploads` disimpan di persistent volume dan dibackup.
-- Jalankan semua migration sampai `019_add_exam_rounds.sql` atau file terbaru di `backend/database/migrations`.
+- Jalankan semua migration sampai `019_create_lkti_submissions.sql` atau file terbaru di `backend/database/migrations`. Backend juga memeriksa dan menambahkan tabel terbaru secara otomatis saat startup.
 - Jangan gunakan akun demo dari seed untuk production.
 
 Deployment dilakukan langsung dari VPS agar kredensial tidak tersimpan di repository:
 
 ```bash
 ssh <user>@<server>
-cd /opt/BESC
+cd /docker/besc
 git pull origin main
 docker compose --env-file .env up -d --build
 docker compose ps
 docker compose logs backend --tail=50
+```
+
+Sebelum `git pull`, buat backup database dan folder upload. Setelah deploy, verifikasi migrasi soal tanpa mengubah data menggunakan query berikut:
+
+```sql
+SELECT c.title, q.round, COUNT(*) AS jumlah_soal
+FROM competitions c
+LEFT JOIN questions q ON q.competition_id = c.id
+GROUP BY c.id, c.title, q.round
+ORDER BY c.title, q.round;
 ```
 
 Simpan `.env` hanya di VPS dan isi minimal `MYSQL_ROOT_PASSWORD`, `DB_PASSWORD`, `JWT_SECRET`, `CORS_ALLOW_ORIGINS`, kredensial SMTP, dan Google Client ID. Jangan menulis password atau secret langsung di script yang masuk Git.

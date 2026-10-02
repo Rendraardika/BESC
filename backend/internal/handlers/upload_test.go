@@ -85,6 +85,34 @@ func TestValidateSensitiveImageUploadRejectsOversizedFile(t *testing.T) {
 	}
 }
 
+func TestValidatePDFUpload(t *testing.T) {
+	tests := []struct {
+		name      string
+		filename  string
+		content   []byte
+		wantError string
+	}{
+		{name: "valid pdf", filename: "karya.pdf", content: []byte("%PDF-1.7\ncontent")},
+		{name: "fake pdf", filename: "karya.pdf", content: []byte("not a pdf"), wantError: "isi berkas bukan PDF"},
+		{name: "wrong extension", filename: "karya.txt", content: []byte("%PDF-1.7"), wantError: "berkas harus berformat PDF"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			header := multipartFileHeader(t, "full_paper", tt.filename, tt.content)
+			ext, err := validatePDFUpload(header)
+			if tt.wantError == "" {
+				if err != nil || ext != ".pdf" {
+					t.Fatalf("expected valid PDF, got ext=%q err=%v", ext, err)
+				}
+				return
+			}
+			if err == nil || !strings.Contains(err.Error(), tt.wantError) {
+				t.Fatalf("expected error containing %q, got %v", tt.wantError, err)
+			}
+		})
+	}
+}
+
 func TestPrivateFileAccessRequiresAdmin(t *testing.T) {
 	uploadDir := t.TempDir()
 	privateFile := filepath.Join(uploadDir, "private", "payments", "proof.jpg")

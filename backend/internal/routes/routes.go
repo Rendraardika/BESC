@@ -22,6 +22,7 @@ type Handlers struct {
 	Document       *handlers.DocumentHandler
 	Team           *handlers.TeamHandler
 	UserTeam       *handlers.UserTeamHandler
+	LKTI           *handlers.LKTIHandler
 }
 
 func Register(app *fiber.App, h Handlers, cfg config.Config) {
@@ -40,9 +41,6 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	api.Post("/auth/logout", h.Auth.Logout)
 	api.Get("/competitions", h.Competition.List)
 	api.Get("/competitions/:id", h.Competition.Detail)
-	// Public document view (no auth needed for viewing files)
-	api.Get("/docs/view/:doc_id", h.Document.ViewDocument)
-
 	protected := api.Group("", middleware.JWT(cfg.JWTSecret))
 	protected.Get("/auth/me", h.Auth.Me)
 	protected.Put("/auth/profile", h.Auth.UpdateProfile)
@@ -52,6 +50,9 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	protected.Post("/registrations/:registration_id/documents", h.Document.UploadDocuments)
 	protected.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	protected.Get("/registrations/:registration_id/payment", h.Payment.Status)
+	protected.Post("/registrations/:registration_id/lkti-submission", h.LKTI.CreateSubmission)
+	protected.Get("/me/lkti-submission", h.LKTI.MySubmission)
+	protected.Post("/lkti-submissions/:id/full-paper", h.LKTI.UploadFullPaper)
 	protected.Get("/competitions/:competition_id/exam/questions", h.Exam.Questions)
 	protected.Post("/competitions/:competition_id/exam/start", h.Exam.Start)
 	protected.Post("/competitions/:competition_id/exam/submit", h.Exam.Submit)
@@ -82,6 +83,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	admin.Get("/proctoring/snapshots/:snapshot_id/image", h.Proctoring.SnapshotImage)
 	admin.Get("/registrations/:registration_id/documents", h.Document.ListDocuments)
 	admin.Get("/documents/:doc_id/view", h.Document.ViewDocument)
+	admin.Get("/lkti-submissions", h.LKTI.AdminList)
+	admin.Put("/lkti-submissions/:id/status", h.LKTI.UpdateStatus)
 	protected.Get("/me/teams", h.UserTeam.GetMyTeam)
 	protected.Post("/me/teams", h.UserTeam.SubmitTeam)
 	admin.Get("/teams", h.Team.List)

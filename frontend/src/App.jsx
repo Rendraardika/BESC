@@ -69,6 +69,7 @@ const OlimpiadePage = lazy(() => import('./pages/OlimpiadePage.jsx'));
 const CompetitionDetailPage = lazy(() => import('./pages/CompetitionDetailPage.jsx'));
 const EventRegistrationPage = lazy(() => import('./pages/EventRegistrationPage.jsx'));
 const EventRegistrationSuccessPage = lazy(() => import('./pages/EventRegistrationSuccessPage.jsx'));
+const LktiSubmissionPage = lazy(() => import('./pages/LktiSubmissionPage.jsx'));
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage.jsx'));
 const ExamRulesPage = lazy(() => import('./pages/ExamRulesPage.jsx'));
 const ExamPage = lazy(() => import('./pages/ExamPage.jsx'));
@@ -92,6 +93,7 @@ const getPageFromHash = () => {
   if (window.location.hash === '#detail-kompetisi') return 'competition-detail';
   if (window.location.hash === '#pendaftaran-event') return 'event-registration';
   if (window.location.hash === '#pendaftaran-berhasil') return 'event-registration-success';
+  if (window.location.hash === '#lkti-saya') return 'lkti-submission';
   if (window.location.hash === '#admin-login') return 'login';
   if (window.location.hash === '#admin-dashboard') return 'admin-dashboard';
   if (window.location.hash === '#ketentuan-ujian') return 'exam-rules';
@@ -101,7 +103,7 @@ const getPageFromHash = () => {
   return 'home';
 };
 
-const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#detail-kompetisi', '#pendaftaran-event', '#pendaftaran-berhasil', '#admin-login', '#admin-dashboard', '#ketentuan-ujian', '#kerjakan-soal'];
+const pageHashes = ['#home', '#daftar', '#login', '#profile', '#olimpiade', '#detail-kompetisi', '#pendaftaran-event', '#pendaftaran-berhasil', '#lkti-saya', '#admin-login', '#admin-dashboard', '#ketentuan-ujian', '#kerjakan-soal'];
 
 const isProfileComplete = (currentUser) => Boolean(currentUser?.profile_complete);
 
@@ -240,6 +242,7 @@ export default function App() {
   };
   const openLogin = () => { window.location.hash = 'login'; window.scrollTo(0, 0); setPage('login'); };
   const backHome = () => { window.location.hash = 'home'; window.scrollTo(0, 0); setPage('home'); };
+  const openLKTI = () => { window.location.hash = 'lkti-saya'; window.scrollTo(0, 0); setPage('lkti-submission'); };
   const openProfile = () => { localStorage.removeItem('besc_after_profile'); window.location.hash = 'profile'; window.scrollTo(0, 0); setPage('profile'); };
   const openOlimpiade = () => { window.location.hash = 'olimpiade'; window.scrollTo(0, 0); setPage('olimpiade'); };
   const openCompetitionDetail = (index = 0) => { safeSetItem('besc_competition_index', String(index)); setCompetitionIndex(index); window.location.hash = 'detail-kompetisi'; window.scrollTo(0, 0); setPage('competition-detail'); };
@@ -329,7 +332,8 @@ export default function App() {
   if (page === 'competition-detail') return <CompetitionDetailPage competitionIndex={competitionIndex} competitions={apiCompetitions} onCompetitionDetail={openCompetitionDetail} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onEventRegistration={openEventRegistration} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
   if (page === 'event-registration') { if (!authChecked) return null; if (!user) return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />; if (!isProfileComplete(user)) { safeSetItem('besc_after_profile', 'event-registration'); return <ProfilePage onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onSaveProfile={handleSaveProfile} user={user} />; } return <EventRegistrationPage competitionIndex={competitionIndex} competitions={apiCompetitions} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} onRegistrationSuccess={handleRegistrationSuccess} registrations={registrations} user={user} />; }
   if (page === 'event-registration-success') return <EventRegistrationSuccessPage eventTitle={registeredEventTitle} onHome={backHome} onOlimpiade={openOlimpiade} />;
+  if (page === 'lkti-submission') { if (!authChecked) return <Loading />; if (!user) return <LoginPage onBack={backHome} onRegister={openRegister} onLoginSuccess={handleAuthSuccess} />; return <Suspense fallback={<Loading />}><LktiSubmissionPage user={user} onHome={backHome} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onRegister={openRegister} /></Suspense>; }
   if (page === 'exam-rules') { if (!examCompetition) { window.location.hash = 'home'; return null; } return <ExamRulesPage competition={examCompetition} onBack={backHome} onStart={startExam} />; }
   if (page === 'exam') { if (!examCompetition) { window.location.hash = 'home'; return null; } return <ExamPage competition={examCompetition} onFinish={backHome} />; }
-  return <HomePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
+  return <HomePage competitions={apiCompetitions} competitionsLoading={competitionsLoading} onCompetitionDetail={openCompetitionDetail} onCompetitions={openCompetitions} onLKTI={openLKTI} onRegister={openRegister} onLogin={openLogin} onLogout={handleLogout} onOlimpiade={openOlimpiade} onProfile={openProfile} onVerifiedCompetition={openExamRules} registrations={registrations} user={user} />;
 }

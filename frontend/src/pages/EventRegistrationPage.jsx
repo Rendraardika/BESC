@@ -376,6 +376,12 @@ export default function EventRegistrationPage({ competitionIndex = 0, competitio
           retries: 2,
         });
       }
+      if (isLKTI) {
+        await apiRequest(`/registrations/${registration.id}/lkti-submission`, {
+          method: 'POST',
+          body: JSON.stringify({ abstract_title: form.judulAbstrak, subtheme: form.subtema }),
+        });
+      }
       localStorage.removeItem('besc_reg_form');
       localStorage.removeItem('besc_resume_rejected');
       setCurrentStep(3);

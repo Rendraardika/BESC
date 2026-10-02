@@ -29,5 +29,6 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 *.sql
+!backend/database/migrations/*.sql
 *.tar.gz
-f r o n t e n d / p u b l i c / * . p d f  
+frontend/public/*.pdf

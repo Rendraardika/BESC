@@ -27,6 +27,11 @@ func NewDocumentHandler(db *sql.DB, cfg config.Config) *DocumentHandler {
 
 func (h *DocumentHandler) UploadDocuments(c *fiber.Ctx) error {
 	registrationID := c.Params("registration_id")
+	if ok, err := h.canAccessRegistration(c, registrationID); err != nil {
+		return handleError(c, err)
+	} else if !ok {
+		return handleError(c, utils.ErrForbidden)
+	}
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -41,12 +46,22 @@ func (h *DocumentHandler) UploadDocuments(c *fiber.Ctx) error {
 	}
 
 	for i, file := range files {
-		docType := "unknown"
+		docType := ""
 		if i < len(docTypes) {
 			docType = docTypes[i]
 		}
-
-		ext := filepath.Ext(file.Filename)
+		var ext string
+		var validationErr error
+		if isPDFDocumentType(docType) {
+			ext, validationErr = validatePDFUpload(file)
+		} else if isImageDocumentType(docType) {
+			ext, validationErr = validateSensitiveImageUpload(file)
+		} else {
+			return response.Error(c, fiber.StatusBadRequest, "jenis dokumen tidak diizinkan", nil)
+		}
+		if validationErr != nil {
+			return uploadValidationResponse(c, validationErr)
+		}
 		filename := fmt.Sprintf("doc_%s_%s%s", uuid.NewString(), docType, ext)
 		storageKey := fmt.Sprintf("registrations/%s/%s", registrationID, filename)
 		diskPath := filepath.Join(h.cfg.UploadDir, "private", storageKey)
@@ -60,7 +75,7 @@ func (h *DocumentHandler) UploadDocuments(c *fiber.Ctx) error {
 
 		_, err := h.db.Exec(
 			"INSERT INTO registration_documents (id, registration_id, doc_type, file_path, original_name) VALUES (?, ?, ?, ?, ?)",
-			uuid.NewString(), registrationID, docType, storageKey, file.Filename,
+			uuid.NewString(), registrationID, docType, storageKey, filepath.Base(file.Filename),
 		)
 		if err != nil {
 			_ = os.Remove(diskPath)
@@ -73,6 +88,11 @@ func (h *DocumentHandler) UploadDocuments(c *fiber.Ctx) error {
 
 func (h *DocumentHandler) ListDocuments(c *fiber.Ctx) error {
 	registrationID := c.Params("registration_id")
+	if ok, err := h.canAccessRegistration(c, registrationID); err != nil {
+		return handleError(c, err)
+	} else if !ok {
+		return handleError(c, utils.ErrForbidden)
+	}
 	rows, err := h.db.Query(
 		"SELECT id, registration_id, doc_type, file_path, original_name, created_at FROM registration_documents WHERE registration_id = ? ORDER BY created_at",
 		registrationID,
@@ -83,12 +103,12 @@ func (h *DocumentHandler) ListDocuments(c *fiber.Ctx) error {
 	defer rows.Close()
 
 	type Doc struct {
-		ID           string `json:"id"`
+		ID             string `json:"id"`
 		RegistrationID string `json:"registration_id"`
-		DocType      string `json:"doc_type"`
-		FilePath     string `json:"file_path"`
-		OriginalName string `json:"original_name"`
-		CreatedAt    string `json:"created_at"`
+		DocType        string `json:"doc_type"`
+		FilePath       string `json:"file_path"`
+		OriginalName   string `json:"original_name"`
+		CreatedAt      string `json:"created_at"`
 	}
 
 	var docs []Doc
@@ -101,6 +121,36 @@ func (h *DocumentHandler) ListDocuments(c *fiber.Ctx) error {
 	}
 
 	return response.JSON(c, fiber.StatusOK, "documents", docs)
+}
+
+func (h *DocumentHandler) canAccessRegistration(c *fiber.Ctx, registrationID string) (bool, error) {
+	if c.Locals("role") == "admin" {
+		return true, nil
+	}
+	var count int
+	err := h.db.QueryRow(`SELECT COUNT(*) FROM registrations WHERE id=? AND user_id=?`, registrationID, userID(c)).Scan(&count)
+	return count > 0, err
+}
+
+func isPDFDocumentType(docType string) bool {
+	switch docType {
+	case "biodataKelompok", "biodataGuru", "abstrak", "abstract", "full_paper",
+		"ketua_followProof", "anggota1_followProof", "anggota2_followProof":
+		return true
+	default:
+		return false
+	}
+}
+
+func isImageDocumentType(docType string) bool {
+	switch docType {
+	case "ketua_kartuPelajar", "ketua_fotoFormal", "ketua_twibbon",
+		"anggota1_kartuPelajar", "anggota1_fotoFormal", "anggota1_twibbon",
+		"anggota2_kartuPelajar", "anggota2_fotoFormal", "anggota2_twibbon":
+		return true
+	default:
+		return false
+	}
 }
 
 func (h *DocumentHandler) ViewDocument(c *fiber.Ctx) error {

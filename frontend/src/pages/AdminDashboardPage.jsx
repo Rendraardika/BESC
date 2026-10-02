@@ -4,6 +4,7 @@ import bescLogo from "../assets/images/logo BESC biru tua FIX.png";
 import { API_URL, apiRequest } from "../lib/api.js";
 import { normalizePhotoSrc } from "../lib/photoUtils.js";
 import TeamDetailModal from "../components/TeamDetailModal.jsx";
+import AdminLKTIPage from "../components/AdminLKTIPage.jsx";
 
 const menuItems = [
   "Dashboard",
@@ -11,6 +12,7 @@ const menuItems = [
   "Kompetisi",
   "Tim",
   "Pembayaran",
+  "Karya LKTI",
   "Bank Soal",
   "Hasil Ujian",
   "Pengaturan",
@@ -212,6 +214,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
   const [reviewLoadingID, setReviewLoadingID] = useState("");
   const [proofActivity, setProofActivity] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [lktiSubmissions, setLktiSubmissions] = useState([]);
   const [editingCompetition, setEditingCompetition] = useState(null);
   const [teams, setTeams] = useState([]);
   const [showTeamForm, setShowTeamForm] = useState(false);
@@ -265,6 +268,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
         if (activePage === "Pembayaran") {
           setPayments(await apiRequest("/admin/payments"));
         }
+        if (activePage === "Karya LKTI") {
+          setLktiSubmissions(await apiRequest("/admin/lkti-submissions"));
+        }
         if (activePage === "Kompetisi" || activePage === "Bank Soal") {
           setCompetitions(await apiRequest("/competitions?limit=100"));
         }
@@ -288,6 +294,9 @@ export default function AdminDashboardPage({ admin, onLogout }) {
         }
         if (activePage === "Pembayaran") {
           setPayments(await apiRequest("/admin/payments"));
+        }
+        if (activePage === "Karya LKTI") {
+          setLktiSubmissions(await apiRequest("/admin/lkti-submissions"));
         }
         if (activePage === "Tim") {
           setTeams(await apiRequest("/admin/teams"));
@@ -1242,6 +1251,13 @@ export default function AdminDashboardPage({ admin, onLogout }) {
                   Kelola Soal
                 </button>,
               ])}
+            />
+          )}
+
+          {activePage === "Karya LKTI" && (
+            <AdminLKTIPage
+              items={lktiSubmissions}
+              onReload={async () => setLktiSubmissions(await apiRequest("/admin/lkti-submissions"))}
             />
           )}
 

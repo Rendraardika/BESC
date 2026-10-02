@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS lkti_submissions (
+    id CHAR(36) PRIMARY KEY,
+    registration_id CHAR(36) NOT NULL,
+    team_id CHAR(36) NULL,
+    abstract_title VARCHAR(255) NOT NULL,
+    subtheme VARCHAR(150) NOT NULL,
+    status VARCHAR(40) NOT NULL DEFAULT 'abstract_submitted',
+    work_title VARCHAR(255) NULL,
+    work_type VARCHAR(40) NULL,
+    abstract_submitted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_by CHAR(36) NULL,
+    reviewed_at DATETIME NULL,
+    full_paper_submitted_at DATETIME NULL,
+    confirmation_at DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_lkti_submissions_registration (registration_id),
+    INDEX idx_lkti_submissions_status (status),
+    INDEX idx_lkti_submissions_subtheme (subtheme),
+    CONSTRAINT fk_lkti_submissions_registration FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
+    CONSTRAINT fk_lkti_submissions_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
+    CONSTRAINT fk_lkti_submissions_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+);
