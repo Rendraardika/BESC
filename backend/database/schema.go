@@ -52,6 +52,9 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	`); err != nil {
 		return err
 	}
+	if err := alignTableCollation(db, schemaName, "lkti_submissions", "registrations", "id"); err != nil {
+		return err
+	}
 	if _, err := db.Exec(`
 		INSERT INTO lkti_submissions (id, registration_id, team_id, abstract_title, subtheme)
 		SELECT UUID(), r.id, t.id,
@@ -105,6 +108,45 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 		return err
 	}
 	return nil
+}
+
+func alignTableCollation(db *sql.DB, schemaName, targetTable, referenceTable, referenceColumn string) error {
+	var targetCollation, referenceCharset, referenceCollation sql.NullString
+	if err := db.QueryRow(`
+		SELECT TABLE_COLLATION FROM information_schema.TABLES
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
+	`, schemaName, targetTable).Scan(&targetCollation); err != nil {
+		return fmt.Errorf("check table collation %s: %w", targetTable, err)
+	}
+	if err := db.QueryRow(`
+		SELECT CHARACTER_SET_NAME, COLLATION_NAME FROM information_schema.COLUMNS
+		WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+	`, schemaName, referenceTable, referenceColumn).Scan(&referenceCharset, &referenceCollation); err != nil {
+		return fmt.Errorf("check reference collation %s.%s: %w", referenceTable, referenceColumn, err)
+	}
+	if !referenceCharset.Valid || !referenceCollation.Valid || targetCollation.String == referenceCollation.String {
+		return nil
+	}
+	if !isSQLIdentifier(referenceCharset.String) || !isSQLIdentifier(referenceCollation.String) {
+		return fmt.Errorf("invalid database charset or collation")
+	}
+	query := fmt.Sprintf("ALTER TABLE `%s` CONVERT TO CHARACTER SET %s COLLATE %s", targetTable, referenceCharset.String, referenceCollation.String)
+	if _, err := db.Exec(query); err != nil {
+		return fmt.Errorf("align table collation %s with %s.%s: %w", targetTable, referenceTable, referenceColumn, err)
+	}
+	return nil
+}
+
+func isSQLIdentifier(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, char := range value {
+		if (char < 'a' || char > 'z') && (char < 'A' || char > 'Z') && (char < '0' || char > '9') && char != '_' {
+			return false
+		}
+	}
+	return true
 }
 
 func ensureRegistrationStatusValues(db *sql.DB, schemaName string) error {

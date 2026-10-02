@@ -19,4 +19,4 @@ CREATE TABLE IF NOT EXISTS lkti_submissions (
     INDEX idx_lkti_submissions_subtheme (subtheme),
     INDEX idx_lkti_submissions_team (team_id),
     INDEX idx_lkti_submissions_reviewer (reviewed_by)
-);
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
