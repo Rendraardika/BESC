@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS lkti_submissions (
     UNIQUE KEY uq_lkti_submissions_registration (registration_id),
     INDEX idx_lkti_submissions_status (status),
     INDEX idx_lkti_submissions_subtheme (subtheme),
-    CONSTRAINT fk_lkti_submissions_registration FOREIGN KEY (registration_id) REFERENCES registrations(id) ON DELETE CASCADE,
-    CONSTRAINT fk_lkti_submissions_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE SET NULL,
-    CONSTRAINT fk_lkti_submissions_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
+    INDEX idx_lkti_submissions_team (team_id),
+    INDEX idx_lkti_submissions_reviewer (reviewed_by)
 );

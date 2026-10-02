@@ -34,11 +34,13 @@ func (r *adminDashboardRepository) DeleteParticipant(id string) error {
 	r.db.Exec(`DELETE FROM submissions WHERE user_id = ?`, id)
 	// 6. Delete payments related to user's registrations
 	r.db.Exec(`DELETE p FROM payments p JOIN registrations r ON r.id = p.registration_id WHERE r.user_id = ?`, id)
-	// 7. Delete registrations
+	// 7. Delete LKTI workflow data before registrations (production schemas may not use an FK here).
+	r.db.Exec(`DELETE ls FROM lkti_submissions ls JOIN registrations r ON r.id = ls.registration_id WHERE r.user_id = ?`, id)
+	// 8. Delete registrations
 	r.db.Exec(`DELETE FROM registrations WHERE user_id = ?`, id)
-	// 8. Delete teams (ON DELETE SET NULL won't auto-delete, so manually delete)
+	// 9. Delete teams (ON DELETE SET NULL won't auto-delete, so manually delete)
 	r.db.Exec(`DELETE FROM teams WHERE user_id = ?`, id)
-	// 9. Finally delete the user
+	// 10. Finally delete the user
 	return NewUserRepository(r.db).Delete(id)
 }
 
