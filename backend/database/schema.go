@@ -62,6 +62,65 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	if err := ensureForeignKey(db, schemaName, "payments", "fk_payments_proof_viewer", "ALTER TABLE payments ADD CONSTRAINT fk_payments_proof_viewer FOREIGN KEY (proof_viewed_by) REFERENCES users(id) ON DELETE SET NULL"); err != nil {
 		return err
 	}
+	if err := copyLegacyPreliminaryQuestions(db); err != nil {
+		return err
+	}
+	return nil
+}
+
+func copyLegacyPreliminaryQuestions(db *sql.DB) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin legacy question migration: %w", err)
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`
+		INSERT INTO questions (
+			id, competition_id, round, question, image,
+			option_a, option_b, option_c, option_d, option_e,
+			correct_answer, score, wrong_score
+		)
+		SELECT
+			UUID(), target.id, 'preliminary', source_question.question, source_question.image,
+			source_question.option_a, source_question.option_b, source_question.option_c,
+			source_question.option_d, source_question.option_e,
+			source_question.correct_answer, source_question.score, source_question.wrong_score
+		FROM questions source_question
+		JOIN competitions source ON source.id = source_question.competition_id
+		JOIN competitions target ON target.title = 'Olimpiade Biologi BESC 2026 SMP'
+		WHERE source.title = 'PENYISIHAN OLIMPIADE SMP BESC 2026'
+			AND NOT EXISTS (
+				SELECT 1
+				FROM questions existing
+				WHERE existing.competition_id = target.id
+					AND COALESCE(existing.round, 'preliminary') = 'preliminary'
+					AND existing.question = source_question.question
+					AND existing.option_a = source_question.option_a
+					AND existing.option_b = source_question.option_b
+					AND existing.option_c = source_question.option_c
+					AND existing.option_d = source_question.option_d
+					AND existing.option_e = source_question.option_e
+					AND existing.correct_answer = source_question.correct_answer
+			)
+	`)
+	if err != nil {
+		return fmt.Errorf("copy legacy preliminary questions: %w", err)
+	}
+
+	copied, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("count copied legacy questions: %w", err)
+	}
+	if copied > 0 {
+		if _, err := tx.Exec(`UPDATE competitions SET status = 'closed' WHERE title = 'PENYISIHAN OLIMPIADE SMP BESC 2026'`); err != nil {
+			return fmt.Errorf("close legacy preliminary competition: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit legacy question migration: %w", err)
+	}
 	return nil
 }
 

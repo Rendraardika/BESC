@@ -286,6 +286,12 @@ go test ./...
 
 Status seleksi lanjutan yang tersedia adalah `semifinalist`, `finalist`, `eliminated`, `not_finalist`, `not_winner`, `winner_1`, `winner_2`, dan `winner_3`.
 
+### Migrasi Soal Penyisihan Lama
+
+Saat backend versi terbaru pertama kali dijalankan, soal dari kompetisi lama **PENYISIHAN OLIMPIADE SMP BESC 2026** otomatis disalin ke **Olimpiade Biologi BESC 2026 SMP** sebagai ronde `preliminary`. Teks soal, gambar, pilihan jawaban, kunci, bobot benar, dan bobot salah ikut disalin.
+
+Migrasi ini aman dijalankan berulang kali karena soal yang sama tidak akan disalin dua kali. Setelah ada soal yang berhasil disalin, kompetisi lama diubah menjadi `closed` dan tetap tersimpan sebagai cadangan.
+
 ## Troubleshooting
 
 Backend gagal connect database:
