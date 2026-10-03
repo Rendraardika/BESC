@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import bescLogo from "../assets/images/logo BESC biru tua FIX.png";
-import { API_URL, apiRequest } from "../lib/api.js";
+import { API_URL, apiRequest, apiRequestBody } from "../lib/api.js";
 import { normalizePhotoSrc } from "../lib/photoUtils.js";
 import TeamDetailModal from "../components/TeamDetailModal.jsx";
 import AdminLKTIPage from "../components/AdminLKTIPage.jsx";
@@ -38,6 +38,23 @@ function Avatar({ name, className }) {
 
 const getProofURL = (activity) =>
   `${API_URL}/admin/payments/${activity.payment_id}/proof`;
+
+const fetchAllSubmissions = async () => {
+  const limit = 100;
+  const firstPage = await apiRequestBody(`/admin/submissions?page=1&limit=${limit}`);
+  const items = [...(firstPage.data || [])];
+  const total = firstPage.meta?.total || items.length;
+  const pageCount = Math.ceil(total / limit);
+
+  for (let page = 2; page <= pageCount; page += 1) {
+    const nextPage = await apiRequestBody(
+      `/admin/submissions?page=${page}&limit=${limit}`,
+    );
+    items.push(...(nextPage.data || []));
+  }
+
+  return items;
+};
 
 const formatDateTimeLocal = (value) => {
   if (!value) return "";
@@ -278,7 +295,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           setTeams(await apiRequest("/admin/teams"));
         }
         if (activePage === "Hasil Ujian") {
-          setSubmissions(await apiRequest("/admin/submissions?limit=100"));
+          setSubmissions(await fetchAllSubmissions());
         }
       } catch (err) {
         setError(err.message);
@@ -302,7 +319,7 @@ export default function AdminDashboardPage({ admin, onLogout }) {
           setTeams(await apiRequest("/admin/teams"));
         }
         if (activePage === "Hasil Ujian") {
-          setSubmissions(await apiRequest("/admin/submissions?limit=100"));
+          setSubmissions(await fetchAllSubmissions());
         }
       } catch (err) {
         console.error("Failed to refresh page data:", err);

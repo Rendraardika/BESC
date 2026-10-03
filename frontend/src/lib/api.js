@@ -7,7 +7,7 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function apiRequest(path, options = {}) {
+export async function apiRequestBody(path, options = {}) {
   const isFormData = options.body instanceof FormData;
   const timeoutMs = options.timeoutMs || 15000;
   const retries = options.retries ?? MAX_RETRIES;
@@ -55,8 +55,13 @@ export async function apiRequest(path, options = {}) {
       }
       throw new Error(body.message || 'Terjadi kesalahan. Silakan coba lagi.');
     }
-    return body.data;
+    return body;
   }
+}
+
+export async function apiRequest(path, options = {}) {
+  const body = await apiRequestBody(path, options);
+  return body.data;
 }
 
 export function saveAuthSession(auth) {
