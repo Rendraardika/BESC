@@ -12,8 +12,25 @@ const rules = [
 export default function ExamRulesPage({ competition, onBack, onStart }) {
   const [agreed, setAgreed] = useState(false);
   const [summary, setSummary] = useState({ questions: 0, points: 0, penalties: 0 });
+  const [durationMinutes, setDurationMinutes] = useState(Number(competition.duration_minutes) || 0);
   const [error, setError] = useState('');
   const roundQuery = competition.round ? `?round=${encodeURIComponent(competition.round)}` : '';
+
+  useEffect(() => {
+    let active = true;
+
+    apiRequest(`/competitions/${competition.competition_id}`)
+      .then((details) => {
+        if (active) setDurationMinutes(Number(details?.duration_minutes) || 0);
+      })
+      .catch((err) => {
+        if (active && !competition.duration_minutes) setError(err.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [competition.competition_id, competition.duration_minutes]);
 
   useEffect(() => {
     apiRequest(`/competitions/${competition.competition_id}/exam/questions${roundQuery}`).then((questions) => setSummary({
@@ -25,7 +42,7 @@ export default function ExamRulesPage({ competition, onBack, onStart }) {
 
   const stats = [
     ['Soal', summary.questions || '-', 'Jumlah soal ujian'],
-    ['Durasi', '60 menit', 'Waktu pengerjaan'],
+    ['Durasi', durationMinutes ? `${durationMinutes} menit` : '-', 'Waktu pengerjaan'],
     ['Total Poin', summary.points || '-', 'Nilai maksimal'],
     ['Penalti Salah', summary.penalties || '0', 'Akumulasi pengurang maksimal'],
   ];
