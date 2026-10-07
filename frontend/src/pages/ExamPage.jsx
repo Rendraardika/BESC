@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { apiRequest } from '../lib/api.js';
 
 const DEFAULT_TAB_SWITCH_LIMIT = 3;
@@ -270,7 +271,7 @@ export default function ExamPage({ competition, onFinish }) {
 
   // If exam has been submitted, show Result and Detailed Review Page
   if (examResult) {
-    return <ExamResultReview result={examResult} competition={competition} onBack={onFinish} />;
+    return <ExamResultReview competition={competition} onBack={onFinish} />;
   }
 
   return (
@@ -438,7 +439,7 @@ export default function ExamPage({ competition, onFinish }) {
   );
 }
 
-function ExamResultReview({ result, competition, onBack }) {
+function ExamResultReview({ competition, onBack }) {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-slate-800">
       {/* Top Header */}
@@ -463,15 +464,13 @@ function ExamResultReview({ result, competition, onBack }) {
           <span className="text-[10px] font-extrabold uppercase tracking-widest text-teal-600">Jawaban Terkirim</span>
           <h2 className="mt-3 text-2xl font-extrabold text-slate-950 sm:text-3xl">Terima kasih, ujian Anda sudah selesai.</h2>
 
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <div className="border border-emerald-100 bg-emerald-50/70 p-6">
-              <div className="text-5xl font-black text-emerald-700">{result.correct_count}</div>
-              <div className="mt-2 text-xs font-extrabold uppercase tracking-wide text-emerald-800">Jumlah Benar</div>
-            </div>
-
-            <div className="border border-red-100 bg-red-50/70 p-6">
-              <div className="text-5xl font-black text-red-600">{result.wrong_count}</div>
-              <div className="mt-2 text-xs font-extrabold uppercase tracking-wide text-red-800">Jumlah Salah</div>
+          <div className="mt-8 flex items-start gap-4 border border-emerald-200 bg-emerald-50 p-5 text-left sm:p-6">
+            <CheckCircle2 className="mt-0.5 h-7 w-7 shrink-0 text-emerald-600" aria-hidden="true" />
+            <div>
+              <h3 className="text-base font-extrabold text-emerald-950">Jawaban Anda telah berhasil dikirim dan tersimpan.</h3>
+              <p className="mt-2 text-sm font-medium leading-6 text-emerald-900/80">
+                Hasil ujian akan diumumkan oleh panitia. Silakan pantau email dan halaman kompetisi untuk informasi selanjutnya.
+              </p>
             </div>
           </div>
 

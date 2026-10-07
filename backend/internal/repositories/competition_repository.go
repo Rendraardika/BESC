@@ -39,7 +39,22 @@ func (r *competitionRepository) Update(item *entities.Competition) error {
 	if err != nil {
 		return competitionWriteError(err)
 	}
-	return rowsAffected(result)
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected > 0 {
+		return nil
+	}
+
+	var exists bool
+	if err := r.db.QueryRow(`SELECT EXISTS(SELECT 1 FROM competitions WHERE id = ?)`, item.ID).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return utils.ErrNotFound
+	}
+	return nil
 }
 
 func (r *competitionRepository) Delete(id string) error {

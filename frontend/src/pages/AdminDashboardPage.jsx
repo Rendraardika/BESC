@@ -2527,6 +2527,22 @@ function QuestionEditor({ onClose, onSave, question }) {
   };
   const [form, setForm] = useState({ ...empty, ...question });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPaddingRight;
+    };
+  }, []);
+
   const update = (field, value) =>
     setForm((current) => ({ ...current, [field]: value }));
   const submit = async (event) => {
@@ -2560,9 +2576,9 @@ function QuestionEditor({ onClose, onSave, question }) {
   };
   const input =
     "h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6 backdrop-blur-sm"
       onClick={onClose}
     >
       <form
@@ -2690,7 +2706,8 @@ function QuestionEditor({ onClose, onSave, question }) {
           </button>
         </footer>
       </form>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
