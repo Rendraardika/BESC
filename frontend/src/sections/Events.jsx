@@ -1,3 +1,4 @@
+import { Trophy } from 'lucide-react';
 import SectionHeader from '../components/SectionHeader.jsx';
 import { buildExamRegistration, competitionAction } from '../lib/competitionAccess.js';
 import { competitionToEvent } from '../lib/competitions.js';
@@ -83,7 +84,7 @@ export default function Events({ competitions, competitionsLoading, onCompetitio
     <section id="kompetisi" className="px-6 py-20 md:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <SectionHeader label="🏆 Kompetisi Terbaru" title="Event BESC Terbaru" sub="Jangan lewatkan kesempatan emas! Dapatkan informasi terbaru tentang kompetisi biologi kami." />
+          <SectionHeader label={<span className="inline-flex items-center gap-2"><Trophy className="h-4 w-4 stroke-[2]" />Kompetisi Terbaru</span>} title="Event BESC Terbaru" sub="Jangan lewatkan kesempatan emas! Dapatkan informasi terbaru tentang kompetisi biologi kami." />
         </div>
         {competitionsLoading ? (
           <LoadingSkeleton />
