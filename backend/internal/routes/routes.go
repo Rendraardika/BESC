@@ -53,6 +53,8 @@ func Register(app *fiber.App, h Handlers, cfg config.Config) {
 	protected.Post("/registrations/:registration_id/lkti-submission", h.LKTI.CreateSubmission)
 	protected.Get("/me/lkti-submission", h.LKTI.MySubmission)
 	protected.Post("/lkti-submissions/:id/full-paper", h.LKTI.UploadFullPaper)
+	protected.Post("/lkti-submissions/:id/poster", h.LKTI.UploadPoster)
+	protected.Post("/lkti-submissions/:id/presentation", h.LKTI.UploadPresentation)
 	protected.Get("/competitions/:competition_id/exam/questions", h.Exam.Questions)
 	protected.Post("/competitions/:competition_id/exam/start", h.Exam.Start)
 	protected.Post("/competitions/:competition_id/exam/submit", h.Exam.Submit)

@@ -18,6 +18,7 @@ import (
 
 const maxSensitiveImageUploadSize int64 = 5 * 1024 * 1024
 const maxPDFUploadSize int64 = 10 * 1024 * 1024
+const maxPresentationUploadSize int64 = 20 * 1024 * 1024
 
 var allowedImageMIMEs = map[string]string{
 	".jpg":  "image/jpeg",
@@ -91,6 +92,28 @@ func validatePDFUpload(file *multipart.FileHeader) (string, error) {
 		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "isi berkas bukan PDF yang valid"}
 	}
 	return ".pdf", nil
+}
+
+func validatePPTXUpload(file *multipart.FileHeader) (string, error) {
+	if file == nil || file.Size <= 0 {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "file PPTX wajib diunggah"}
+	}
+	if file.Size > maxPresentationUploadSize {
+		return "", uploadValidationError{status: fiber.StatusRequestEntityTooLarge, message: "ukuran PPTX maksimal 20 MB"}
+	}
+	if strings.ToLower(filepath.Ext(file.Filename)) != ".pptx" {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "berkas utama harus berformat PPTX"}
+	}
+	src, err := file.Open()
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+	header := make([]byte, 4)
+	if _, err := io.ReadFull(src, header); err != nil || string(header) != "PK\x03\x04" {
+		return "", uploadValidationError{status: fiber.StatusBadRequest, message: "isi berkas bukan PPTX yang valid"}
+	}
+	return ".pptx", nil
 }
 
 func uploadValidationResponse(c *fiber.Ctx, err error) error {

@@ -41,6 +41,13 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 			reviewed_at DATETIME NULL,
 			full_paper_submitted_at DATETIME NULL,
 			confirmation_at DATETIME NULL,
+			poster_submitted_at DATETIME NULL,
+			poster_confirmation_at DATETIME NULL,
+			poster_publication_consent_at DATETIME NULL,
+			presentation_submitted_at DATETIME NULL,
+			presentation_material_confirmation_at DATETIME NULL,
+			presentation_technical_confirmation_at DATETIME NULL,
+			presentation_full_paper_confirmation_at DATETIME NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 			UNIQUE KEY uq_lkti_submissions_registration (registration_id),
@@ -60,6 +67,19 @@ func EnsureLatestSchema(db *sql.DB, schemaName string) error {
 	}
 	if err := ensureColumnDataType(db, schemaName, "lkti_submissions", "work_title", "text", "ALTER TABLE lkti_submissions MODIFY COLUMN work_title TEXT NULL"); err != nil {
 		return err
+	}
+	for _, column := range []struct{ name, alter string }{
+		{"poster_submitted_at", "ALTER TABLE lkti_submissions ADD COLUMN poster_submitted_at DATETIME NULL AFTER confirmation_at"},
+		{"poster_confirmation_at", "ALTER TABLE lkti_submissions ADD COLUMN poster_confirmation_at DATETIME NULL AFTER poster_submitted_at"},
+		{"poster_publication_consent_at", "ALTER TABLE lkti_submissions ADD COLUMN poster_publication_consent_at DATETIME NULL AFTER poster_confirmation_at"},
+		{"presentation_submitted_at", "ALTER TABLE lkti_submissions ADD COLUMN presentation_submitted_at DATETIME NULL AFTER poster_publication_consent_at"},
+		{"presentation_material_confirmation_at", "ALTER TABLE lkti_submissions ADD COLUMN presentation_material_confirmation_at DATETIME NULL AFTER presentation_submitted_at"},
+		{"presentation_technical_confirmation_at", "ALTER TABLE lkti_submissions ADD COLUMN presentation_technical_confirmation_at DATETIME NULL AFTER presentation_material_confirmation_at"},
+		{"presentation_full_paper_confirmation_at", "ALTER TABLE lkti_submissions ADD COLUMN presentation_full_paper_confirmation_at DATETIME NULL AFTER presentation_technical_confirmation_at"},
+	} {
+		if err := ensureColumn(db, schemaName, "lkti_submissions", column.name, column.alter); err != nil {
+			return err
+		}
 	}
 	if _, err := db.Exec(`
 		INSERT INTO lkti_submissions (id, registration_id, team_id, abstract_title, subtheme)

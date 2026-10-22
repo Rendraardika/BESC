@@ -135,6 +135,7 @@ func (h *DocumentHandler) canAccessRegistration(c *fiber.Ctx, registrationID str
 func isPDFDocumentType(docType string) bool {
 	switch docType {
 	case "biodataKelompok", "biodataGuru", "abstrak", "abstract", "full_paper",
+		"presentation_pdf",
 		"ketua_followProof", "anggota1_followProof", "anggota2_followProof":
 		return true
 	default:
@@ -146,7 +147,7 @@ func isImageDocumentType(docType string) bool {
 	switch docType {
 	case "ketua_kartuPelajar", "ketua_fotoFormal", "ketua_twibbon",
 		"anggota1_kartuPelajar", "anggota1_fotoFormal", "anggota1_twibbon",
-		"anggota2_kartuPelajar", "anggota2_fotoFormal", "anggota2_twibbon":
+		"anggota2_kartuPelajar", "anggota2_fotoFormal", "anggota2_twibbon", "poster":
 		return true
 	default:
 		return false

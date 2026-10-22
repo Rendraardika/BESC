@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/smtp"
 	"os"
 	"path/filepath"
@@ -23,6 +24,13 @@ const (
 	lktiAbstractPassed     = "abstract_passed"
 	lktiAbstractRejected   = "abstract_rejected"
 	lktiFullPaperSubmitted = "full_paper_submitted"
+	lktiFullPaperPassed    = "full_paper_passed"
+	lktiFullPaperRejected  = "full_paper_rejected"
+	lktiPosterUploaded     = "poster_uploaded"
+	lktiPosterSubmitted    = "poster_submitted"
+	lktiPresentationPPTX   = "presentation_pptx_submitted"
+	lktiPosterPassed       = "poster_passed"
+	lktiPosterRejected     = "poster_rejected"
 )
 
 var lktiSubthemes = map[string]bool{
@@ -100,6 +108,8 @@ type lktiItem struct {
 	ParticipantEmail      string  `json:"participant_email"`
 	TeamName              string  `json:"team_name"`
 	LeaderName            string  `json:"leader_name"`
+	Member1Name           string  `json:"member1_name"`
+	Member2Name           string  `json:"member2_name"`
 	Institution           string  `json:"institution"`
 	AbstractTitle         string  `json:"abstract_title"`
 	Subtheme              string  `json:"subtheme"`
@@ -111,19 +121,31 @@ type lktiItem struct {
 	AbstractOriginalName  *string `json:"abstract_original_name"`
 	FullPaperDocumentID   *string `json:"full_paper_document_id"`
 	FullPaperOriginalName *string `json:"full_paper_original_name"`
+	PosterDocumentID      *string `json:"poster_document_id"`
+	PosterOriginalName    *string `json:"poster_original_name"`
+	PresentationPPTXID    *string `json:"presentation_pptx_document_id"`
+	PresentationPPTXName  *string `json:"presentation_pptx_original_name"`
+	PresentationPDFID     *string `json:"presentation_pdf_document_id"`
+	PresentationPDFName   *string `json:"presentation_pdf_original_name"`
 	AbstractSubmittedAt   string  `json:"abstract_submitted_at"`
 	FullPaperSubmittedAt  *string `json:"full_paper_submitted_at"`
 }
 
 const lktiSelect = `
 	SELECT ls.id, ls.registration_id, c.title, u.name, u.email,
-		COALESCE(t.name,''), COALESCE(t.leader_name,u.name), COALESCE(t.institution,u.institution,''),
+		COALESCE(t.name,''), COALESCE(t.leader_name,u.name), COALESCE(t.member1_name,''), COALESCE(t.member2_name,''), COALESCE(t.institution,u.institution,''),
 		ls.abstract_title, ls.subtheme, ls.status, COALESCE(p.payment_status,'pending'),
 		COALESCE(ls.work_title,''), COALESCE(ls.work_type,''),
 		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('abstrak','abstract') ORDER BY created_at DESC LIMIT 1),
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('abstrak','abstract') ORDER BY created_at DESC LIMIT 1),
 		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='full_paper' ORDER BY created_at DESC LIMIT 1),
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='full_paper' ORDER BY created_at DESC LIMIT 1),
+		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='poster' ORDER BY created_at DESC LIMIT 1),
+		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='poster' ORDER BY created_at DESC LIMIT 1),
+		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('presentation_main','presentation_pptx') ORDER BY created_at DESC LIMIT 1),
+		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('presentation_main','presentation_pptx') ORDER BY created_at DESC LIMIT 1),
+		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='presentation_pdf' ORDER BY created_at DESC LIMIT 1),
+		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='presentation_pdf' ORDER BY created_at DESC LIMIT 1),
 		DATE_FORMAT(ls.abstract_submitted_at, '%Y-%m-%dT%H:%i:%s'),
 		CASE WHEN ls.full_paper_submitted_at IS NULL THEN NULL ELSE DATE_FORMAT(ls.full_paper_submitted_at, '%Y-%m-%dT%H:%i:%s') END
 	FROM lkti_submissions ls
@@ -137,9 +159,11 @@ const lktiSelect = `
 func scanLKTI(row interface{ Scan(...interface{}) error }) (*lktiItem, error) {
 	var item lktiItem
 	err := row.Scan(&item.ID, &item.RegistrationID, &item.CompetitionTitle, &item.ParticipantName, &item.ParticipantEmail,
-		&item.TeamName, &item.LeaderName, &item.Institution, &item.AbstractTitle, &item.Subtheme, &item.Status,
+		&item.TeamName, &item.LeaderName, &item.Member1Name, &item.Member2Name, &item.Institution, &item.AbstractTitle, &item.Subtheme, &item.Status,
 		&item.PaymentStatus, &item.WorkTitle, &item.WorkType, &item.AbstractDocumentID, &item.AbstractOriginalName,
-		&item.FullPaperDocumentID, &item.FullPaperOriginalName, &item.AbstractSubmittedAt, &item.FullPaperSubmittedAt)
+		&item.FullPaperDocumentID, &item.FullPaperOriginalName, &item.PosterDocumentID, &item.PosterOriginalName,
+		&item.PresentationPPTXID, &item.PresentationPPTXName, &item.PresentationPDFID, &item.PresentationPDFName,
+		&item.AbstractSubmittedAt, &item.FullPaperSubmittedAt)
 	return &item, err
 }
 
@@ -175,11 +199,11 @@ func (h *LKTIHandler) UpdateStatus(c *fiber.Ctx) error {
 	var input struct {
 		Status string `json:"status"`
 	}
-	if err := c.BodyParser(&input); err != nil || (input.Status != lktiAbstractPassed && input.Status != lktiAbstractRejected) {
-		return response.Error(c, fiber.StatusBadRequest, "status seleksi abstrak tidak valid", nil)
+	if err := c.BodyParser(&input); err != nil || !isLKTIReviewStatus(input.Status) {
+		return response.Error(c, fiber.StatusBadRequest, "status penilaian LKTI tidak valid", nil)
 	}
-	var email, name, title, paymentStatus string
-	err := h.db.QueryRow(`SELECT u.email,u.name,c.title,COALESCE(p.payment_status,'pending') FROM lkti_submissions ls JOIN registrations r ON r.id=ls.registration_id JOIN users u ON u.id=r.user_id JOIN competitions c ON c.id=r.competition_id LEFT JOIN payments p ON p.registration_id=r.id WHERE ls.id=?`, c.Params("id")).Scan(&email, &name, &title, &paymentStatus)
+	var email, name, title, paymentStatus, currentStatus string
+	err := h.db.QueryRow(`SELECT u.email,u.name,c.title,COALESCE(p.payment_status,'pending'),ls.status FROM lkti_submissions ls JOIN registrations r ON r.id=ls.registration_id JOIN users u ON u.id=r.user_id JOIN competitions c ON c.id=r.competition_id LEFT JOIN payments p ON p.registration_id=r.id WHERE ls.id=?`, c.Params("id")).Scan(&email, &name, &title, &paymentStatus, &currentStatus)
 	if errors.Is(err, sql.ErrNoRows) {
 		return handleError(c, utils.ErrNotFound)
 	}
@@ -189,19 +213,37 @@ func (h *LKTIHandler) UpdateStatus(c *fiber.Ctx) error {
 	if input.Status == lktiAbstractPassed && paymentStatus != "verified" {
 		return response.Error(c, fiber.StatusConflict, "pembayaran harus terverifikasi sebelum abstrak diloloskan", nil)
 	}
-	result, err := h.db.Exec(`UPDATE lkti_submissions SET status=?, reviewed_by=?, reviewed_at=NOW() WHERE id=? AND status IN ('abstract_submitted','abstract_passed','abstract_rejected')`, input.Status, userID(c), c.Params("id"))
+	if !isAllowedLKTITransition(currentStatus, input.Status) {
+		return response.Error(c, fiber.StatusConflict, "status tidak sesuai dengan tahap pengumpulan saat ini", nil)
+	}
+	result, err := h.db.Exec(`UPDATE lkti_submissions SET status=?, reviewed_by=?, reviewed_at=NOW() WHERE id=? AND status=?`, input.Status, userID(c), c.Params("id"), currentStatus)
 	if err != nil {
 		return handleError(c, err)
 	}
 	if affected, _ := result.RowsAffected(); affected == 0 {
-		return response.Error(c, fiber.StatusConflict, "full paper sudah dikirim dan status tidak dapat diubah", nil)
+		return response.Error(c, fiber.StatusConflict, "status karya sudah berubah, muat ulang data terlebih dahulu", nil)
 	}
 	go func() {
 		if err := h.sendStatusEmail(email, name, title, input.Status); err != nil {
 			log.Printf("LKTI status updated but email failed: %v", err)
 		}
 	}()
-	return response.JSON(c, fiber.StatusOK, "status seleksi abstrak diperbarui", nil)
+	return response.JSON(c, fiber.StatusOK, "status penilaian LKTI diperbarui", nil)
+}
+
+func isLKTIReviewStatus(status string) bool {
+	switch status {
+	case lktiAbstractPassed, lktiAbstractRejected, lktiFullPaperPassed, lktiFullPaperRejected, lktiPosterPassed, lktiPosterRejected:
+		return true
+	default:
+		return false
+	}
+}
+
+func isAllowedLKTITransition(current, next string) bool {
+	return (current == lktiAbstractSubmitted && (next == lktiAbstractPassed || next == lktiAbstractRejected)) ||
+		(current == lktiFullPaperSubmitted && (next == lktiFullPaperPassed || next == lktiFullPaperRejected)) ||
+		(current == lktiPosterSubmitted && (next == lktiPosterPassed || next == lktiPosterRejected))
 }
 
 func (h *LKTIHandler) UploadFullPaper(c *fiber.Ctx) error {
@@ -260,17 +302,192 @@ func (h *LKTIHandler) UploadFullPaper(c *fiber.Ctx) error {
 	return response.JSON(c, fiber.StatusCreated, "full paper berhasil dikirim", nil)
 }
 
+func (h *LKTIHandler) UploadPoster(c *fiber.Ctx) error {
+	confirmed := c.FormValue("confirmed") == "true"
+	publicationConsent := c.FormValue("publication_consent") == "true"
+	if !confirmed || !publicationConsent {
+		return response.Error(c, fiber.StatusBadRequest, "kedua pernyataan poster wajib disetujui", nil)
+	}
+	file, err := c.FormFile("poster")
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, "poster ilmiah wajib diunggah", nil)
+	}
+	ext, err := validateSensitiveImageUpload(file)
+	if err != nil {
+		return uploadValidationResponse(c, err)
+	}
+	if ext == ".webp" {
+		return response.Error(c, fiber.StatusBadRequest, "poster harus berformat PNG, JPG, atau JPEG", nil)
+	}
+	registrationID, err := h.lktiUploadRegistration(c, lktiFullPaperPassed)
+	if err != nil {
+		return err
+	}
+	storageKey, diskPath, err := h.saveLKTIFile(c, file, registrationID, "poster", ext)
+	if err != nil {
+		return err
+	}
+	tx, err := h.db.Begin()
+	if err != nil {
+		_ = os.Remove(diskPath)
+		return handleError(c, err)
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec(`INSERT INTO registration_documents (id,registration_id,doc_type,file_path,original_name) VALUES (?,?,?,?,?)`, uuid.NewString(), registrationID, "poster", storageKey, filepath.Base(file.Filename)); err != nil {
+		_ = os.Remove(diskPath)
+		return handleError(c, err)
+	}
+	if _, err = tx.Exec(`UPDATE lkti_submissions SET status=?,poster_submitted_at=NOW(),poster_confirmation_at=NOW(),poster_publication_consent_at=NOW() WHERE id=?`, lktiPosterUploaded, c.Params("id")); err != nil {
+		_ = os.Remove(diskPath)
+		return handleError(c, err)
+	}
+	if err := tx.Commit(); err != nil {
+		_ = os.Remove(diskPath)
+		return handleError(c, err)
+	}
+	return response.JSON(c, fiber.StatusCreated, "poster ilmiah berhasil dikirim", nil)
+}
+
+func (h *LKTIHandler) UploadPresentation(c *fiber.Ctx) error {
+	if c.FormValue("step") != "complete" {
+		return response.Error(c, fiber.StatusBadRequest, "tahap unggahan presentasi tidak valid", nil)
+	}
+	materialConfirmed := c.FormValue("material_confirmed") == "true"
+	technicalConfirmed := c.FormValue("technical_confirmed") == "true"
+	fullPaperConfirmed := c.FormValue("full_paper_confirmed") == "true"
+	if !materialConfirmed || !technicalConfirmed || !fullPaperConfirmed {
+		return response.Error(c, fiber.StatusBadRequest, "seluruh pernyataan presentasi wajib disetujui", nil)
+	}
+	registrationID, err := h.lktiUploadRegistration(c, lktiPosterUploaded, lktiPresentationPPTX)
+	if err != nil {
+		return err
+	}
+	var existingMainCount int
+	if err := h.db.QueryRow(`SELECT COUNT(*) FROM registration_documents WHERE registration_id=? AND doc_type IN ('presentation_main','presentation_pptx')`, registrationID).Scan(&existingMainCount); err != nil {
+		return handleError(c, err)
+	}
+	mainFile, mainFileErr := c.FormFile("presentation_pptx")
+	if mainFileErr != nil {
+		mainFile = nil
+	}
+	if existingMainCount == 0 && mainFile == nil {
+		return response.Error(c, fiber.StatusBadRequest, "PPT utama wajib diunggah", nil)
+	}
+	mainExt := ""
+	if mainFile != nil {
+		var validationErr error
+		mainExt, validationErr = validatePresentationMainUpload(mainFile)
+		if validationErr != nil {
+			return uploadValidationResponse(c, validationErr)
+		}
+	}
+	pdf, err := c.FormFile("presentation_pdf")
+	if err != nil {
+		pdf = nil
+	}
+	pdfExt := ""
+	if err == nil {
+		var validationErr error
+		pdfExt, validationErr = validatePDFUpload(pdf)
+		if validationErr != nil {
+			return uploadValidationResponse(c, validationErr)
+		}
+	}
+	cleanupPaths := make([]string, 0, 2)
+	defer func() {
+		for _, path := range cleanupPaths {
+			_ = os.Remove(path)
+		}
+	}()
+	mainKey := ""
+	if mainFile != nil {
+		var mainPath string
+		mainKey, mainPath, err = h.saveLKTIFile(c, mainFile, registrationID, "presentation_main", mainExt)
+		if err != nil {
+			return err
+		}
+		cleanupPaths = append(cleanupPaths, mainPath)
+	}
+	pdfKey := ""
+	if pdf != nil {
+		var pdfPath string
+		pdfKey, pdfPath, err = h.saveLKTIFile(c, pdf, registrationID, "presentation_pdf", pdfExt)
+		if err != nil {
+			return err
+		}
+		cleanupPaths = append(cleanupPaths, pdfPath)
+	}
+	tx, err := h.db.Begin()
+	if err != nil {
+		return handleError(c, err)
+	}
+	defer tx.Rollback()
+	if mainFile != nil {
+		if _, err = tx.Exec(`INSERT INTO registration_documents (id,registration_id,doc_type,file_path,original_name) VALUES (?,?,?,?,?)`, uuid.NewString(), registrationID, "presentation_main", mainKey, filepath.Base(mainFile.Filename)); err != nil {
+			return handleError(c, err)
+		}
+	}
+	if pdfKey != "" {
+		if _, err = tx.Exec(`INSERT INTO registration_documents (id,registration_id,doc_type,file_path,original_name) VALUES (?,?,?,?,?)`, uuid.NewString(), registrationID, "presentation_pdf", pdfKey, filepath.Base(pdf.Filename)); err != nil {
+			return handleError(c, err)
+		}
+	}
+	if _, err = tx.Exec(`UPDATE lkti_submissions SET status=?,presentation_submitted_at=NOW(),presentation_material_confirmation_at=NOW(),presentation_technical_confirmation_at=NOW(),presentation_full_paper_confirmation_at=NOW() WHERE id=?`, lktiPosterSubmitted, c.Params("id")); err != nil {
+		return handleError(c, err)
+	}
+	if err := tx.Commit(); err != nil {
+		return handleError(c, err)
+	}
+	cleanupPaths = nil
+	return response.JSON(c, fiber.StatusCreated, "materi presentasi berhasil dikirim", nil)
+}
+
+func validatePresentationMainUpload(file *multipart.FileHeader) (string, error) {
+	if strings.EqualFold(filepath.Ext(file.Filename), ".pdf") {
+		return validatePDFUpload(file)
+	}
+	return validatePPTXUpload(file)
+}
+
+func (h *LKTIHandler) lktiUploadRegistration(c *fiber.Ctx, requiredStatuses ...string) (string, error) {
+	var registrationID, status string
+	err := h.db.QueryRow(`SELECT ls.registration_id,ls.status FROM lkti_submissions ls JOIN registrations r ON r.id=ls.registration_id WHERE ls.id=? AND r.user_id=?`, c.Params("id"), userID(c)).Scan(&registrationID, &status)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", handleError(c, utils.ErrForbidden)
+	}
+	if err != nil {
+		return "", handleError(c, err)
+	}
+	allowed := false
+	for _, requiredStatus := range requiredStatuses {
+		if status == requiredStatus {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return "", response.Error(c, fiber.StatusConflict, "unggahan belum tersedia pada tahap karya saat ini", nil)
+	}
+	return registrationID, nil
+}
+
+func (h *LKTIHandler) saveLKTIFile(c *fiber.Ctx, file *multipart.FileHeader, registrationID, documentType, ext string) (string, string, error) {
+	storageKey := filepath.ToSlash(filepath.Join("registrations", registrationID, fmt.Sprintf("doc_%s_%s%s", uuid.NewString(), documentType, ext)))
+	diskPath := filepath.Join(h.cfg.UploadDir, "private", filepath.FromSlash(storageKey))
+	if err := os.MkdirAll(filepath.Dir(diskPath), 0750); err != nil {
+		return "", "", handleError(c, err)
+	}
+	if err := c.SaveFile(file, diskPath); err != nil {
+		return "", "", handleError(c, err)
+	}
+	return storageKey, diskPath, nil
+}
+
 func (h *LKTIHandler) sendStatusEmail(recipient, name, competition, status string) error {
 	if h.cfg.SMTPHost == "" || h.cfg.SMTPUser == "" || h.cfg.SMTPPass == "" {
 		return fmt.Errorf("smtp is not configured")
 	}
-	passed := status == lktiAbstractPassed
-	subject := "Hasil Seleksi Abstrak LKTI BESC"
-	message := fmt.Sprintf("Halo %s,\r\n\r\nTerima kasih telah mengikuti seleksi abstrak %s. Mohon maaf, abstrak tim kamu belum dapat melanjutkan ke tahap full paper.\r\n\r\nTerima kasih,\r\nTim BESC", name, competition)
-	if passed {
-		subject = "Selamat, Abstrak LKTI Kamu Lolos"
-		message = fmt.Sprintf("Halo %s,\r\n\r\nSelamat! Abstrak tim kamu pada %s dinyatakan lolos. Silakan masuk ke akun BESC dan unggah full paper final melalui halaman Status Karya LKTI.\r\n\r\nTerima kasih,\r\nTim BESC", name, competition)
-	}
+	subject, message := lktiStatusEmail(name, competition, status)
 	from := h.cfg.MailFrom
 	if from == "" {
 		from = h.cfg.SMTPUser
@@ -278,4 +495,26 @@ func (h *LKTIHandler) sendStatusEmail(recipient, name, competition, status strin
 	body := []byte("From: " + from + "\r\nTo: " + recipient + "\r\nSubject: " + subject + "\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n" + message)
 	auth := smtp.PlainAuth("", h.cfg.SMTPUser, strings.ReplaceAll(strings.TrimSpace(h.cfg.SMTPPass), " ", ""), h.cfg.SMTPHost)
 	return smtp.SendMail(h.cfg.SMTPHost+":"+h.cfg.SMTPPort, auth, h.cfg.SMTPUser, []string{recipient}, body)
+}
+
+func lktiStatusEmail(name, competition, status string) (string, string) {
+	stage, nextStage := "", ""
+	switch status {
+	case lktiAbstractPassed:
+		stage, nextStage = "Abstrak", "unggah full paper final melalui halaman Status Karya LKTI"
+	case lktiAbstractRejected:
+		stage = "Abstrak"
+	case lktiFullPaperPassed:
+		stage, nextStage = "Full paper", "unggah poster ilmiah melalui halaman Status Karya LKTI"
+	case lktiFullPaperRejected:
+		stage = "Full paper"
+	case lktiPosterPassed:
+		stage, nextStage = "Poster dan materi presentasi", "menunggu informasi tahap berikutnya dari panitia"
+	case lktiPosterRejected:
+		stage = "Poster ilmiah"
+	}
+	if nextStage != "" {
+		return fmt.Sprintf("Selamat, %s LKTI Kamu Lolos", stage), fmt.Sprintf("Halo %s,\r\n\r\nSelamat! %s tim kamu pada %s dinyatakan lolos. Silakan masuk ke akun BESC dan %s.\r\n\r\nTerima kasih,\r\nTim BESC", name, strings.ToLower(stage), competition, nextStage)
+	}
+	return fmt.Sprintf("Hasil Penilaian %s LKTI BESC", stage), fmt.Sprintf("Halo %s,\r\n\r\nTerima kasih telah mengikuti tahap %s %s. Mohon maaf, karya tim kamu belum dapat melanjutkan ke tahap berikutnya.\r\n\r\nTerima kasih,\r\nTim BESC", name, strings.ToLower(stage), competition)
 }

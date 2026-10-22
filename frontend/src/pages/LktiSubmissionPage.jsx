@@ -4,105 +4,55 @@ import Footer from '../components/Footer.jsx';
 import { apiRequest } from '../lib/api.js';
 
 const subthemes = ['Bioenergy Genetics', 'Molecular Bioremediation', 'Microbial Bioenergy', 'Metabolic Engineering', 'Sustainable Biotechnology'];
-
 const statusInfo = {
   abstract_submitted: ['Abstrak Sedang Dinilai', 'Panitia sedang menilai abstrak yang sudah dikirim.', 'bg-amber-50 text-amber-800'],
   abstract_passed: ['Lolos Seleksi Abstrak', 'Tim kamu dapat melanjutkan ke pengumpulan full paper.', 'bg-emerald-50 text-emerald-800'],
   abstract_rejected: ['Tidak Lolos Seleksi Abstrak', 'Terima kasih sudah mengikuti seleksi abstrak LKTI BESC.', 'bg-rose-50 text-rose-800'],
-  full_paper_submitted: ['Full Paper Terkirim', 'Berkas final sudah diterima panitia.', 'bg-blue-50 text-blue-800'],
+  full_paper_submitted: ['Full Paper Sedang Dinilai', 'Berkas full paper sudah diterima dan sedang ditinjau panitia.', 'bg-blue-50 text-blue-800'],
+  full_paper_passed: ['Lolos Seleksi Full Paper', 'Tim kamu dapat melanjutkan ke pengumpulan poster ilmiah.', 'bg-emerald-50 text-emerald-800'],
+  full_paper_rejected: ['Tidak Lolos Seleksi Full Paper', 'Terima kasih telah mengikuti tahapan LKTI BESC.', 'bg-rose-50 text-rose-800'],
+  poster_uploaded: ['Poster Ilmiah Terkirim', 'Lanjutkan dengan mengunggah PPT utama.', 'bg-blue-50 text-blue-800'],
+  presentation_pptx_submitted: ['PPT Utama Tersimpan', 'Lengkapi konfirmasi dan kirim. PDF cadangan boleh disertakan bila tersedia.', 'bg-blue-50 text-blue-800'],
+  poster_submitted: ['Poster dan Materi Presentasi Sedang Dinilai', 'Poster, PPTX utama, dan PDF cadangan sudah diterima panitia.', 'bg-blue-50 text-blue-800'],
+  poster_passed: ['Lolos Tahap Poster dan Presentasi', 'Selamat, seluruh berkas tahap akhir telah dinyatakan lolos.', 'bg-emerald-50 text-emerald-800'],
+  poster_rejected: ['Tidak Lolos Seleksi Poster', 'Terima kasih telah mengikuti tahapan LKTI BESC.', 'bg-rose-50 text-rose-800'],
+  presentation_submitted: ['Materi Presentasi Terkirim', 'PPTX dan PDF cadangan sudah diterima panitia.', 'bg-blue-50 text-blue-800'],
 };
-
 const paymentInfo = {
   pending: ['Menunggu Verifikasi Pembayaran', 'Panitia sedang memeriksa bukti pembayaran tim kamu.', 'bg-amber-50 text-amber-800'],
   rejected: ['Pembayaran Ditolak', 'Silakan unggah ulang bukti pembayaran melalui kartu kompetisi LKTI.', 'bg-rose-50 text-rose-800'],
 };
 
+function Detail({ label, value, wide }) { return <div className={wide ? 'sm:col-span-2' : ''}><div className="text-xs font-bold text-slate-400">{label}</div><div className="mt-1 font-bold text-slate-800">{value || '-'}</div></div>; }
+function Identity({ submission, workDetails }) {
+  const members = [submission.leader_name, submission.member1_name, submission.member2_name].filter(Boolean).join(', ');
+  return <div className="grid gap-4 border-y border-slate-200 py-5 sm:grid-cols-3">
+    <Detail label="Nama Tim" value={submission.team_name} /><Detail label="Ketua Tim" value={submission.leader_name} /><Detail label="Asal Sekolah" value={submission.institution} />
+    {workDetails ? <><Detail label="Seluruh Anggota Tim" value={members} wide /><Detail label="Judul Karya Tulis Ilmiah" value={submission.work_title} wide /><Detail label="Jenis Karya" value={submission.work_type} /><Detail label="Subtema" value={submission.subtheme} /></> : <><Detail label="Judul Abstrak" value={submission.abstract_title} wide /><Detail label="Subtema" value={submission.subtheme} /></>}
+  </div>;
+}
+function FileInput({ label, accept, help, onChange, required = true }) { return <label className="block text-sm font-bold text-slate-700">{label}<input required={required} accept={accept} type="file" onChange={(e) => onChange(e.target.files?.[0] || null)} className="mt-2 block w-full border border-slate-300 bg-white p-2 font-normal" /><span className="mt-1 block text-xs font-normal text-slate-400">{help}</span></label>; }
+function Check({ checked, onChange, children }) { return <label className="flex items-start gap-3 bg-slate-50 p-4 text-sm leading-6 text-slate-600"><input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-1 h-4 w-4" /><span>{children}</span></label>; }
+function SubmitButton({ submitting, children }) { return <button disabled={submitting} className="h-11 bg-[#087f73] px-6 text-sm font-extrabold text-white disabled:opacity-50">{submitting ? 'Mengirim...' : children}</button>; }
+
 export default function LktiSubmissionPage({ user, onHome, onLogin, onLogout, onOlimpiade, onProfile, onRegister }) {
-  const [submission, setSubmission] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [form, setForm] = useState({ workTitle: '', subtheme: '', workType: '', file: null, confirmed: false });
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      const data = await apiRequest('/me/lkti-submission');
-      setSubmission(data);
-      if (data) setForm((current) => ({ ...current, workTitle: data.work_title || data.abstract_title || '', subtheme: data.subtheme || '' }));
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [submission, setSubmission] = useState(null); const [loading, setLoading] = useState(true); const [submitting, setSubmitting] = useState(false); const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+  const [fullPaper, setFullPaper] = useState({ workTitle: '', subtheme: '', workType: '', file: null, confirmed: false });
+  const [poster, setPoster] = useState({ file: null, confirmed: false, publicationConsent: false });
+  const [presentation, setPresentation] = useState({ pptx: null, pdf: null, materialConfirmed: false, technicalConfirmed: false, fullPaperConfirmed: false });
+  const load = async () => { setLoading(true); try { const data = await apiRequest('/me/lkti-submission'); setSubmission(data); if (data) setFullPaper((current) => ({ ...current, workTitle: data.work_title || data.abstract_title || '', subtheme: data.subtheme || '' })); } catch (err) { setError(err.message); } finally { setLoading(false); } };
   useEffect(() => { load(); }, []);
-
-  const submitFullPaper = async (event) => {
-    event.preventDefault();
-    setError(''); setSuccess('');
-    if (!form.file || form.file.type !== 'application/pdf' || form.file.size > 10 * 1024 * 1024) {
-      setError('Pilih file PDF dengan ukuran maksimal 10 MB.'); return;
-    }
-    if (!form.confirmed) { setError('Pernyataan konfirmasi wajib disetujui.'); return; }
-    setSubmitting(true);
-    try {
-      const body = new FormData();
-      body.append('work_title', form.workTitle);
-      body.append('subtheme', form.subtheme);
-      body.append('work_type', form.workType);
-      body.append('confirmed', 'true');
-      body.append('full_paper', form.file, form.file.name);
-      await apiRequest(`/lkti-submissions/${submission.id}/full-paper`, { method: 'POST', body, timeoutMs: 60000, retries: 1 });
-      setSuccess('Full paper berhasil dikirim.');
-      await load();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const info = paymentInfo[submission?.payment_status] || statusInfo[submission?.status] || statusInfo.abstract_submitted;
-  return <>
-    <Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onRegister={onRegister} user={user} />
-    <main className="min-h-[70vh] bg-slate-50 px-5 py-10">
-      <div className="mx-auto max-w-4xl">
-        <button type="button" onClick={onHome} className="mb-5 text-sm font-bold text-[#126bad]">Kembali ke beranda</button>
-        <div className="border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-xs font-extrabold uppercase text-teal-700">LKTI BESC 2026</p>
-          <h1 className="mt-1 text-2xl font-extrabold text-slate-900">Status Karya Tim</h1>
-          {loading && <p className="mt-8 text-slate-500">Memuat data karya...</p>}
-          {!loading && !submission && <div className="mt-6 bg-slate-50 p-5 text-sm text-slate-600">Belum ada pengajuan abstrak LKTI pada akun ini.</div>}
-          {!loading && submission && <>
-            <div className={`mt-6 p-5 ${info[2]}`}><div className="font-extrabold">{info[0]}</div><p className="mt-1 text-sm">{info[1]}</p></div>
-            <div className="mt-6 grid gap-4 border-y border-slate-200 py-5 sm:grid-cols-3">
-              <div><div className="text-xs font-bold text-slate-400">Nama Tim</div><div className="mt-1 font-bold">{submission.team_name || '-'}</div></div>
-              <div><div className="text-xs font-bold text-slate-400">Ketua Tim</div><div className="mt-1 font-bold">{submission.leader_name}</div></div>
-              <div><div className="text-xs font-bold text-slate-400">Asal Sekolah</div><div className="mt-1 font-bold">{submission.institution || '-'}</div></div>
-              <div className="sm:col-span-2"><div className="text-xs font-bold text-slate-400">Judul Abstrak</div><div className="mt-1 font-bold">{submission.abstract_title}</div></div>
-              <div><div className="text-xs font-bold text-slate-400">Subtema</div><div className="mt-1 font-bold">{submission.subtheme}</div></div>
-            </div>
-            {submission.status === 'abstract_passed' && <form onSubmit={submitFullPaper} className="mt-7 space-y-5">
-              <div><h2 className="text-lg font-extrabold text-slate-900">Data Karya Final</h2><p className="text-sm text-slate-500">Lengkapi dan kirim full paper final tim.</p></div>
-              <label className="block text-sm font-bold text-slate-700">Judul KTI<input required value={form.workTitle} onChange={(e) => setForm({ ...form, workTitle: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 px-3 font-normal" /></label>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-bold text-slate-700">Subtema<select required value={form.subtheme} onChange={(e) => setForm({ ...form, subtheme: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Pilih subtema</option>{subthemes.map((item) => <option key={item}>{item}</option>)}</select></label>
-                <label className="block text-sm font-bold text-slate-700">Jenis Karya<select required value={form.workType} onChange={(e) => setForm({ ...form, workType: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Pilih jenis karya</option><option>Original Article</option><option>Review Article</option></select></label>
-              </div>
-              <label className="block text-sm font-bold text-slate-700">Unggah Full Paper (.pdf)<input required accept="application/pdf,.pdf" type="file" onChange={(e) => setForm({ ...form, file: e.target.files?.[0] || null })} className="mt-2 block w-full border border-slate-300 bg-white p-2 font-normal" /><span className="mt-1 block text-xs font-normal text-slate-400">Maksimal 10 MB.</span></label>
-              <label className="flex items-start gap-3 bg-slate-50 p-4 text-sm leading-6 text-slate-600"><input type="checkbox" checked={form.confirmed} onChange={(e) => setForm({ ...form, confirmed: e.target.checked })} className="mt-1 h-4 w-4" /><span>Saya menyatakan bahwa naskah yang diunggah merupakan berkas final, telah diperiksa kelengkapannya, dan telah sesuai dengan seluruh ketentuan LKTI BESC 2026. Saya memahami bahwa kesalahan atau ketidaklengkapan berkas yang dikumpulkan menjadi tanggung jawab peserta.</span></label>
-              <button disabled={submitting} className="h-11 bg-[#087f73] px-6 text-sm font-extrabold text-white disabled:opacity-50">{submitting ? 'Mengirim...' : 'Kirim Full Paper'}</button>
-            </form>}
-            {submission.status === 'full_paper_submitted' && <div className="mt-6 text-sm text-slate-600"><strong>{submission.work_title}</strong><br />{submission.work_type} · {submission.full_paper_original_name}</div>}
-          </>}
-          {error && <div className="mt-5 bg-red-50 p-3 text-sm font-bold text-red-700">{error}</div>}
-          {success && <div className="mt-5 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{success}</div>}
-        </div>
-      </div>
-    </main>
-    <Footer />
-  </>;
+  const submit = async (path, body, message) => { setError(''); setSuccess(''); setSubmitting(true); try { await apiRequest(path, { method: 'POST', body, timeoutMs: 60000, retries: 1 }); setSuccess(message); await load(); } catch (err) { setError(err.message); } finally { setSubmitting(false); } };
+  const submitFullPaper = (event) => { event.preventDefault(); if (!fullPaper.file || fullPaper.file.type !== 'application/pdf' || fullPaper.file.size > 10 * 1024 * 1024) return setError('Pilih file PDF dengan ukuran maksimal 10 MB.'); if (!fullPaper.confirmed) return setError('Pernyataan konfirmasi wajib disetujui.'); const body = new FormData(); body.append('work_title', fullPaper.workTitle); body.append('subtheme', fullPaper.subtheme); body.append('work_type', fullPaper.workType); body.append('confirmed', 'true'); body.append('full_paper', fullPaper.file); submit(`/lkti-submissions/${submission.id}/full-paper`, body, 'Full paper berhasil dikirim.'); };
+  const submitPoster = (event) => { event.preventDefault(); if (!poster.file || !['image/png', 'image/jpeg'].includes(poster.file.type) || poster.file.size > 5 * 1024 * 1024) return setError('Pilih poster PNG, JPG, atau JPEG dengan ukuran maksimal 5 MB.'); if (!poster.confirmed || !poster.publicationConsent) return setError('Kedua pernyataan wajib disetujui.'); const body = new FormData(); body.append('poster', poster.file); body.append('confirmed', 'true'); body.append('publication_consent', 'true'); submit(`/lkti-submissions/${submission.id}/poster`, body, 'Poster ilmiah berhasil dikirim.'); };
+  const submitPresentation = (event) => { event.preventDefault(); const mainAlreadyUploaded = submission.status === 'presentation_pptx_submitted'; if (!presentation.pptx && !mainAlreadyUploaded) return setError('PPT utama wajib diunggah.'); if (presentation.pptx && (!['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'].includes(presentation.pptx.type) || presentation.pptx.size > 20 * 1024 * 1024)) return setError('Pilih file PPTX atau PDF dengan ukuran maksimal 20 MB.'); if (presentation.pdf && (presentation.pdf.type !== 'application/pdf' || presentation.pdf.size > 10 * 1024 * 1024)) return setError('Pilih PDF cadangan dengan ukuran maksimal 10 MB.'); if (!presentation.materialConfirmed || !presentation.technicalConfirmed || !presentation.fullPaperConfirmed) return setError('Seluruh pernyataan presentasi wajib disetujui.'); const body = new FormData(); body.append('step', 'complete'); if (presentation.pptx) body.append('presentation_pptx', presentation.pptx); if (presentation.pdf) body.append('presentation_pdf', presentation.pdf); body.append('material_confirmed', 'true'); body.append('technical_confirmed', 'true'); body.append('full_paper_confirmed', 'true'); submit(`/lkti-submissions/${submission.id}/presentation`, body, 'Materi presentasi berhasil dikirim.'); };
+  const isLegacyPosterStep = submission?.status === 'poster_submitted' && !submission?.presentation_pptx_document_id;
+  const info = paymentInfo[submission?.payment_status] || (isLegacyPosterStep ? statusInfo.poster_uploaded : statusInfo[submission?.status]) || statusInfo.abstract_submitted;
+  const hasWork = ['full_paper_submitted', 'full_paper_passed', 'full_paper_rejected', 'poster_uploaded', 'poster_submitted', 'presentation_pptx_submitted', 'poster_passed', 'poster_rejected', 'presentation_submitted'].includes(submission?.status);
+  return <><Header onLogin={onLogin} onLogout={onLogout} onOlimpiade={onOlimpiade} onProfile={onProfile} onRegister={onRegister} user={user} /><main className="min-h-[70vh] bg-slate-50 px-5 py-10"><div className="mx-auto max-w-4xl"><button type="button" onClick={onHome} className="mb-5 text-sm font-bold text-[#126bad]">Kembali ke beranda</button><div className="border border-slate-200 bg-white p-6 shadow-sm sm:p-8"><p className="text-xs font-extrabold uppercase text-teal-700">LKTI BESC 2026</p><h1 className="mt-1 text-2xl font-extrabold text-slate-900">Status Karya Tim</h1>
+    {loading && <p className="mt-8 text-slate-500">Memuat data karya...</p>}{!loading && !submission && <div className="mt-6 bg-slate-50 p-5 text-sm text-slate-600">Belum ada pengajuan abstrak LKTI pada akun ini.</div>}{!loading && submission && <><div className={`mt-6 p-5 ${info[2]}`}><div className="font-extrabold">{info[0]}</div><p className="mt-1 text-sm">{info[1]}</p></div><Identity submission={submission} workDetails={hasWork} />
+    {submission.status === 'abstract_passed' && <form onSubmit={submitFullPaper} className="mt-7 space-y-5"><div><h2 className="text-lg font-extrabold text-slate-900">Data Karya Final</h2><p className="text-sm text-slate-500">Lengkapi dan kirim full paper final tim.</p></div><label className="block text-sm font-bold text-slate-700">Judul KTI<input required value={fullPaper.workTitle} onChange={(e) => setFullPaper({ ...fullPaper, workTitle: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 px-3 font-normal" /></label><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-bold text-slate-700">Subtema<select required value={fullPaper.subtheme} onChange={(e) => setFullPaper({ ...fullPaper, subtheme: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Pilih subtema</option>{subthemes.map((item) => <option key={item}>{item}</option>)}</select></label><label className="block text-sm font-bold text-slate-700">Jenis Karya<select required value={fullPaper.workType} onChange={(e) => setFullPaper({ ...fullPaper, workType: e.target.value })} className="mt-2 h-11 w-full border border-slate-300 bg-white px-3 font-normal"><option value="">Pilih jenis karya</option><option>Original Article</option><option>Review Article</option></select></label></div><FileInput label="Unggah Full Paper (.pdf)" accept="application/pdf,.pdf" help="Maksimal 10 MB." onChange={(file) => setFullPaper({ ...fullPaper, file })} /><Check checked={fullPaper.confirmed} onChange={(checked) => setFullPaper({ ...fullPaper, confirmed: checked })}>Saya menyatakan bahwa naskah yang diunggah merupakan berkas final, telah diperiksa kelengkapannya, dan telah sesuai dengan seluruh ketentuan LKTI BESC 2026. Saya memahami bahwa kesalahan atau ketidaklengkapan berkas yang dikumpulkan menjadi tanggung jawab peserta.</Check><SubmitButton submitting={submitting}>Kirim Full Paper</SubmitButton></form>}
+    {submission.status === 'full_paper_passed' && <form onSubmit={submitPoster} className="mt-7 space-y-5"><div><h2 className="text-lg font-extrabold text-slate-900">Unggah Poster Ilmiah</h2><p className="text-sm text-slate-500">Setelah poster dikirim, halaman berikutnya akan meminta PPT utama.</p></div><FileInput label="Unggah Poster Ilmiah" accept="image/png,image/jpeg,.png,.jpg,.jpeg" help="Format PNG, JPG, atau JPEG. Maksimal 5 MB." onChange={(file) => setPoster({ ...poster, file })} /><Check checked={poster.confirmed} onChange={(checked) => setPoster({ ...poster, confirmed: checked })}>Saya menyatakan bahwa poster yang diunggah sesuai dengan karya tim, orisinal, dan telah diperiksa kelengkapannya.</Check><Check checked={poster.publicationConsent} onChange={(checked) => setPoster({ ...poster, publicationConsent: checked })}>Saya menyetujui publikasi poster ilmiah oleh panitia LKTI BESC 2026.</Check><SubmitButton submitting={submitting}>Kirim Poster Ilmiah</SubmitButton></form>}
+    {(submission.status === 'poster_uploaded' || isLegacyPosterStep || submission.status === 'presentation_pptx_submitted') && <form onSubmit={submitPresentation} className="mt-7 space-y-5"><div><h2 className="text-lg font-extrabold text-slate-900">Unggah Materi Presentasi</h2><p className="text-sm text-slate-500">PPT utama wajib. PDF cadangan boleh diunggah bila tersedia.</p></div>{submission.status === 'presentation_pptx_submitted' && <p className="bg-emerald-50 p-3 text-sm font-bold text-emerald-800">Materi utama tersimpan: {submission.presentation_pptx_original_name || 'berkas berhasil diterima'}</p>}<FileInput required={submission.status !== 'presentation_pptx_submitted'} label={`Unggah PPT Utama (.pptx atau .pdf)${submission.status === 'presentation_pptx_submitted' ? ' - sudah tersimpan' : ' - wajib'}`} accept=".pptx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation" help="Format PPTX atau PDF. Maksimal 20 MB." onChange={(file) => setPresentation({ ...presentation, pptx: file })} /><FileInput required={false} label="Unggah PPT Cadangan (.pdf) - opsional" accept="application/pdf,.pdf" help="Format PDF. Maksimal 10 MB." onChange={(file) => setPresentation({ ...presentation, pdf: file })} /><Check checked={presentation.materialConfirmed} onChange={(checked) => setPresentation({ ...presentation, materialConfirmed: checked })}>Saya mengonfirmasi bahwa materi utama dan PDF cadangan (jika diunggah) memuat isi yang sama.</Check><Check checked={presentation.technicalConfirmed} onChange={(checked) => setPresentation({ ...presentation, technicalConfirmed: checked })}>Saya mengonfirmasi kesiapan teknis untuk presentasi.</Check><Check checked={presentation.fullPaperConfirmed} onChange={(checked) => setPresentation({ ...presentation, fullPaperConfirmed: checked })}>Saya menyatakan materi presentasi sesuai dengan full paper yang telah dikumpulkan.</Check><SubmitButton submitting={submitting}>Kirim Materi Presentasi</SubmitButton></form>}
+    </>}{error && <div className="mt-5 bg-red-50 p-3 text-sm font-bold text-red-700">{error}</div>}{success && <div className="mt-5 bg-emerald-50 p-3 text-sm font-bold text-emerald-700">{success}</div>}</div></div></main><Footer /></>;
 }

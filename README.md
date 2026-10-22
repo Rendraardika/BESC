@@ -107,7 +107,7 @@ CREATE DATABASE competition_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 EXIT;
 ```
 
-Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `019_create_lkti_submissions.sql`.
+Import semua migration dari folder `backend/database/migrations` secara berurutan. Saat ini migration tersedia sampai `020_add_lkti_poster_presentation.sql`.
 
 ```bash
 cd backend
@@ -296,7 +296,7 @@ Data soal tersimpan di MySQL production, bukan di Git. Karena itu, `git pull` ti
 | Olimpiade Biologi BESC 2026 SMP | 100 | Penyisihan SMP |
 | PENYISIHAN OLIMPIADE SMP BESC 2026 | 50 | Try Out SMP (kompetisi salah diberi nama) |
 | Seleksi KTI | 0 | Tidak memakai ujian Olimpiade |
-| LKTI BESC 2026 | 0 | Menggunakan seleksi abstrak dan full paper |
+| LKTI BESC 2026 | 0 | Menggunakan seleksi abstrak, full paper, poster, dan presentasi |
 
 Jangan menyalin 50 soal dari kompetisi `PENYISIHAN OLIMPIADE SMP BESC 2026` ke Olimpiade SMP. Ubah nama dan kategori kompetisi tersebut menjadi Try Out SMP agar 50 soal tetap terhubung pada data aslinya. Soal semifinal Olimpiade ditambahkan atau dipilih terpisah dengan ronde `semifinal` melalui Bank Soal.
 
@@ -307,6 +307,8 @@ Jangan menyalin 50 soal dari kompetisi `PENYISIHAN OLIMPIADE SMP BESC 2026` ke O
 - Admin menilai abstrak melalui menu **Karya LKTI**. Abstrak hanya dapat diloloskan setelah pembayaran terverifikasi.
 - Keputusan lolos atau tidak lolos dikirim ke email peserta.
 - Tim yang lolos membuka **Status Karya** dari kartu LKTI, kemudian mengisi judul KTI, subtema, jenis karya, konfirmasi, dan mengunggah full paper PDF maksimal 10 MB.
+- Setelah full paper diloloskan admin, tim mengunggah poster ilmiah PNG/JPG/JPEG maksimal 5 MB. Berikutnya tim mengirim materi utama PPTX atau PDF (wajib, maksimal 20 MB) dan PDF cadangan (opsional, maksimal 10 MB) pada satu halaman. Peserta menyetujui pernyataan presentasi; identitas tim serta data karya tampil otomatis.
+- Admin meninjau ketiga berkas tersebut dalam satu tab **Poster & Presentasi**.
 - Data peserta lama yang sudah mempunyai dokumen abstrak otomatis dimasukkan ke alur seleksi ketika backend terbaru dijalankan.
 
 ## Troubleshooting
@@ -357,7 +359,7 @@ Sebelum deploy production:
 - Batasi `CORS_ALLOW_ORIGINS` hanya ke domain frontend.
 - Isi `GOOGLE_CLIENT_ID` backend dan frontend jika memakai Google Login.
 - Pastikan `backend/uploads` disimpan di persistent volume dan dibackup.
-- Jalankan semua migration sampai `019_create_lkti_submissions.sql` atau file terbaru di `backend/database/migrations`. Backend juga memeriksa dan menambahkan tabel terbaru secara otomatis saat startup.
+- Jalankan semua migration sampai `020_add_lkti_poster_presentation.sql` atau file terbaru di `backend/database/migrations`. Backend juga memeriksa dan menambahkan tabel terbaru secara otomatis saat startup.
 - Jangan gunakan akun demo dari seed untuk production.
 
 Deployment dilakukan langsung dari VPS agar kredensial tidak tersimpan di repository:
