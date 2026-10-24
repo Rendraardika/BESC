@@ -123,10 +123,13 @@ type lktiItem struct {
 	FullPaperOriginalName *string `json:"full_paper_original_name"`
 	PosterDocumentID      *string `json:"poster_document_id"`
 	PosterOriginalName    *string `json:"poster_original_name"`
+	PosterUploadedAt      *string `json:"poster_uploaded_at"`
 	PresentationPPTXID    *string `json:"presentation_pptx_document_id"`
 	PresentationPPTXName  *string `json:"presentation_pptx_original_name"`
+	PresentationPPTXAt    *string `json:"presentation_pptx_uploaded_at"`
 	PresentationPDFID     *string `json:"presentation_pdf_document_id"`
 	PresentationPDFName   *string `json:"presentation_pdf_original_name"`
+	PresentationPDFAt     *string `json:"presentation_pdf_uploaded_at"`
 	AbstractSubmittedAt   string  `json:"abstract_submitted_at"`
 	FullPaperSubmittedAt  *string `json:"full_paper_submitted_at"`
 }
@@ -142,10 +145,13 @@ const lktiSelect = `
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='full_paper' ORDER BY created_at DESC LIMIT 1),
 		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='poster' ORDER BY created_at DESC LIMIT 1),
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='poster' ORDER BY created_at DESC LIMIT 1),
+		(SELECT DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='poster' ORDER BY created_at DESC LIMIT 1),
 		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('presentation_main','presentation_pptx') ORDER BY created_at DESC LIMIT 1),
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('presentation_main','presentation_pptx') ORDER BY created_at DESC LIMIT 1),
+		(SELECT DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type IN ('presentation_main','presentation_pptx') ORDER BY created_at DESC LIMIT 1),
 		(SELECT id FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='presentation_pdf' ORDER BY created_at DESC LIMIT 1),
 		(SELECT original_name FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='presentation_pdf' ORDER BY created_at DESC LIMIT 1),
+		(SELECT DATE_FORMAT(created_at, '%d-%m-%Y %H:%i') FROM registration_documents WHERE registration_id=ls.registration_id AND doc_type='presentation_pdf' ORDER BY created_at DESC LIMIT 1),
 		DATE_FORMAT(ls.abstract_submitted_at, '%Y-%m-%dT%H:%i:%s'),
 		CASE WHEN ls.full_paper_submitted_at IS NULL THEN NULL ELSE DATE_FORMAT(ls.full_paper_submitted_at, '%Y-%m-%dT%H:%i:%s') END
 	FROM lkti_submissions ls
@@ -162,7 +168,8 @@ func scanLKTI(row interface{ Scan(...interface{}) error }) (*lktiItem, error) {
 		&item.TeamName, &item.LeaderName, &item.Member1Name, &item.Member2Name, &item.Institution, &item.AbstractTitle, &item.Subtheme, &item.Status,
 		&item.PaymentStatus, &item.WorkTitle, &item.WorkType, &item.AbstractDocumentID, &item.AbstractOriginalName,
 		&item.FullPaperDocumentID, &item.FullPaperOriginalName, &item.PosterDocumentID, &item.PosterOriginalName,
-		&item.PresentationPPTXID, &item.PresentationPPTXName, &item.PresentationPDFID, &item.PresentationPDFName,
+		&item.PosterUploadedAt, &item.PresentationPPTXID, &item.PresentationPPTXName, &item.PresentationPPTXAt,
+		&item.PresentationPDFID, &item.PresentationPDFName, &item.PresentationPDFAt,
 		&item.AbstractSubmittedAt, &item.FullPaperSubmittedAt)
 	return &item, err
 }
